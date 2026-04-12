@@ -31,6 +31,16 @@
             </select>
         </div>
 
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="state_code">State</label>
+            <select name="state_code" id="state_code" style="min-width: 180px;">
+                <option value="">All States</option>
+                <option value="MD" {{ request('state_code') == 'MD' ? 'selected' : '' }}>Maryland (MD)</option>
+                <option value="VA" {{ request('state_code') == 'VA' ? 'selected' : '' }}>Virginia (VA)</option>
+                <option value="DC" {{ request('state_code') == 'DC' ? 'selected' : '' }}>District of Columbia (DC)</option>
+            </select>
+        </div>
+
         <div class="form-group" style="margin-bottom: 0; display: flex; gap: 10px;">
             <button type="submit" class="btn">Apply</button>
             <a href="{{ route('members.index') }}" class="btn btn-secondary">Reset</a>

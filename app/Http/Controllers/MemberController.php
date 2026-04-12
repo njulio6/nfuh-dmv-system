@@ -7,6 +7,7 @@ use App\Models\MemberRank;
 use App\Models\MemberRole;
 use App\Models\Organization;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class MemberController extends Controller
 {
@@ -30,6 +31,10 @@ class MemberController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->filled('state_code')) {
+            $query->where('state_code', $request->state_code);
+        }
+
         $members = $query->orderBy('id', 'desc')->paginate(10);
 
         return view('members.index', compact('members'));
@@ -48,35 +53,60 @@ class MemberController extends Controller
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255', 'unique:members,email'],
             'phone' => ['required', 'string', 'max:50'],
-            'rank_id' => ['required', 'exists:member_ranks,id'],
+            'rank_id' => ['nullable', 'exists:member_ranks,id'],
             'status' => ['required', 'string'],
-            'address' => ['nullable', 'string', 'max:255'],
+            'address' => ['required', 'string', 'max:255'],
+            'state_code' => ['required', Rule::in(['MD', 'VA', 'DC'])],
+            'join_date' => ['required', 'date'],
             'next_of_kin_name' => ['nullable', 'string', 'max:255'],
             'next_of_kin_phone' => ['nullable', 'string', 'max:50'],
+            'next_of_kin_email' => ['nullable', 'email', 'max:255'],
+            'next_of_kin_address' => ['nullable', 'string'],
+            'participates_in_njangi' => ['nullable', 'boolean'],
+            'participates_in_savings' => ['nullable', 'boolean'],
+            'participates_in_cultural' => ['nullable', 'boolean'],
             'role_ids' => ['nullable', 'array'],
             'role_ids.*' => ['exists:member_roles,id'],
         ]);
+
+        if (
+            !($request->boolean('participates_in_njangi')
+            || $request->boolean('participates_in_savings')
+            || $request->boolean('participates_in_cultural'))
+        ) {
+            return back()
+                ->withErrors([
+                    'participation' => 'Select at least one participation type.',
+                ])
+                ->withInput();
+        }
 
         $organization = Organization::firstOrFail();
 
         $member = Member::create([
             'organization_id' => $organization->id,
-            'member_code' => 'TEMP',
+            'member_code' => $this->generateMemberCode(
+                $validated['state_code'],
+                $validated['join_date']
+            ),
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
             'email' => $validated['email'] ?? null,
             'phone' => $validated['phone'],
-            'rank_id' => $validated['rank_id'],
+            'rank_id' => $validated['rank_id'] ?? null,
             'status' => $validated['status'],
-            'address' => $validated['address'] ?? null,
+            'address' => $validated['address'],
+            'state_code' => $validated['state_code'],
+            'join_date' => $validated['join_date'],
             'next_of_kin_name' => $validated['next_of_kin_name'] ?? null,
             'next_of_kin_phone' => $validated['next_of_kin_phone'] ?? null,
-        ]);
-
-        $member->update([
-            'member_code' => 'NFUH-' . str_pad($member->id, 4, '0', STR_PAD_LEFT),
+            'next_of_kin_email' => $validated['next_of_kin_email'] ?? null,
+            'next_of_kin_address' => $validated['next_of_kin_address'] ?? null,
+            'participates_in_njangi' => $request->boolean('participates_in_njangi'),
+            'participates_in_savings' => $request->boolean('participates_in_savings'),
+            'participates_in_cultural' => $request->boolean('participates_in_cultural'),
         ]);
 
         $member->roles()->sync($validated['role_ids'] ?? []);
@@ -108,27 +138,58 @@ class MemberController extends Controller
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
+            'email' => [
+                'nullable',
+                'email',
+                'max:255',
+                Rule::unique('members', 'email')->ignore($member->id),
+            ],
             'phone' => ['required', 'string', 'max:50'],
-            'rank_id' => ['required', 'exists:member_ranks,id'],
+            'rank_id' => ['nullable', 'exists:member_ranks,id'],
             'status' => ['required', 'string'],
-            'address' => ['nullable', 'string', 'max:255'],
+            'address' => ['required', 'string', 'max:255'],
+            'state_code' => ['required', Rule::in(['MD', 'VA', 'DC'])],
+            'join_date' => ['required', 'date'],
             'next_of_kin_name' => ['nullable', 'string', 'max:255'],
             'next_of_kin_phone' => ['nullable', 'string', 'max:50'],
+            'next_of_kin_email' => ['nullable', 'email', 'max:255'],
+            'next_of_kin_address' => ['nullable', 'string'],
+            'participates_in_njangi' => ['nullable', 'boolean'],
+            'participates_in_savings' => ['nullable', 'boolean'],
+            'participates_in_cultural' => ['nullable', 'boolean'],
             'role_ids' => ['nullable', 'array'],
             'role_ids.*' => ['exists:member_roles,id'],
         ]);
+
+        if (
+            !($request->boolean('participates_in_njangi')
+            || $request->boolean('participates_in_savings')
+            || $request->boolean('participates_in_cultural'))
+        ) {
+            return back()
+                ->withErrors([
+                    'participation' => 'Select at least one participation type.',
+                ])
+                ->withInput();
+        }
 
         $member->update([
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
             'email' => $validated['email'] ?? null,
             'phone' => $validated['phone'],
-            'rank_id' => $validated['rank_id'],
+            'rank_id' => $validated['rank_id'] ?? null,
             'status' => $validated['status'],
-            'address' => $validated['address'] ?? null,
+            'address' => $validated['address'],
+            'state_code' => $validated['state_code'],
+            'join_date' => $validated['join_date'],
             'next_of_kin_name' => $validated['next_of_kin_name'] ?? null,
             'next_of_kin_phone' => $validated['next_of_kin_phone'] ?? null,
+            'next_of_kin_email' => $validated['next_of_kin_email'] ?? null,
+            'next_of_kin_address' => $validated['next_of_kin_address'] ?? null,
+            'participates_in_njangi' => $request->boolean('participates_in_njangi'),
+            'participates_in_savings' => $request->boolean('participates_in_savings'),
+            'participates_in_cultural' => $request->boolean('participates_in_cultural'),
         ]);
 
         $member->roles()->sync($validated['role_ids'] ?? []);
@@ -136,5 +197,25 @@ class MemberController extends Controller
         return redirect()
             ->route('members.index')
             ->with('success', 'Member updated successfully');
+    }
+
+    private function generateMemberCode(string $stateCode, string $joinDate): string
+    {
+        $year = date('Y', strtotime($joinDate));
+        $prefix = "{$stateCode}-{$year}-";
+
+        $lastMember = Member::where('member_code', 'like', $prefix . '%')
+            ->orderByDesc('member_code')
+            ->first();
+
+        $nextSequence = 1;
+
+        if ($lastMember) {
+            $parts = explode('-', $lastMember->member_code);
+            $lastSequence = (int) ($parts[2] ?? 0);
+            $nextSequence = $lastSequence + 1;
+        }
+
+        return $prefix . str_pad((string) $nextSequence, 3, '0', STR_PAD_LEFT);
     }
 }
