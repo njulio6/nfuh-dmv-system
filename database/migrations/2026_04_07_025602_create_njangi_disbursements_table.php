@@ -11,50 +11,48 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('njangi_disbursements', function (Blueprint $table) {
-            $table->id();
+    Schema::create('njangi_disbursements', function (Blueprint $table) {
+        $table->id();
 
-            $table->foreignId('njangi_session_id')
-                ->constrained('njangi_sessions')
-                ->cascadeOnDelete();
+        $table->foreignId('organization_id')
+            ->constrained()
+            ->cascadeOnDelete();
 
-            $table->foreignId('njangi_session_beneficiary_id')
-                ->constrained('njangi_session_beneficiaries')
-                ->cascadeOnDelete();
+        $table->foreignId('njangi_session_id')
+            ->constrained('njangi_sessions')
+            ->cascadeOnDelete();
 
-            $table->foreignId('njangi_cycle_member_id')
-                ->constrained('njangi_cycle_members')
-                ->cascadeOnDelete();
+        $table->foreignId('njangi_session_beneficiary_id')
+            ->constrained('njangi_session_beneficiaries')
+            ->cascadeOnDelete();
 
-            // Gross amount allocated to beneficiary
-            $table->decimal('gross_amount', 12, 2)->default(0);
+        $table->foreignId('njangi_cycle_member_id')
+            ->constrained('njangi_cycle_members')
+            ->cascadeOnDelete();
 
-            // Optional deductions
-            $table->decimal('loan_deduction', 12, 2)->default(0);
-            $table->decimal('penalty_deduction', 12, 2)->default(0);
-            $table->decimal('other_deduction', 12, 2)->default(0);
+        $table->decimal('gross_amount', 12, 2)->default(0);
 
-            // Final amount actually paid out
-            $table->decimal('net_amount', 12, 2)->default(0);
+        $table->decimal('loan_deduction', 12, 2)->default(0);
+        $table->decimal('penalty_deduction', 12, 2)->default(0);
+        $table->decimal('other_deduction', 12, 2)->default(0);
 
-            $table->date('disbursement_date')->nullable();
+        $table->decimal('net_amount', 12, 2)->default(0);
 
-            $table->enum('status', ['pending', 'approved', 'paid', 'cancelled'])
-                ->default('pending');
+        $table->date('disbursement_date')->nullable();
 
-            $table->string('payment_method')->nullable(); // cash, transfer, zelle, etc.
-            $table->string('reference_number')->nullable();
+        $table->enum('status', ['pending', 'approved', 'paid', 'cancelled'])
+            ->default('pending');
 
-            $table->text('notes')->nullable();
+        $table->string('payment_method')->nullable();
+        $table->string('reference_number')->nullable();
 
-            $table->timestamps();
+        $table->text('notes')->nullable();
 
-            // One payout record per beneficiary assignment
-            $table->unique(['njangi_session_beneficiary_id']);
+        $table->timestamps();
 
-            // Prevent same member from getting multiple payout records in same session
-            $table->unique(['njangi_session_id', 'njangi_cycle_member_id']);
-        });
+        $table->unique(['njangi_session_beneficiary_id']);
+        $table->unique(['njangi_session_id', 'njangi_cycle_member_id']);
+    });
     }
 
     /**

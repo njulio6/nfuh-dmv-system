@@ -12,16 +12,13 @@ class NjangiCycleMember extends Model
         'njangi_cycle_id',
         'member_id',
         'benefit_order',
-        'monthly_contribution_amount',
         'is_active',
-        'joined_at',
         'notes',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'joined_at' => 'date',
-        'monthly_contribution_amount' => 'decimal:2',
+        'benefit_order' => 'integer',
     ];
 
     public function cycle(): BelongsTo
@@ -34,14 +31,14 @@ class NjangiCycleMember extends Model
         return $this->belongsTo(Member::class);
     }
 
-    public function sessionBeneficiaries(): HasMany
-    {
-        return $this->hasMany(NjangiSessionBeneficiary::class);
-    }
-
     public function contributions(): HasMany
     {
         return $this->hasMany(NjangiContribution::class);
+    }
+
+    public function beneficiarySessions(): HasMany
+    {
+        return $this->hasMany(NjangiSessionBeneficiary::class);
     }
 
     public function disbursements(): HasMany

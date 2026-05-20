@@ -29,4 +29,31 @@ class Organization extends Model
     {
         return $this->hasOne(RoyalAuthority::class);
     }
+
+    // 🔥 NJANGI RELATIONSHIPS
+
+    public function njangiCycles(): HasMany
+    {
+        return $this->hasMany(NjangiCycle::class);
+    }
+
+    public function njangiSessions(): HasMany
+    {
+        return $this->hasMany(NjangiSession::class);
+    }
+
+    public function njangiPaymentSubmissions(): HasMany
+    {
+        return $this->hasMany(NjangiPaymentSubmission::class);
+    }
+
+    public function njangiContributions(): HasMany
+    {
+        return $this->hasMany(NjangiContribution::class);
+    }
+
+    public function njangiDisbursements(): HasMany
+    {
+        return $this->hasMany(NjangiDisbursement::class);
+    }
 }

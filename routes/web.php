@@ -1,10 +1,12 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\MemberController;
+use App\Http\Controllers\NjangiCycleController;
+use App\Http\Controllers\NjangiPaymentSubmissionController;
 use App\Imports\MembersImport;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Http\Controllers\MemberController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -22,9 +24,25 @@ Route::middleware('auth')->group(function () {
 
 Route::get('/import-members', function () {
     Excel::import(new MembersImport, storage_path('app/members.xlsx'));
+
     return 'Imported!';
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
 
 Route::resource('members', MemberController::class);
+Route::resource('njangi-cycles', NjangiCycleController::class);
+
+Route::post('njangi-cycles/{njangiCycle}/add-members', [NjangiCycleController::class, 'addMembers'])
+    ->name('njangi-cycles.add-members');
+
+Route::post('njangi-cycles/{njangiCycle}/assign-benefit-order', [NjangiCycleController::class, 'assignBenefitOrder'])
+    ->name('njangi-cycles.assign-benefit-order');
+
+Route::post('njangi-cycles/{njangiCycle}/generate-sessions', [NjangiCycleController::class, 'generateSessions'])
+    ->name('njangi-cycles.generate-sessions');
+
+Route::post(
+    'njangi-submissions/{submission}/approve',
+    [NjangiPaymentSubmissionController::class, 'approve']
+)->name('njangi-submissions.approve');

@@ -11,36 +11,39 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('njangi_sessions', function (Blueprint $table) {
-            $table->id();
+    Schema::create('njangi_sessions', function (Blueprint $table) {
+        $table->id();
 
-            // Parent yearly cycle
-            $table->foreignId('njangi_cycle_id')
-                ->constrained('njangi_cycles')
-                ->cascadeOnDelete();
+        // Organization scope (VERY IMPORTANT)
+        $table->foreignId('organization_id')
+            ->constrained()
+            ->cascadeOnDelete();
 
-            // Session sequence within the cycle: 1..12
-            $table->unsignedTinyInteger('session_number');
+        // Parent yearly cycle
+        $table->foreignId('njangi_cycle_id')
+            ->constrained('njangi_cycles')
+            ->cascadeOnDelete();
 
-            // Actual NFUH meeting date
-            $table->date('session_date');
+        // Session sequence within the cycle: 1..12
+        $table->unsignedTinyInteger('session_number');
 
-            // Optional tracking fields
-            $table->string('title')->nullable(); // e.g. "January Session"
-            $table->text('notes')->nullable();
+        // Actual NFUH meeting date
+        $table->date('session_date');
 
-            // Session state
-            $table->enum('status', ['scheduled', 'open', 'closed', 'cancelled'])
-                ->default('scheduled');
+        // Optional tracking fields
+        $table->string('title')->nullable(); // e.g. "January Session"
+        $table->text('notes')->nullable();
 
-            $table->timestamps();
+        // Session state
+        $table->enum('status', ['scheduled', 'open', 'closed', 'cancelled'])
+            ->default('scheduled');
 
-            // Prevent duplicate session number inside same cycle
-            $table->unique(['njangi_cycle_id', 'session_number']);
+        $table->timestamps();
 
-            // Prevent duplicate date inside same cycle
-            $table->unique(['njangi_cycle_id', 'session_date']);
-        });
+        // Constraints
+        $table->unique(['njangi_cycle_id', 'session_number']);
+        $table->unique(['njangi_cycle_id', 'session_date']);
+    });
     }
 
     /**

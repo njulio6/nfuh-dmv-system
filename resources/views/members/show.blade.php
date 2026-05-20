@@ -98,11 +98,7 @@
             {{ count($participation) ? implode(', ', $participation) : 'N/A' }}
         </div>
     </div>
-
-    <div class="actions">
-        <a href="{{ route('members.edit', $member) }}" class="btn">Edit Member</a>
-    </div>
-
+<div class="actions">
+    <a href="{{ route('members.edit', $member) }}" class="btn">Edit Member</a>
 </div>
-
 @endsection

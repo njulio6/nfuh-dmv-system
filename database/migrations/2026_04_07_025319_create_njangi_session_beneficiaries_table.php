@@ -11,33 +11,32 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('njangi_session_beneficiaries', function (Blueprint $table) {
-            $table->id();
+    Schema::create('njangi_session_beneficiaries', function (Blueprint $table) {
+        $table->id();
 
-            $table->foreignId('njangi_session_id')
-                ->constrained('njangi_sessions')
-                ->cascadeOnDelete();
+        $table->foreignId('organization_id')
+            ->constrained()
+            ->cascadeOnDelete();
 
-            $table->foreignId('njangi_cycle_member_id')
-                ->constrained('njangi_cycle_members')
-                ->cascadeOnDelete();
+        $table->foreignId('njangi_session_id')
+            ->constrained('njangi_sessions')
+            ->cascadeOnDelete();
 
-            // Order of payout inside that specific session: 1, 2, 3, 4...
-            $table->unsignedTinyInteger('beneficiary_slot');
+        $table->foreignId('njangi_cycle_member_id')
+            ->constrained('njangi_cycle_members')
+            ->cascadeOnDelete();
 
-            // Snapshot of draw order for clarity/reporting
-            $table->unsignedTinyInteger('benefit_order')->nullable();
+        $table->unsignedTinyInteger('beneficiary_slot');
 
-            $table->text('notes')->nullable();
+        $table->unsignedInteger('benefit_order')->nullable();
 
-            $table->timestamps();
+        $table->text('notes')->nullable();
 
-            // Prevent same member from being assigned twice in same session
-            $table->unique(['njangi_session_id', 'njangi_cycle_member_id']);
+        $table->timestamps();
 
-            // Prevent duplicate slot numbers in same session
-            $table->unique(['njangi_session_id', 'beneficiary_slot']);
-        });
+        $table->unique(['njangi_session_id', 'njangi_cycle_member_id']);
+        $table->unique(['njangi_session_id', 'beneficiary_slot']);
+    });
     }
 
     /**

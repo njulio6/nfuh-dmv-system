@@ -10,6 +10,11 @@ return new class extends Migration
     {
         Schema::create('njangi_cycles', function (Blueprint $table) {
             $table->id();
+
+            $table->foreignId('organization_id')
+                  ->constrained()
+                  ->cascadeOnDelete();
+
             $table->string('name');
             $table->year('year');
             $table->date('start_date')->nullable();

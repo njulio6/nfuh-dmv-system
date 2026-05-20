@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class NjangiSession extends Model
 {
     protected $fillable = [
+        'organization_id',
         'njangi_cycle_id',
         'session_number',
         'session_date',
@@ -18,8 +19,14 @@ class NjangiSession extends Model
     ];
 
     protected $casts = [
+        'session_number' => 'integer',
         'session_date' => 'date',
     ];
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
 
     public function cycle(): BelongsTo
     {
@@ -29,6 +36,11 @@ class NjangiSession extends Model
     public function beneficiaries(): HasMany
     {
         return $this->hasMany(NjangiSessionBeneficiary::class);
+    }
+
+    public function paymentSubmissions(): HasMany
+    {
+        return $this->hasMany(NjangiPaymentSubmission::class);
     }
 
     public function contributions(): HasMany

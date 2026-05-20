@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class NjangiDisbursement extends Model
 {
     protected $fillable = [
+        'organization_id',
         'njangi_session_id',
         'njangi_session_beneficiary_id',
         'njangi_cycle_member_id',
@@ -32,12 +33,17 @@ class NjangiDisbursement extends Model
         'disbursement_date' => 'date',
     ];
 
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
     public function session(): BelongsTo
     {
         return $this->belongsTo(NjangiSession::class, 'njangi_session_id');
     }
 
-    public function beneficiary(): BelongsTo
+    public function sessionBeneficiary(): BelongsTo
     {
         return $this->belongsTo(NjangiSessionBeneficiary::class, 'njangi_session_beneficiary_id');
     }
