@@ -4,17 +4,33 @@ namespace App\Http\Controllers;
 
 use App\Models\NjangiPaymentSubmission;
 use App\Services\Njangi\ApproveNjangiPaymentSubmission;
-use Illuminate\Http\Request;
 use RuntimeException;
 
 class NjangiPaymentSubmissionController extends Controller
 {
+    public function index()
+    {
+        $submissions = NjangiPaymentSubmission::with([
+                'member',
+                'cycle',
+                'session',
+                'reviewer',
+            ])
+            ->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
+            ->orderByDesc('submitted_at')
+            ->paginate(15);
+
+        return view('njangi.submissions.index', compact('submissions'));
+    }
+
     public function approve(
         NjangiPaymentSubmission $submission,
         ApproveNjangiPaymentSubmission $service
     ) {
         try {
-            $service->execute($submission, auth()->id());
+            $reviewerUserId = auth()->id() ?? 1;
+
+            $service->execute($submission, $reviewerUserId);
 
             return redirect()
                 ->back()
