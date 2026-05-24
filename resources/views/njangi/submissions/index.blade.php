@@ -47,14 +47,19 @@
                 <td>{{ $submission->submitted_at }}</td>
                 <td>
                     @if ($submission->status === 'pending')
-                    <form method="POST" action="{{ route('njangi-submissions.approve', $submission) }}">
-                        @csrf
-                        <button type="submit">
-                            Approve
-                        </button>
-                    </form>
+                    <div style="display: flex; gap: 8px;">
+                        <form method="POST" action="{{ route('njangi-submissions.approve', $submission) }}">
+                            @csrf
+                            <button type="submit" class="btn">Approve</button>
+                        </form>
+
+                        <form method="POST" action="{{ route('njangi-submissions.reject', $submission) }}">
+                            @csrf
+                            <button type="submit" class="btn btn-danger">Reject</button>
+                        </form>
+                    </div>
                     @else
-                    Approved
+                    {{ ucfirst($submission->status) }}
                     @endif
                 </td>
             </tr>

@@ -41,4 +41,23 @@ class NjangiPaymentSubmissionController extends Controller
                 ->with('error', $e->getMessage());
         }
     }
+
+    public function reject(NjangiPaymentSubmission $submission)
+    {
+        if ($submission->status !== 'pending') {
+            return redirect()
+                ->back()
+                ->with('error', 'Only pending submissions can be rejected.');
+        }
+
+        $submission->update([
+            'status' => 'rejected',
+            'reviewed_by' => auth()->id() ?? 1,
+            'reviewed_at' => now(),
+        ]);
+
+        return redirect()
+            ->back()
+            ->with('success', 'Payment submission rejected.');
+    }
 }

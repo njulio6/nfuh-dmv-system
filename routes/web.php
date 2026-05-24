@@ -48,6 +48,9 @@ Route::post(
     [NjangiPaymentSubmissionController::class, 'approve']
 )->name('njangi-submissions.approve');
 
+Route::post('/njangi-submissions/{submission}/reject', [NjangiPaymentSubmissionController::class, 'reject'])
+    ->name('njangi-submissions.reject');
+
 Route::get('/njangi-submissions', [NjangiPaymentSubmissionController::class, 'index'])
     ->name('njangi-submissions.index');
 
