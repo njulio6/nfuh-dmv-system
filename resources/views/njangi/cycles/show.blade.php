@@ -43,11 +43,16 @@
         <div class="profile-label">Notes</div>
         <div>{{ $njangiCycle->notes ?: 'N/A' }}</div>
     </div>
-       <a href="{{ route('njangi-submissions.index') }}" class="btn">Payment Submissions
-        </a>
-        <a href="{{ route('njangi-contributions.index') }}" class="btn">Contributions / Refunds
-        </a>
+
     <div class="actions" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="{{ route('njangi-submissions.index') }}"
+            style="display:inline-block; background:#2563eb; color:white; padding:10px 16px; border-radius:6px; text-decoration:none;">
+            Payment Submissions
+        </a>
+        <a href="{{ route('njangi-contributions.index') }}"
+            style="display:inline-block; background:#2563eb; color:white; padding:10px 16px; border-radius:6px; text-decoration:none;">
+            Contributions / Refunds
+        </a>
         @if ($njangiCycle->sessions->isEmpty())
         <form action="{{ route('njangi-cycles.add-members', $njangiCycle) }}" method="POST">
             @csrf
