@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\NjangiCycleController;
 use App\Http\Controllers\NjangiPaymentSubmissionController;
+use App\Http\Controllers\NjangiContributionController;
 use App\Imports\MembersImport;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -49,3 +50,6 @@ Route::post(
 
 Route::get('/njangi-submissions', [NjangiPaymentSubmissionController::class, 'index'])
     ->name('njangi-submissions.index');
+
+    Route::get('/njangi-contributions', [NjangiContributionController::class, 'index'])
+    ->name('njangi-contributions.index');
