@@ -268,15 +268,6 @@ class MemberSeeder extends Seeder
                 ->toArray();
 
             $member->roles()->sync($roleIds);
-
-            // Create user account for this member so they can log in immediately
-            \App\Models\User::create([
-                'organization_id' => $org->id,
-                'name' => $data['first_name'] . ' ' . $data['last_name'],
-                'email' => $data['email'],
-                'password' => \Illuminate\Support\Facades\Hash::make('password'),
-                'email_verified_at' => now(),
-            ]);
         }
     }
 

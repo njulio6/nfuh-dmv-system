@@ -3,34 +3,20 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 use App\Models\Organization;
 use App\Models\Member;
-use App\Models\User;
 use App\Models\NjangiCycle;
 use App\Models\NjangiCycleMember;
 use App\Models\NjangiSession;
 use App\Models\NjangiSessionBeneficiary;
 use App\Models\NjangiPaymentSubmission;
 use App\Models\NjangiContribution;
-use App\Models\MemberRole;
 
 class RealDataSeeder extends Seeder
 {
     public function run(): void
     {
         $org = Organization::first();
-
-        // ─── GLOBAL ADMIN ACCOUNT ─────────────────────────────────────────────
-        // A User with NO Member profile = global admin (full admin dashboard access)
-        User::create([
-            'organization_id'    => $org->id,
-            'name'               => 'Admin',
-            'email'              => 'admin@example.com',
-            'password'           => Hash::make('password'),
-            'email_verified_at'  => now(),
-        ]);
-
 
         // Third Cycle (2026) — Active
         $thirdCycle = NjangiCycle::create([
@@ -162,72 +148,66 @@ class RealDataSeeder extends Seeder
         }
 
         // ─── PAYMENT SUBMISSIONS ─────────────────────────────────────────────
-        // Get Rakib's and Emmanuel's user accounts for reviewer
-        $rakibUser    = User::where('email', 'krakib2002@gmail.com')->first();
-        $emmanuelUser = User::where('email', 'emmanuel@example.com')->first();
-
-        if (!$rakibUser || !$emmanuelUser) return;
-
-        // Submission 1: $400 — APPROVED (what shows in the dashboard)
+        // Note: reviewed_by is null since no users are seeded (admin is created via installer)
+        // Submission 1: $400 — APPROVED
         $approvedSubmission = NjangiPaymentSubmission::create([
-            'organization_id'  => $org->id,
-            'member_id'        => $rakib->id,
-            'njangi_cycle_id'  => $thirdCycle->id,
-            'njangi_session_id'=> $juneSession->id,
-            'amount'           => 400.00,
-            'is_attending'     => false,
-            'screenshot_path'  => 'screenshots/placeholder.jpg',
-            'status'           => 'approved',
-            'reviewed_by'      => $emmanuelUser->id,
-            'submitted_at'     => '2026-06-11 08:00:00',
-            'reviewed_at'      => '2026-06-11 09:00:00',
-            'member_note'      => null,
-            'review_note'      => null,
+            'organization_id'   => $org->id,
+            'member_id'         => $rakib->id,
+            'njangi_cycle_id'   => $thirdCycle->id,
+            'njangi_session_id' => $juneSession->id,
+            'amount'            => 400.00,
+            'is_attending'      => false,
+            'screenshot_path'   => 'screenshots/placeholder.jpg',
+            'status'            => 'approved',
+            'reviewed_by'       => null,
+            'submitted_at'      => '2026-06-11 08:00:00',
+            'reviewed_at'       => '2026-06-11 09:00:00',
+            'member_note'       => null,
+            'review_note'       => null,
         ]);
 
-        // Create the contributions from the approved $400 split equally between 2 beneficiaries
-        // $200 → Agnes Tanyi, $200 → Rakib Hasan
+        // Split $400 equally: $200 → Agnes, $200 → Rakib
         NjangiContribution::create([
-            'organization_id'      => $org->id,
-            'njangi_cycle_id'      => $thirdCycle->id,
-            'njangi_session_id'    => $juneSession->id,
-            'contributor_member_id'=> $rakib->id,
-            'beneficiary_member_id'=> $agnes->id,
-            'payment_submission_id'=> $approvedSubmission->id,
-            'amount'               => 200.00,
-            'payment_date'         => '2026-06-11',
-            'payment_method'       => 'zelle',
-            'notes'                => 'Auto-created from approved Njangi payment submission.',
+            'organization_id'       => $org->id,
+            'njangi_cycle_id'       => $thirdCycle->id,
+            'njangi_session_id'     => $juneSession->id,
+            'contributor_member_id' => $rakib->id,
+            'beneficiary_member_id' => $agnes->id,
+            'payment_submission_id' => $approvedSubmission->id,
+            'amount'                => 200.00,
+            'payment_date'          => '2026-06-11',
+            'payment_method'        => 'zelle',
+            'notes'                 => 'Auto-created from approved Njangi payment submission.',
         ]);
 
         NjangiContribution::create([
-            'organization_id'      => $org->id,
-            'njangi_cycle_id'      => $thirdCycle->id,
-            'njangi_session_id'    => $juneSession->id,
-            'contributor_member_id'=> $rakib->id,
-            'beneficiary_member_id'=> $rakib->id,
-            'payment_submission_id'=> $approvedSubmission->id,
-            'amount'               => 200.00,
-            'payment_date'         => '2026-06-11',
-            'payment_method'       => 'zelle',
-            'notes'                => 'Auto-created from approved Njangi payment submission.',
+            'organization_id'       => $org->id,
+            'njangi_cycle_id'       => $thirdCycle->id,
+            'njangi_session_id'     => $juneSession->id,
+            'contributor_member_id' => $rakib->id,
+            'beneficiary_member_id' => $rakib->id,
+            'payment_submission_id' => $approvedSubmission->id,
+            'amount'                => 200.00,
+            'payment_date'          => '2026-06-11',
+            'payment_method'        => 'zelle',
+            'notes'                 => 'Auto-created from approved Njangi payment submission.',
         ]);
 
-        // Submission 2: $400 — REJECTED (also shows in dashboard)
+        // Submission 2: $400 — REJECTED
         NjangiPaymentSubmission::create([
-            'organization_id'  => $org->id,
-            'member_id'        => $rakib->id,
-            'njangi_cycle_id'  => $thirdCycle->id,
-            'njangi_session_id'=> $juneSession->id,
-            'amount'           => 400.00,
-            'is_attending'     => false,
-            'screenshot_path'  => 'screenshots/placeholder.jpg',
-            'status'           => 'rejected',
-            'reviewed_by'      => $emmanuelUser->id,
-            'submitted_at'     => '2026-06-11 07:00:00',
-            'reviewed_at'      => '2026-06-11 08:30:00',
-            'member_note'      => null,
-            'review_note'      => 'Duplicate submission.',
+            'organization_id'   => $org->id,
+            'member_id'         => $rakib->id,
+            'njangi_cycle_id'   => $thirdCycle->id,
+            'njangi_session_id' => $juneSession->id,
+            'amount'            => 400.00,
+            'is_attending'      => false,
+            'screenshot_path'   => 'screenshots/placeholder.jpg',
+            'status'            => 'rejected',
+            'reviewed_by'       => null,
+            'submitted_at'      => '2026-06-11 07:00:00',
+            'reviewed_at'       => '2026-06-11 08:30:00',
+            'member_note'       => null,
+            'review_note'       => 'Duplicate submission.',
         ]);
     }
 }
