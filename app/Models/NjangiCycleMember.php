@@ -12,6 +12,7 @@ class NjangiCycleMember extends Model
         'njangi_cycle_id',
         'member_id',
         'benefit_order',
+        'subscription_amount',
         'is_active',
         'notes',
     ];
@@ -19,6 +20,7 @@ class NjangiCycleMember extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'benefit_order' => 'integer',
+        'subscription_amount' => 'float',
     ];
 
     public function cycle(): BelongsTo

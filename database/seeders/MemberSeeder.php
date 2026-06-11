@@ -63,7 +63,6 @@ class MemberSeeder extends Seeder
                 'next_of_kin_address' => '3505 Sunflower Pl, Bowie, MD',
                 'participates_in_njangi' => true,
                 'participates_in_savings' => true,
-                'participates_in_cultural' => false,
             ],
             [
                 'first_name' => 'Emmanuel',
@@ -81,7 +80,6 @@ class MemberSeeder extends Seeder
                 'next_of_kin_address' => '1401 Central Ave, Hyattsville, MD',
                 'participates_in_njangi' => true,
                 'participates_in_savings' => true,
-                'participates_in_cultural' => true,
             ],
             [
                 'first_name' => 'Brenda',
@@ -99,7 +97,6 @@ class MemberSeeder extends Seeder
                 'next_of_kin_address' => '8021 Richmond Hwy, Alexandria, VA',
                 'participates_in_njangi' => true,
                 'participates_in_savings' => true,
-                'participates_in_cultural' => true,
             ],
             [
                 'first_name' => 'Michael',
@@ -117,7 +114,6 @@ class MemberSeeder extends Seeder
                 'next_of_kin_address' => '1200 Rhode Island Ave NE, Washington, DC',
                 'participates_in_njangi' => false,
                 'participates_in_savings' => true,
-                'participates_in_cultural' => true,
             ],
             [
                 'first_name' => 'Agnes',
@@ -135,7 +131,6 @@ class MemberSeeder extends Seeder
                 'next_of_kin_address' => '5510 Silver Hill Rd, District Heights, MD',
                 'participates_in_njangi' => true,
                 'participates_in_savings' => true,
-                'participates_in_cultural' => false,
             ],
             [
                 'first_name' => 'Paul',
@@ -153,7 +148,6 @@ class MemberSeeder extends Seeder
                 'next_of_kin_address' => '2200 Wilson Blvd, Arlington, VA',
                 'participates_in_njangi' => false,
                 'participates_in_savings' => true,
-                'participates_in_cultural' => true,
             ],
             [
                 'first_name' => 'Linda',
@@ -171,7 +165,6 @@ class MemberSeeder extends Seeder
                 'next_of_kin_address' => '4301 Northview Dr, Bowie, MD',
                 'participates_in_njangi' => true,
                 'participates_in_savings' => false,
-                'participates_in_cultural' => true,
             ],
             [
                 'first_name' => 'George',
@@ -189,7 +182,6 @@ class MemberSeeder extends Seeder
                 'next_of_kin_address' => '600 H St NW, Washington, DC',
                 'participates_in_njangi' => false,
                 'participates_in_savings' => false,
-                'participates_in_cultural' => true,
             ],
             [
                 'first_name' => 'Sarah',
@@ -207,7 +199,6 @@ class MemberSeeder extends Seeder
                 'next_of_kin_address' => '5100 Duke St, Alexandria, VA',
                 'participates_in_njangi' => true,
                 'participates_in_savings' => false,
-                'participates_in_cultural' => true,
             ],
             [
                 'first_name' => 'Peter',
@@ -225,7 +216,23 @@ class MemberSeeder extends Seeder
                 'next_of_kin_address' => '7700 Laurel Bowie Rd, Bowie, MD',
                 'participates_in_njangi' => true,
                 'participates_in_savings' => true,
-                'participates_in_cultural' => false,
+            ],
+            [
+                'first_name' => 'Rakib',
+                'last_name' => 'Hasan',
+                'email' => 'krakib2002@gmail.com',
+                'phone' => '2401110099',
+                'state_code' => 'MD',
+                'join_date' => '2026-01-01',
+                'title' => null,
+                'roles' => [],
+                'address' => '123 Test St, Bowie, MD',
+                'next_of_kin_name' => 'Agnes Tanyi',
+                'next_of_kin_phone' => '2401110005',
+                'next_of_kin_email' => 'agnes@example.com',
+                'next_of_kin_address' => '5510 Silver Hill Rd, District Heights, MD',
+                'participates_in_njangi' => true,
+                'participates_in_savings' => true,
             ],
         ];
 
@@ -248,7 +255,6 @@ class MemberSeeder extends Seeder
                 'next_of_kin_address' => $data['next_of_kin_address'],
                 'participates_in_njangi' => $data['participates_in_njangi'],
                 'participates_in_savings' => $data['participates_in_savings'],
-                'participates_in_cultural' => $data['participates_in_cultural'],
             ]);
 
             $member->update([
@@ -262,6 +268,15 @@ class MemberSeeder extends Seeder
                 ->toArray();
 
             $member->roles()->sync($roleIds);
+
+            // Create user account for this member so they can log in immediately
+            \App\Models\User::create([
+                'organization_id' => $org->id,
+                'name' => $data['first_name'] . ' ' . $data['last_name'],
+                'email' => $data['email'],
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                'email_verified_at' => now(),
+            ]);
         }
     }
 

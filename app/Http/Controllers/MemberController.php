@@ -35,7 +35,12 @@ class MemberController extends Controller
             $query->where('state_code', $request->state_code);
         }
 
-        $members = $query->orderBy('id', 'desc')->paginate(10);
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [5, 10, 20, 30, 50])) {
+            $perPage = 10;
+        }
+
+        $members = $query->orderBy('id', 'desc')->paginate($perPage);
 
         return view('members.index', compact('members'));
     }
@@ -48,7 +53,7 @@ class MemberController extends Controller
         return view('members.create', compact('ranks', 'roles'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, \App\Services\Member\MemberCodeGenerator $generator)
     {
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
@@ -66,15 +71,14 @@ class MemberController extends Controller
             'next_of_kin_address' => ['nullable', 'string'],
             'participates_in_njangi' => ['nullable', 'boolean'],
             'participates_in_savings' => ['nullable', 'boolean'],
-            'participates_in_cultural' => ['nullable', 'boolean'],
             'role_ids' => ['nullable', 'array'],
             'role_ids.*' => ['exists:member_roles,id'],
+            'password' => ['nullable', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
         ]);
 
         if (
             !($request->boolean('participates_in_njangi')
-            || $request->boolean('participates_in_savings')
-            || $request->boolean('participates_in_cultural'))
+            || $request->boolean('participates_in_savings'))
         ) {
             return back()
                 ->withErrors([
@@ -87,7 +91,7 @@ class MemberController extends Controller
 
         $member = Member::create([
             'organization_id' => $organization->id,
-            'member_code' => $this->generateMemberCode(
+            'member_code' => $generator->generate(
                 $validated['state_code'],
                 $validated['join_date']
             ),
@@ -106,10 +110,19 @@ class MemberController extends Controller
             'next_of_kin_address' => $validated['next_of_kin_address'] ?? null,
             'participates_in_njangi' => $request->boolean('participates_in_njangi'),
             'participates_in_savings' => $request->boolean('participates_in_savings'),
-            'participates_in_cultural' => $request->boolean('participates_in_cultural'),
         ]);
 
         $member->roles()->sync($validated['role_ids'] ?? []);
+
+        if (!empty($validated['email']) && $request->filled('password')) {
+            \App\Models\User::updateOrCreate(
+                ['email' => $validated['email']],
+                [
+                    'name' => $validated['first_name'] . ' ' . $validated['last_name'],
+                    'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+                ]
+            );
+        }
 
         return redirect()
             ->route('members.index')
@@ -156,15 +169,14 @@ class MemberController extends Controller
             'next_of_kin_address' => ['nullable', 'string'],
             'participates_in_njangi' => ['nullable', 'boolean'],
             'participates_in_savings' => ['nullable', 'boolean'],
-            'participates_in_cultural' => ['nullable', 'boolean'],
             'role_ids' => ['nullable', 'array'],
             'role_ids.*' => ['exists:member_roles,id'],
+            'password' => ['nullable', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
         ]);
 
         if (
             !($request->boolean('participates_in_njangi')
-            || $request->boolean('participates_in_savings')
-            || $request->boolean('participates_in_cultural'))
+            || $request->boolean('participates_in_savings'))
         ) {
             return back()
                 ->withErrors([
@@ -189,33 +201,31 @@ class MemberController extends Controller
             'next_of_kin_address' => $validated['next_of_kin_address'] ?? null,
             'participates_in_njangi' => $request->boolean('participates_in_njangi'),
             'participates_in_savings' => $request->boolean('participates_in_savings'),
-            'participates_in_cultural' => $request->boolean('participates_in_cultural'),
         ]);
 
         $member->roles()->sync($validated['role_ids'] ?? []);
+
+        if (!empty($validated['email']) && $request->filled('password')) {
+            \App\Models\User::updateOrCreate(
+                ['email' => $validated['email']],
+                [
+                    'name' => $validated['first_name'] . ' ' . $validated['last_name'],
+                    'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+                ]
+            );
+        }
 
         return redirect()
             ->route('members.index')
             ->with('success', 'Member updated successfully');
     }
 
-    private function generateMemberCode(string $stateCode, string $joinDate): string
+    public function destroy(Member $member)
     {
-        $year = date('Y', strtotime($joinDate));
-        $prefix = "{$stateCode}-{$year}-";
+        $member->delete();
 
-        $lastMember = Member::where('member_code', 'like', $prefix . '%')
-            ->orderByDesc('member_code')
-            ->first();
-
-        $nextSequence = 1;
-
-        if ($lastMember) {
-            $parts = explode('-', $lastMember->member_code);
-            $lastSequence = (int) ($parts[2] ?? 0);
-            $nextSequence = $lastSequence + 1;
-        }
-
-        return $prefix . str_pad((string) $nextSequence, 3, '0', STR_PAD_LEFT);
+        return redirect()
+            ->route('members.index')
+            ->with('success', 'Member deleted successfully');
     }
 }

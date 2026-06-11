@@ -27,14 +27,12 @@ class Member extends Model
         'next_of_kin_address',
         'participates_in_njangi',
         'participates_in_savings',
-        'participates_in_cultural',
     ];
 
     protected $casts = [
         'join_date' => 'date',
         'participates_in_njangi' => 'boolean',
         'participates_in_savings' => 'boolean',
-        'participates_in_cultural' => 'boolean',
     ];
 
     public function organization(): BelongsTo
@@ -70,5 +68,10 @@ class Member extends Model
     public function njangiContributionsReceived(): HasMany
     {
         return $this->hasMany(NjangiContribution::class, 'beneficiary_member_id');
+    }
+
+    public function getNameAttribute(): string
+    {
+        return trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? ''));
     }
 }

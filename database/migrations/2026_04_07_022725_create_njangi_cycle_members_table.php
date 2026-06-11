@@ -15,6 +15,7 @@ return new class extends Migration
             $table->foreignId('member_id')->constrained()->cascadeOnDelete();
 
             $table->unsignedInteger('benefit_order')->nullable();
+            $table->decimal('subscription_amount', 12, 2)->default(0.00);
 
             $table->boolean('is_active')->default(true);
 

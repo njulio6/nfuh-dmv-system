@@ -10,17 +10,31 @@ class NjangiPaymentSubmissionController extends Controller
 {
     public function index()
     {
-        $submissions = NjangiPaymentSubmission::with([
+        $cycleId = request('cycle_id');
+        $activeCycle = null;
+        if ($cycleId) {
+            $activeCycle = \App\Models\NjangiCycle::find($cycleId);
+        } else {
+            $activeCycle = \App\Models\NjangiCycle::where('status', 'active')->first()
+                ?? \App\Models\NjangiCycle::latest('id')->first();
+        }
+
+        $query = NjangiPaymentSubmission::with([
                 'member',
                 'cycle',
                 'session',
                 'reviewer',
-            ])
-            ->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
+            ]);
+
+        if ($activeCycle) {
+            $query->where('njangi_cycle_id', $activeCycle->id);
+        }
+
+        $submissions = $query->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
             ->orderByDesc('submitted_at')
             ->paginate(15);
 
-        return view('njangi.submissions.index', compact('submissions'));
+        return view('njangi.submissions.index', compact('submissions', 'activeCycle'));
     }
 
     public function approve(

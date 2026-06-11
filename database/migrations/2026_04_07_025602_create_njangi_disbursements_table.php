@@ -50,8 +50,8 @@ return new class extends Migration
 
         $table->timestamps();
 
-        $table->unique(['njangi_session_beneficiary_id']);
-        $table->unique(['njangi_session_id', 'njangi_cycle_member_id']);
+        $table->unique(['njangi_session_beneficiary_id'], 'disb_beneficiary_unique');
+        $table->unique(['njangi_session_id', 'njangi_cycle_member_id'], 'disb_session_member_unique');
     });
     }
 

@@ -38,6 +38,10 @@ class ApproveNjangiPaymentSubmission
                 'review_note' => $reviewNote,
             ]);
 
+            $beneficiaryCount = $beneficiaries->count();
+            $baseAmount = floor(($submission->amount / $beneficiaryCount) * 100) / 100;
+            $remainder = (int) round(($submission->amount - ($baseAmount * $beneficiaryCount)) * 100);
+
             foreach ($beneficiaries as $sessionBeneficiary) {
                 $beneficiaryMemberId = $sessionBeneficiary->cycleMember->member_id;
 
@@ -50,6 +54,12 @@ class ApproveNjangiPaymentSubmission
                     continue;
                 }
 
+                $individualAmount = $baseAmount;
+                if ($remainder > 0) {
+                    $individualAmount += 0.01;
+                    $remainder--;
+                }
+
                 NjangiContribution::create([
                     'organization_id' => $submission->organization_id,
                     'njangi_cycle_id' => $submission->njangi_cycle_id,
@@ -57,7 +67,7 @@ class ApproveNjangiPaymentSubmission
                     'contributor_member_id' => $submission->member_id,
                     'beneficiary_member_id' => $beneficiaryMemberId,
                     'payment_submission_id' => $submission->id,
-                    'amount' => $submission->amount,
+                    'amount' => $individualAmount,
                     'payment_date' => now()->toDateString(),
                     'payment_method' => 'zelle',
                     'reference_number' => null,

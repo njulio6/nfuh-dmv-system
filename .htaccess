@@ -1,0 +1,7 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Redirect all non-public requests to the public/ folder
+    RewriteCond %{REQUEST_URI} !^/nfuh-dmv-system/public
+    RewriteRule ^(.*)$ /nfuh-dmv-system/public/$1 [R=302,L]
+</IfModule>

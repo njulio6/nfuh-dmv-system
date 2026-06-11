@@ -12,12 +12,25 @@ use RuntimeException;
 
 class NjangiCycleController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $cycles = NjangiCycle::with('organization')
-            ->orderByDesc('year')
+        $query = NjangiCycle::with('organization');
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('year', 'like', "%{$search}%")
+                  ->orWhereHas('organization', function($orgQuery) use ($search) {
+                      $orgQuery->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $perPage = $request->input('per_page', 10);
+        $cycles = $query->orderByDesc('year')
             ->orderByDesc('id')
-            ->paginate(10);
+            ->paginate($perPage);
 
         return view('njangi.cycles.index', compact('cycles'));
     }
@@ -111,6 +124,7 @@ class NjangiCycleController extends Controller
 
         $members = Member::where('organization_id', $njangiCycle->organization_id)
             ->whereNotIn('id', $existingMemberIds)
+            ->where('participates_in_njangi', true)
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get();

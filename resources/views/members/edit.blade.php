@@ -1,16 +1,30 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1>Edit Member</h1>
 
-    <form action="{{ route('members.update', $member) }}" method="POST">
+    <!-- Header area with Back Button -->
+    <x-premium-header 
+        title="Edit Member Profile" 
+        subtitle="Editing profile: {{ $member->first_name }} {{ $member->last_name }}" 
+        back-url="{{ route('members.index') }}" 
+    />
+
+    <form action="{{ route('members.update', $member) }}" method="POST" class="flex flex-col gap-6 w-full -mt-3">
         @csrf
         @method('PUT')
 
         @include('members.partials.form')
 
-        <button type="submit">Update Member</button>
+        <!-- Form Actions -->
+        <div class="flex items-center justify-end gap-3 border-t border-zinc-200 dark:border-zinc-800 pt-5 mt-2">
+            <x-premium-button variant="secondary" href="{{ route('members.index') }}">
+                Cancel
+            </x-premium-button>
+            <x-premium-button type="submit" variant="primary">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                <span>Update Member</span>
+            </x-premium-button>
+        </div>
     </form>
 
-    <a href="{{ route('members.index') }}">Back</a>
 @endsection
