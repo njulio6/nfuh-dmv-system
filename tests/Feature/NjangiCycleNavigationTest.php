@@ -9,7 +9,9 @@ use App\Models\NjangiContribution;
 use App\Models\Member;
 
 test('submissions list filters by query cycle_id or defaults to active cycle', function () {
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin']);
     $user = User::factory()->create();
+    $user->assignRole('admin');
     $org = Organization::create(['name' => 'Org']);
 
     // Create member
@@ -96,7 +98,9 @@ test('submissions list filters by query cycle_id or defaults to active cycle', f
 });
 
 test('contributions list filters by query cycle_id or defaults to active cycle', function () {
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin']);
     $user = User::factory()->create();
+    $user->assignRole('admin');
     $org = Organization::create(['name' => 'Org 2']);
 
     $member = Member::create([

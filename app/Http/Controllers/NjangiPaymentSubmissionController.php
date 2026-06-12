@@ -42,7 +42,7 @@ class NjangiPaymentSubmissionController extends Controller
         ApproveNjangiPaymentSubmission $service
     ) {
         try {
-            $reviewerUserId = auth()->id() ?? 1;
+            $reviewerUserId = auth()->id();
 
             $service->execute($submission, $reviewerUserId);
 
@@ -66,7 +66,7 @@ class NjangiPaymentSubmissionController extends Controller
 
         $submission->update([
             'status' => 'rejected',
-            'reviewed_by' => auth()->id() ?? 1,
+            'reviewed_by' => auth()->id(),
             'reviewed_at' => now(),
         ]);
 

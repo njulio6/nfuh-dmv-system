@@ -154,10 +154,14 @@ class InstallerController extends Controller
         DB::purge('mysql');
         DB::reconnect('mysql');
 
-        // Run migrations & seeders
+        // Run migrations safely
         try {
-            Artisan::call('migrate:fresh', ['--force' => true]);
-            Artisan::call('db:seed', ['--force' => true]);
+            Artisan::call('migrate', ['--force' => true]);
+
+            // Seed settings and structural records only if empty
+            if (DB::table('settings')->count() === 0) {
+                Artisan::call('db:seed', ['--force' => true]);
+            }
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Failed to run migrations & seeders: ' . $e->getMessage());
         }
@@ -186,6 +190,10 @@ class InstallerController extends Controller
                 'password' => Hash::make($validated['password']),
                 'email_verified_at' => now(),
             ]);
+
+            // Assign Spatie admin role to the super admin
+            \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin']);
+            $user->assignRole('admin');
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Failed to create administrator account: ' . $e->getMessage());
         }

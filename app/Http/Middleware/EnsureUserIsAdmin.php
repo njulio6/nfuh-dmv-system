@@ -20,14 +20,14 @@ class EnsureUserIsAdmin
             return redirect()->route('login');
         }
 
-        $member = \App\Models\Member::where('email', $user->email)->first();
-        $isAdmin = false;
+        $isAdmin = $user->hasRole('admin');
         
-        if (!$member) {
-            $isAdmin = true; // Users with no member record are treated as global admins
-        } else {
-            $adminRoles = ['Secretary', 'Treasurer', 'Financial Secretary', 'Loan Officer', 'Lead Nformi'];
-            $isAdmin = $member->roles()->whereIn('name', $adminRoles)->exists();
+        if (!$isAdmin) {
+            $member = \App\Models\Member::where('email', $user->email)->first();
+            if ($member) {
+                $adminRoles = ['Secretary', 'Treasurer', 'Financial Secretary', 'Loan Officer', 'Lead Nformi'];
+                $isAdmin = $member->roles()->whereIn('name', $adminRoles)->exists();
+            }
         }
 
         if (!$isAdmin) {

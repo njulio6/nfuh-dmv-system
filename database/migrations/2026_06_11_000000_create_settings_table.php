@@ -19,15 +19,6 @@ return new class extends Migration
             $table->boolean('single_benefit_constraint')->default(true);
             $table->timestamps();
         });
-
-        // Seed default row
-        DB::table('settings')->insert([
-            'app_name' => 'NFUH DMV',
-            'beneficiary_count' => 4,
-            'single_benefit_constraint' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
     }
 
     public function down(): void

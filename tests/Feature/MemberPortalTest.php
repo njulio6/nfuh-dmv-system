@@ -19,11 +19,20 @@ test('guest is redirected to login', function () {
     $response->assertRedirect('/login');
 });
 
-test('user without member profile lands on admin dashboard', function () {
+test('user without member profile but with admin role lands on admin dashboard', function () {
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin']);
     $user = User::factory()->create();
+    $user->assignRole('admin');
+    
     $response = $this->actingAs($user)->get('/dashboard');
     $response->assertStatus(200);
     $response->assertViewIs('dashboard');
+});
+
+test('user without member profile and without admin role is forbidden', function () {
+    $user = User::factory()->create();
+    $response = $this->actingAs($user)->get('/dashboard');
+    $response->assertStatus(403);
 });
 
 test('member with admin role lands on admin dashboard', function () {

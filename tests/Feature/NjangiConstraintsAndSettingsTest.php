@@ -11,7 +11,10 @@ use App\Models\Setting;
 
 beforeEach(function () {
     $this->org = Organization::create(['name' => 'Constraint test org']);
+    $this->seed(\Database\Seeders\SettingsSeeder::class);
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin']);
     $this->adminUser = User::factory()->create();
+    $this->adminUser->assignRole('admin');
 });
 
 test('only members with participates_in_njangi = true can be enrolled in a cycle via addMembers', function () {

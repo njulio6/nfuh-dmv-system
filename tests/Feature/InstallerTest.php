@@ -87,6 +87,10 @@ class InstallerTest extends TestCase
             'email' => 'installer-admin@example.com',
             'name'  => 'Installer Admin',
         ]);
+
+        $user = \App\Models\User::where('email', 'installer-admin@example.com')->first();
+        $this->assertNotNull($user);
+        $this->assertTrue($user->hasRole('admin'));
     }
 
     public function test_complete_step_creates_installed_lock_file(): void

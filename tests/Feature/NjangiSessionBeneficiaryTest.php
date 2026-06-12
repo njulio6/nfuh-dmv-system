@@ -11,6 +11,7 @@ use App\Models\NjangiSessionBeneficiary;
 
 beforeEach(function () {
     $this->org = Organization::create(['name' => 'NFUH DMV System Test']);
+    $this->seed(\Database\Seeders\SettingsSeeder::class);
 });
 
 test('guest is redirected to login from beneficiaries page', function () {
@@ -71,8 +72,10 @@ test('regular member is forbidden from managing beneficiaries', function () {
     $responsePost->assertStatus(403);
 });
 
-test('global admin (user without a member profile) can access beneficiaries page', function () {
+test('global admin (user with admin role) can access beneficiaries page', function () {
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin']);
     $user = User::factory()->create();
+    $user->assignRole('admin');
     // No Member record for this email
 
     $cycle = NjangiCycle::create([
@@ -129,7 +132,9 @@ test('admin member (with Treasurer role) can access beneficiaries page', functio
 });
 
 test('updating with zero beneficiaries triggers a validation error redirecting back', function () {
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin']);
     $user = User::factory()->create();
+    $user->assignRole('admin');
 
     // Set beneficiary_count to 1 dynamically for this test
     \App\Models\Setting::query()->update(['beneficiary_count' => 1]);
@@ -166,7 +171,9 @@ test('updating with zero beneficiaries triggers a validation error redirecting b
 });
 
 test('updating with valid beneficiaries successfully updates database and redirects', function () {
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin']);
     $user = User::factory()->create();
+    $user->assignRole('admin');
 
     $cycle = NjangiCycle::create([
         'organization_id' => $this->org->id,

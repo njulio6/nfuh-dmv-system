@@ -40,3 +40,7 @@ Homestead.json
 Homestead.yaml
 project_plan
 CHANGELOG.md
+
+# Setup & Packaging
+/storage/installed
+/composer.phar

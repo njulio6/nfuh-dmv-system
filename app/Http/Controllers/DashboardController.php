@@ -24,21 +24,21 @@ class DashboardController extends Controller
         // Find member matching the user's email
         $member = Member::where('email', $user->email)->first();
 
-        // Admin check: If user has no member record, OR has one of the admin/board roles
-        $isAdmin = false;
-        if (!$member) {
-            $isAdmin = true; // No member record means they are an admin user (like the initial setup user)
-        } else {
-            // Check if member has any of the administrative roles
+        // Admin check: Explicitly check for Spatie admin role OR linked member admin roles
+        $isAdmin = $user->hasRole('admin');
+        
+        if (!$isAdmin && $member) {
             $adminRoles = ['Secretary', 'Treasurer', 'Financial Secretary', 'Loan Officer', 'Lead Nformi'];
-            $hasAdminRole = $member->roles()->whereIn('name', $adminRoles)->exists();
-            if ($hasAdminRole) {
-                $isAdmin = true;
-            }
+            $isAdmin = $member->roles()->whereIn('name', $adminRoles)->exists();
         }
 
         if ($isAdmin) {
             return view('dashboard');
+        }
+
+        // If the user is neither an admin nor linked to a member, deny access
+        if (!$member) {
+            abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
 
         // --- Member Portal Logic ---
