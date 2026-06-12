@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en" class="h-full w-full overflow-x-hidden">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -315,7 +315,7 @@
             setTimeout(() => this.transitionActive = true, 100);
         }
     }" 
-    class="h-full bg-zinc-50 dark:bg-darkBg text-zinc-800 dark:text-zinc-200 font-sans antialiased transition-colors duration-200"
+    class="h-full w-full overflow-x-hidden bg-zinc-50 dark:bg-darkBg text-zinc-800 dark:text-zinc-200 font-sans antialiased transition-colors duration-200"
 >
     <!-- Dynamic helper PHP properties -->
     @php
@@ -350,7 +350,7 @@
         }
     @endphp
 
-    <div class="flex h-full overflow-hidden">
+    <div class="flex h-full w-full overflow-hidden">
         
         <!-- ================= SIDEBAR (DESKTOP) ================= -->
         <aside 

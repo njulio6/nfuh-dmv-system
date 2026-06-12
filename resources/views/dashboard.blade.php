@@ -216,52 +216,54 @@
                 </div>
             </div>
 
-            <div class="relative w-full flex-1 min-h-[220px]">
-                <!-- Y-axis labels -->
-                <div class="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-[11px] text-zinc-400 dark:text-zinc-500 pointer-events-none select-none z-10 w-8 text-right pr-1.5">
-                    @foreach ($yLabels as $label)
-                        <span>{{ $label }}</span>
-                    @endforeach
-                </div>
+            <div class="w-full overflow-x-auto overflow-y-hidden pb-1 select-none">
+                <div class="relative w-full min-w-[400px] flex-1 min-h-[220px]">
+                    <!-- Y-axis labels -->
+                    <div class="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-[11px] text-zinc-400 dark:text-zinc-500 pointer-events-none select-none z-10 w-8 text-right pr-1.5">
+                        @foreach ($yLabels as $label)
+                            <span>{{ $label }}</span>
+                        @endforeach
+                    </div>
 
-                <!-- Guide lines -->
-                <div class="absolute left-8 right-0 top-0 bottom-6 flex flex-col justify-between pointer-events-none">
-                    @for ($i = 0; $i < 4; $i++)
-                        <div class="w-full border-t border-dashed border-zinc-200/50 dark:border-zinc-800/40 h-0"></div>
-                    @endfor
-                    <div class="w-full border-t border-zinc-200 dark:border-zinc-800 h-0"></div>
-                </div>
+                    <!-- Guide lines -->
+                    <div class="absolute left-8 right-0 top-0 bottom-6 flex flex-col justify-between pointer-events-none">
+                        @for ($i = 0; $i < 4; $i++)
+                            <div class="w-full border-t border-dashed border-zinc-200/50 dark:border-zinc-800/40 h-0"></div>
+                        @endfor
+                        <div class="w-full border-t border-zinc-200 dark:border-zinc-800 h-0"></div>
+                    </div>
 
-                <!-- Bars (Exactly gap-0.5 spacing as TCG Agency) -->
-                <div class="absolute left-8 right-0 top-0 bottom-6 flex items-end justify-between gap-0.5">
-                    @foreach ($chartData as $data)
-                        @php
-                            $contribPct = $yAxisMax > 0 ? ($data['contributions'] / $yAxisMax) * 100 : 0;
-                            $subPct = $yAxisMax > 0 ? ($data['submissions'] / $yAxisMax) * 100 : 0;
-                        @endphp
-                        <div class="flex-1 flex items-end justify-center gap-0.5 group relative h-full">
-                            <!-- Tooltip on hover -->
-                            <div class="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 z-30 pointer-events-none bg-zinc-900 text-zinc-100 text-[11px] font-medium p-2 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap border border-zinc-800">
-                                <div class="font-bold text-[11px] mb-0.5 text-white">{{ $data['month'] }} {{ $selectedYear }}</div>
-                                <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm bg-zinc-100 border border-transparent"></div> Contributions: <b>{{ $data['contributions'] }}</b></div>
-                                <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm bg-zinc-400"></div> Submissions: <b>{{ $data['submissions'] }}</b></div>
+                    <!-- Bars (Exactly gap-0.5 spacing as TCG Agency) -->
+                    <div class="absolute left-8 right-0 top-0 bottom-6 flex items-end justify-between gap-0.5">
+                        @foreach ($chartData as $data)
+                            @php
+                                $contribPct = $yAxisMax > 0 ? ($data['contributions'] / $yAxisMax) * 100 : 0;
+                                $subPct = $yAxisMax > 0 ? ($data['submissions'] / $yAxisMax) * 100 : 0;
+                            @endphp
+                            <div class="flex-1 flex items-end justify-center gap-0.5 group relative h-full">
+                                <!-- Tooltip on hover -->
+                                <div class="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 z-30 pointer-events-none bg-zinc-900 text-zinc-100 text-[11px] font-medium p-2 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap border border-zinc-800">
+                                    <div class="font-bold text-[11px] mb-0.5 text-white">{{ $data['month'] }} {{ $selectedYear }}</div>
+                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm bg-zinc-100 border border-transparent"></div> Contributions: <b>{{ $data['contributions'] }}</b></div>
+                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm bg-zinc-400"></div> Submissions: <b>{{ $data['submissions'] }}</b></div>
+                                </div>
+
+                                <!-- Contribution Bar -->
+                                <div class="w-[11px] bg-zinc-900 dark:bg-zinc-100 rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-70" style="height: {{ $contribPct }}%; min-height: {{ $data['contributions'] > 0 ? '3px' : '0' }};"></div>
+                                <!-- Submission Bar -->
+                                <div class="w-[11px] bg-zinc-350 dark:bg-zinc-600 rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-70" style="height: {{ $subPct }}%; min-height: {{ $data['submissions'] > 0 ? '3px' : '0' }};"></div>
                             </div>
+                        @endforeach
+                    </div>
 
-                            <!-- Contribution Bar -->
-                            <div class="w-[11px] bg-zinc-900 dark:bg-zinc-100 rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-70" style="height: {{ $contribPct }}%; min-height: {{ $data['contributions'] > 0 ? '3px' : '0' }};"></div>
-                            <!-- Submission Bar -->
-                            <div class="w-[11px] bg-zinc-300 dark:bg-zinc-600 rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-70" style="height: {{ $subPct }}%; min-height: {{ $data['submissions'] > 0 ? '3px' : '0' }};"></div>
-                        </div>
-                    @endforeach
-                </div>
-
-                <!-- Month labels -->
-                <div class="absolute left-8 right-0 bottom-0 h-5 flex justify-between">
-                    @foreach ($chartData as $data)
-                        <div class="flex-1 text-center">
-                            <span class="text-[11px] text-zinc-550 dark:text-zinc-400 select-none font-medium">{{ $data['month'] }}</span>
-                        </div>
-                    @endforeach
+                    <!-- Month labels -->
+                    <div class="absolute left-8 right-0 bottom-0 h-5 flex justify-between">
+                        @foreach ($chartData as $data)
+                            <div class="flex-1 text-center">
+                                <span class="text-[11px] text-zinc-550 dark:text-zinc-400 select-none font-medium">{{ $data['month'] }}</span>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
             </div>
         </div>
