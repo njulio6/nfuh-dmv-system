@@ -51,19 +51,7 @@
         </script>
 
         <!-- Block to prevent dark mode flash -->
-        <script>
-            (function() {
-                try {
-                    var theme = localStorage.getItem('theme');
-                    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    if (theme === 'dark' || (!theme && prefersDark)) {
-                        document.documentElement.classList.add('dark');
-                    } else {
-                        document.documentElement.classList.remove('dark');
-                    }
-                } catch (e) {}
-            })();
-        </script>
+        @include('partials.theme-script')
         
         <style>
             [x-cloak] { display: none !important; }
@@ -71,7 +59,7 @@
     </head>
     <body class="font-sans antialiased bg-zinc-50 dark:bg-darkBg text-zinc-900 dark:text-zinc-100 min-h-screen flex items-center justify-center p-4 relative transition-colors duration-200"
           x-data="{ 
-              darkMode: localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+              darkMode: localStorage.getItem('theme') === 'dark',
               toggleTheme() {
                   this.darkMode = !this.darkMode;
                   if (this.darkMode) {

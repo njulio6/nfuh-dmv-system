@@ -54,19 +54,7 @@
         </script>
 
         <!-- Block to prevent dark mode flash -->
-        <script>
-            (function() {
-                try {
-                    var theme = localStorage.getItem('theme');
-                    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    if (theme === 'dark' || (!theme && prefersDark)) {
-                        document.documentElement.classList.add('dark');
-                    } else {
-                        document.documentElement.classList.remove('dark');
-                    }
-                } catch (e) {}
-            })();
-        </script>
+        @include('partials.theme-script')
         
         <style>
             [x-cloak] { display: none !important; }
@@ -76,7 +64,7 @@
         
         <!-- Alpine-powered Theme Toggler -->
         <div x-data="{ 
-            darkMode: localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+            darkMode: localStorage.getItem('theme') === 'dark',
             toggleTheme() {
                 this.darkMode = !this.darkMode;
                 if (this.darkMode) {
