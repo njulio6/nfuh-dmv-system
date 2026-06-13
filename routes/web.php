@@ -25,6 +25,12 @@ Route::middleware(['auth'])->group(function () {
         ->name('member.submissions.store');
     Route::get('/member/njangi-report', [MemberPortalController::class, 'report'])
         ->name('member.njangi-report');
+    Route::get('/member/savings', [\App\Http\Controllers\SavingsController::class, 'mySavings'])
+        ->name('member.savings');
+    Route::get('/member/savings/requests', [\App\Http\Controllers\SavingsController::class, 'mySavingsRequests'])
+        ->name('member.savings.requests');
+    Route::post('/member/savings/request', [\App\Http\Controllers\SavingsController::class, 'requestDeposit'])
+        ->name('member.savings.request');
 });
 
 Route::middleware('auth')->group(function () {
@@ -71,6 +77,19 @@ Route::middleware(['auth', 'admin'])->group(function () {
         ->name('njangi-sessions.beneficiaries.edit');
     Route::post('/njangi-sessions/{njangiSession}/beneficiaries', [\App\Http\Controllers\NjangiSessionBeneficiaryController::class, 'update'])
         ->name('njangi-sessions.beneficiaries.update');
+
+    Route::get('/savings', [\App\Http\Controllers\SavingsController::class, 'index'])
+        ->name('savings.index');
+    Route::get('/savings/transactions', [\App\Http\Controllers\SavingsController::class, 'transactions'])
+        ->name('savings.transactions');
+    Route::get('/savings/requests', [\App\Http\Controllers\SavingsController::class, 'adminRequests'])
+        ->name('savings.requests');
+    Route::post('/savings', [\App\Http\Controllers\SavingsController::class, 'store'])
+        ->name('savings.store');
+    Route::post('/savings/requests/{depositRequest}/approve', [\App\Http\Controllers\SavingsController::class, 'approve'])
+        ->name('savings.approve');
+    Route::post('/savings/requests/{depositRequest}/reject', [\App\Http\Controllers\SavingsController::class, 'reject'])
+        ->name('savings.reject');
 
     Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'edit'])
         ->name('settings.edit');

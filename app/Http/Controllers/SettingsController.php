@@ -14,6 +14,7 @@ class SettingsController extends Controller
             'app_name' => 'NFUH DMV',
             'beneficiary_count' => 4,
             'single_benefit_constraint' => true,
+            'min_savings_for_loan' => 500.00,
         ]);
 
         return view('settings.edit', compact('settings'));
@@ -33,11 +34,13 @@ class SettingsController extends Controller
             'favicon' => ['nullable', 'file', 'mimes:ico,png,jpg,jpeg,gif,webp', 'max:1024'],
             'beneficiary_count' => ['required', 'integer', 'min:1'],
             'single_benefit_constraint' => ['nullable', 'boolean'],
+            'min_savings_for_loan' => ['required', 'numeric', 'min:0'],
         ]);
 
         $settings->app_name = $validated['app_name'];
         $settings->beneficiary_count = $validated['beneficiary_count'];
         $settings->single_benefit_constraint = $request->has('single_benefit_constraint');
+        $settings->min_savings_for_loan = $validated['min_savings_for_loan'];
 
         if ($request->hasFile('logo_light')) {
             if ($settings->logo_light_path) {

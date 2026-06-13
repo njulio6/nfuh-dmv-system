@@ -95,6 +95,7 @@
         .dropdown-collapse {
             display: grid;
             grid-template-rows: 0fr;
+            overflow: hidden;
             transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease-out, margin-top 0.25s ease-out;
         }
         .dropdown-collapse.open {
@@ -347,6 +348,11 @@
             elseif (str_starts_with($routeName, 'njangi-contributions')) $pageTitle = 'Ledger';
             elseif (str_starts_with($routeName, 'profile')) $pageTitle = 'Profile';
             elseif ($routeName === 'member.njangi-report') $pageTitle = 'Njangi Report';
+            elseif ($routeName === 'savings.index') $pageTitle = 'Savings Balances';
+            elseif ($routeName === 'savings.transactions') $pageTitle = 'Savings Transactions';
+            elseif ($routeName === 'savings.requests') $pageTitle = 'Deposit Requests';
+            elseif ($routeName === 'member.savings') $pageTitle = 'My Savings';
+            elseif ($routeName === 'member.savings.requests') $pageTitle = 'My Deposit Requests';
         }
     @endphp
 
@@ -475,6 +481,82 @@
                         </div>
                     </div>
 
+                    <!-- Group 3: Financials (Admin) -->
+                    <div class="relative flex w-full min-w-0 flex-col px-2 py-1"
+                         x-data="{ 
+                             open: {{ Route::is('savings.*') ? 'true' : 'false' }} 
+                          }"
+                         x-effect="if (searchQuery !== '') { open = 'savings'.includes(searchQuery.toLowerCase()) || 'balances'.includes(searchQuery.toLowerCase()) || 'transactions'.includes(searchQuery.toLowerCase()); }"
+                    >
+                        <div 
+                            class="flex h-8 shrink-0 items-center rounded-[10px] px-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 select-none"
+                            x-show="!sidebarCollapsed && (!searchQuery || 'savings'.includes(searchQuery.toLowerCase()) || 'balances'.includes(searchQuery.toLowerCase()) || 'transactions'.includes(searchQuery.toLowerCase()))"
+                        >
+                            Financials
+                        </div>
+
+                        <!-- Collapsible Header/Trigger (Only when sidebar is NOT collapsed) -->
+                        <button 
+                            @click="open = !open"
+                            class="group flex items-center justify-between w-full h-7 px-2 rounded-[10px] text-sm outline-none transition-all duration-205 select-none cursor-pointer {{ Route::is('savings.*') ? 'bg-zinc-100/60 dark:bg-zinc-800/50 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}"
+                            x-show="!sidebarCollapsed && (!searchQuery || 'savings'.includes(searchQuery.toLowerCase()) || 'balances'.includes(searchQuery.toLowerCase()) || 'transactions'.includes(searchQuery.toLowerCase()))"
+                        >
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0"></i>
+                                <span>Savings</span>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-3.5 h-3.5 transition-transform duration-200" :class="open ? 'rotate-90' : ''"></i>
+                        </button>
+
+                        <!-- When collapsed, show icon directly pointing to Savings Balances -->
+                        <div x-show="sidebarCollapsed" class="flex justify-center w-full">
+                            <a 
+                                href="{{ route('savings.index') }}"
+                                class="group flex items-center justify-center size-8 rounded-[10px] text-sm outline-none transition-all duration-200 relative select-none cursor-pointer {{ Route::is('savings.*') ? 'bg-zinc-100 dark:bg-zinc-800 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50' }}"
+                                title="Savings"
+                            >
+                                <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0"></i>
+                            </a>
+                        </div>
+
+                        <!-- Dropdown Items container -->
+                        <div 
+                            class="dropdown-collapse {{ Route::is('savings.*') ? 'open opacity-100 mt-1' : 'opacity-0 mt-0' }}"
+                            :class="{ 'open opacity-100 mt-1': open && !sidebarCollapsed, 'opacity-0 mt-0': !open || sidebarCollapsed }"
+                        >
+                            <div class="overflow-hidden">
+                                <div class="flex w-full min-w-0 flex-col gap-1 pl-4 border-l border-zinc-150 dark:border-zinc-800/80 ml-4">
+                                    <!-- Savings Balances -->
+                                    <a 
+                                        href="{{ route('savings.index') }}" 
+                                        class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('savings.index') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
+                                    >
+                                        <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('savings.index') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                        <span class="truncate">Balances</span>
+                                    </a>
+
+                                    <!-- Deposit Requests -->
+                                    <a 
+                                        href="{{ route('savings.requests') }}" 
+                                        class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('savings.requests') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
+                                    >
+                                        <i data-lucide="inbox" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('savings.requests') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                        <span class="truncate">Deposit Requests</span>
+                                    </a>
+
+                                    <!-- Savings Transactions -->
+                                    <a 
+                                        href="{{ route('savings.transactions') }}" 
+                                        class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('savings.transactions') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
+                                    >
+                                        <i data-lucide="history" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('savings.transactions') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                        <span class="truncate">Transactions</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Group 4: Administration -->
                     <div class="relative flex w-full min-w-0 flex-col px-2 py-1">
                         <div 
@@ -497,6 +579,73 @@
                         </div>
                     </div>
                 @else
+                    <!-- Group 2: Financials (Member) -->
+                    <div class="relative flex w-full min-w-0 flex-col px-2 py-1"
+                         x-data="{ 
+                              open: {{ (Route::is('member.savings') || Route::is('member.savings.requests')) ? 'true' : 'false' }} 
+                           }"
+                         x-effect="if (searchQuery !== '') { open = 'my savings'.includes(searchQuery.toLowerCase()) || 'deposit requests'.includes(searchQuery.toLowerCase()); }"
+                    >
+                        <div 
+                            class="flex h-8 shrink-0 items-center rounded-[10px] px-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 select-none"
+                            x-show="!sidebarCollapsed && (!searchQuery || 'my savings'.includes(searchQuery.toLowerCase()) || 'deposit requests'.includes(searchQuery.toLowerCase()))"
+                        >
+                            Financials
+                        </div>
+
+                        <!-- Collapsible Header/Trigger (Only when sidebar is NOT collapsed) -->
+                        <button 
+                            @click="open = !open"
+                            class="group flex items-center justify-between w-full h-7 px-2 rounded-[10px] text-sm outline-none transition-all duration-205 select-none cursor-pointer {{ (Route::is('member.savings') || Route::is('member.savings.requests')) ? 'bg-zinc-100/60 dark:bg-zinc-800/50 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}"
+                            x-show="!sidebarCollapsed && (!searchQuery || 'my savings'.includes(searchQuery.toLowerCase()) || 'deposit requests'.includes(searchQuery.toLowerCase()))"
+                        >
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0"></i>
+                                <span>Savings</span>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-3.5 h-3.5 transition-transform duration-200" :class="open ? 'rotate-90' : ''"></i>
+                        </button>
+
+                        <!-- When collapsed, show icon directly pointing to My Savings -->
+                        <div x-show="sidebarCollapsed" class="flex justify-center w-full">
+                            <a 
+                                href="{{ route('member.savings') }}"
+                                class="group flex items-center justify-center size-8 rounded-[10px] text-sm outline-none transition-all duration-200 relative select-none cursor-pointer {{ (Route::is('member.savings') || Route::is('member.savings.requests')) ? 'bg-zinc-100 dark:bg-zinc-800 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50' }}"
+                                title="Savings"
+                            >
+                                <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0"></i>
+                            </a>
+                        </div>
+
+                        <!-- Dropdown Items container -->
+                        <div 
+                            class="dropdown-collapse {{ (Route::is('member.savings') || Route::is('member.savings.requests')) ? 'open opacity-100 mt-1' : 'opacity-0 mt-0' }}"
+                            :class="{ 'open opacity-100 mt-1': open && !sidebarCollapsed, 'opacity-0 mt-0': !open || sidebarCollapsed }"
+                        >
+                            <div class="overflow-hidden">
+                                <div class="flex w-full min-w-0 flex-col gap-1 pl-4 border-l border-zinc-150 dark:border-zinc-800/80 ml-4">
+                                    <!-- My Savings -->
+                                    <a 
+                                        href="{{ route('member.savings') }}" 
+                                        class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('member.savings') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
+                                    >
+                                        <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('member.savings') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                        <span class="truncate">My Savings</span>
+                                    </a>
+
+                                    <!-- Deposit Requests -->
+                                    <a 
+                                        href="{{ route('member.savings.requests') }}" 
+                                        class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('member.savings.requests') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
+                                    >
+                                        <i data-lucide="inbox" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('member.savings.requests') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                        <span class="truncate">Deposit Requests</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Group 3: Reports (Member) -->
                     <div class="relative flex w-full min-w-0 flex-col px-2 pb-1.5 pt-0"
                          x-data="{ 
@@ -504,6 +653,12 @@
                          }"
                          x-effect="if (searchQuery !== '') { open = 'njangi report'.includes(searchQuery.toLowerCase()); }"
                     >
+                        <div 
+                            class="flex h-8 shrink-0 items-center rounded-[10px] px-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 select-none"
+                            x-show="!sidebarCollapsed && (!searchQuery || 'reports'.includes(searchQuery.toLowerCase()) || 'njangi report'.includes(searchQuery.toLowerCase()))"
+                        >
+                            Reports
+                        </div>
                         <!-- Collapsible Header/Trigger (Only when sidebar is NOT collapsed) -->
                         <button 
                             @click="open = !open"
@@ -531,16 +686,16 @@
                         <!-- Dropdown Items container -->
                         <div 
                             class="dropdown-collapse {{ Route::is('member.njangi-report') ? 'open opacity-100 mt-1' : 'opacity-0 mt-0' }}"
-                            :class="open && !sidebarCollapsed ? 'open opacity-100 mt-1' : 'opacity-0 mt-0'"
+                            :class="{ 'open opacity-100 mt-1': open && !sidebarCollapsed, 'opacity-0 mt-0': !open || sidebarCollapsed }"
                         >
                             <div class="overflow-hidden">
                                 <div class="flex w-full min-w-0 flex-col gap-1 pl-4 border-l border-zinc-150 dark:border-zinc-800/80 ml-4">
                                     <!-- Njangi Report -->
                                     <a 
                                         href="{{ route('member.njangi-report') }}" 
-                                        class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-xs outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('member.njangi-report') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
+                                        class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('member.njangi-report') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
                                     >
-                                        <i data-lucide="file-text" class="w-3.5 h-3.5 shrink-0 transition-colors {{ Route::is('member.njangi-report') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                        <i data-lucide="file-text" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('member.njangi-report') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
                                         <span class="truncate">Njangi Report</span>
                                     </a>
                                 </div>
@@ -678,8 +833,19 @@
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Njangi</span>
                             <a href="{{ route('member.njangi-report') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.njangi-report') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="file-text" class="w-[18px] h-[18px] shrink-0 text-zinc-500 dark:text-zinc-450"></i>
+                                <i data-lucide="file-text" class="w-[18px] h-[18px] shrink-0 text-zinc-550 dark:text-zinc-400"></i>
                                 <span>Njangi Report</span>
+                            </a>
+                        </div>
+                        <div class="space-y-1">
+                            <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Financials</span>
+                            <a href="{{ route('member.savings') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.savings') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="piggy-bank" class="w-[18px] h-[18px] shrink-0 text-zinc-555 dark:text-zinc-400"></i>
+                                <span>My Savings</span>
+                            </a>
+                            <a href="{{ route('member.savings.requests') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.savings.requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="inbox" class="w-[18px] h-[18px] shrink-0 text-zinc-555 dark:text-zinc-400"></i>
+                                <span>Deposit Requests</span>
                             </a>
                         </div>
                     @endif
@@ -692,20 +858,35 @@
                                 <span>Members</span>
                             </a>
                         </div>
-
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Njangi</span>
                             <a href="{{ route('njangi-cycles.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('njangi-cycles.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="refresh-cw" class="w-[18px] h-[18px] shrink-0 text-zinc-550 dark:text-zinc-400"></i>
+                                <i data-lucide="refresh-cw" class="w-[18px] h-[18px] shrink-0 text-zinc-555 dark:text-zinc-400"></i>
                                 <span>Cycles</span>
                             </a>
-                            <a href="{{ route('njangi-submissions.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('njangi-submissions.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="receipt" class="w-[18px] h-[18px] shrink-0 text-zinc-550 dark:text-zinc-400"></i>
+                            <a href="{{ route('njangi-submissions.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('njangi-submissions.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="receipt" class="w-[18px] h-[18px] shrink-0 text-zinc-555 dark:text-zinc-400"></i>
                                 <span>Audit Submissions</span>
                             </a>
-                            <a href="{{ route('njangi-contributions.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('njangi-contributions.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="wallet" class="w-[18px] h-[18px] shrink-0 text-zinc-550 dark:text-zinc-400"></i>
+                            <a href="{{ route('njangi-contributions.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('njangi-contributions.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="wallet" class="w-[18px] h-[18px] shrink-0 text-zinc-555 dark:text-zinc-400"></i>
                                 <span>Ledger</span>
+                            </a>
+                        </div>
+
+                        <div class="space-y-1">
+                            <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Financials</span>
+                            <a href="{{ route('savings.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('savings.index') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="piggy-bank" class="w-[18px] h-[18px] shrink-0 text-zinc-555 dark:text-zinc-400"></i>
+                                <span>Balances</span>
+                            </a>
+                            <a href="{{ route('savings.requests') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('savings.requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="inbox" class="w-[18px] h-[18px] shrink-0 text-zinc-555 dark:text-zinc-400"></i>
+                                <span>Deposit Requests</span>
+                            </a>
+                            <a href="{{ route('savings.transactions') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('savings.transactions') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="history" class="w-[18px] h-[18px] shrink-0 text-zinc-555 dark:text-zinc-400"></i>
+                                <span>Transactions</span>
                             </a>
                         </div>
 
@@ -924,6 +1105,244 @@
     <!-- Lucide icons replacement instantiation -->
     <script>
         lucide.createIcons();
+    </script>
+
+    <!-- Global Alpine Components Registration -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            // Register datepicker component globally
+            Alpine.data('datepicker', (config) => ({
+                value: config.value || '',
+                name: config.name || '',
+                required: config.required || false,
+                open: false,
+                monthOpen: false,
+                yearOpen: false,
+                month: null, // 0-11
+                year: null,
+                days: [],
+                months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+                
+                init() {
+                    let initialDate = new Date();
+                    if (this.value) {
+                        const parts = this.value.split('-');
+                        if (parts.length === 3) {
+                            initialDate = new Date(parts[0], parts[1] - 1, parts[2]);
+                        } else {
+                            initialDate = new Date(this.value);
+                        }
+                    }
+                    this.month = initialDate.getMonth();
+                    this.year = initialDate.getFullYear();
+                    this.generateCalendar();
+                    
+                    this.$watch('value', (val) => {
+                        if (val) {
+                            const parts = val.split('-');
+                            if (parts.length === 3) {
+                                const y = parseInt(parts[0], 10);
+                                const m = parseInt(parts[1], 10) - 1;
+                                if (!isNaN(y) && !isNaN(m)) {
+                                    this.month = m;
+                                    this.year = y;
+                                    this.generateCalendar();
+                                }
+                            }
+                        }
+                    });
+                },
+                
+                get displayValue() {
+                    if (!this.value) return 'Select Date';
+                    const parts = this.value.split('-');
+                    if (parts.length === 3) {
+                        const d = new Date(parts[0], parts[1] - 1, parts[2]);
+                        if (!isNaN(d.getTime())) {
+                            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                        }
+                    }
+                    return 'Select Date';
+                },
+                
+                getYears() {
+                    const currentYear = new Date().getFullYear();
+                    const initialYear = this.value ? parseInt(this.value.split('-')[0], 10) : currentYear;
+                    const minYear = Math.min(currentYear - 50, initialYear - 10);
+                    const maxYear = Math.max(currentYear + 10, initialYear + 10);
+                    const years = [];
+                    for (let y = minYear; y <= maxYear; y++) {
+                        years.push(y);
+                    }
+                    return years;
+                },
+                
+                generateCalendar() {
+                    const firstDayOfMonth = new Date(this.year, this.month, 1).getDay();
+                    const daysInMonth = new Date(this.year, this.month + 1, 0).getDate();
+                    const daysInPrevMonth = new Date(this.year, this.month, 0).getDate();
+                    
+                    const days = [];
+                    
+                    // Previous month trailing days
+                    for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+                        days.push({
+                            day: daysInPrevMonth - i,
+                            month: this.month === 0 ? 11 : this.month - 1,
+                            year: this.month === 0 ? this.year - 1 : this.year,
+                            currentMonth: false
+                        });
+                    }
+                    
+                    // Current month days
+                    for (let i = 1; i <= daysInMonth; i++) {
+                        days.push({
+                            day: i,
+                            month: this.month,
+                            year: this.year,
+                            currentMonth: true
+                        });
+                    }
+                    
+                    // Next month leading days
+                    const totalCells = 42;
+                    const nextMonthDays = totalCells - days.length;
+                    for (let i = 1; i <= nextMonthDays; i++) {
+                        days.push({
+                            day: i,
+                            month: this.month === 11 ? 0 : this.month + 1,
+                            year: this.month === 11 ? this.year + 1 : this.year,
+                            currentMonth: false
+                        });
+                    }
+                    
+                    this.days = days;
+                },
+                
+                prevMonth() {
+                    if (this.month === 0) {
+                        this.month = 11;
+                        this.year--;
+                    } else {
+                        this.month--;
+                    }
+                    this.generateCalendar();
+                },
+                
+                nextMonth() {
+                    if (this.month === 11) {
+                        this.month = 0;
+                        this.year++;
+                    } else {
+                        this.month++;
+                    }
+                    this.generateCalendar();
+                },
+                
+                selectDate(dateObj) {
+                    const pad = (n) => String(n).padStart(2, '0');
+                    this.value = `${dateObj.year}-${pad(dateObj.month + 1)}-${pad(dateObj.day)}`;
+                    this.open = false;
+                    this.monthOpen = false;
+                    this.yearOpen = false;
+                },
+                
+                isSelected(dateObj) {
+                    if (!this.value) return false;
+                    const parts = this.value.split('-');
+                    if (parts.length === 3) {
+                        return parseInt(parts[2], 10) === dateObj.day &&
+                               (parseInt(parts[1], 10) - 1) === dateObj.month &&
+                               parseInt(parts[0], 10) === dateObj.year;
+                    }
+                    return false;
+                },
+                
+                isToday(dateObj) {
+                    const today = new Date();
+                    return today.getDate() === dateObj.day &&
+                           today.getMonth() === dateObj.month &&
+                           today.getFullYear() === dateObj.year;
+                }
+            }));
+            
+            // Register customSelect component globally
+            Alpine.data('customSelect', (config) => ({
+                open: false,
+                value: config.value || '',
+                label: config.label || '',
+                options: config.options || [],
+                activeIndex: -1,
+
+                init() {
+                    if (!this.label) {
+                        const opt = this.options.find(o => String(o.value) === String(this.value));
+                        if (opt) {
+                            this.label = opt.label;
+                        } else if (this.value === '') {
+                            this.label = config.defaultLabel || 'Select Option';
+                        }
+                    }
+                    this.$watch('value', (val) => {
+                        const opt = this.options.find(o => String(o.value) === String(val));
+                        if (opt) {
+                            this.label = opt.label;
+                        } else if (val === '') {
+                            this.label = config.defaultLabel || 'Select Option';
+                        }
+                        this.$refs.hiddenInput.value = val;
+                        this.$refs.hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                },
+                toggle() {
+                    this.open = !this.open;
+                    if (this.open) {
+                        this.activeIndex = this.options.findIndex(o => String(o.value) === String(this.value));
+                        if (this.activeIndex === -1) this.activeIndex = 0;
+                        this.$nextTick(() => {
+                            this.scrollToActive();
+                        });
+                    }
+                },
+                close() {
+                    this.open = false;
+                    this.activeIndex = -1;
+                },
+                select(val) {
+                    this.value = val;
+                    this.close();
+                },
+                selectActive() {
+                    if (this.activeIndex >= 0 && this.activeIndex < this.options.length) {
+                        this.select(this.options[this.activeIndex].value);
+                    }
+                },
+                focusNext() {
+                    if (!this.open) {
+                        this.toggle();
+                        return;
+                    }
+                    this.activeIndex = (this.activeIndex + 1) % this.options.length;
+                    this.scrollToActive();
+                },
+                focusPrev() {
+                    if (!this.open) {
+                        this.toggle();
+                        return;
+                    }
+                    this.activeIndex = (this.activeIndex - 1 + this.options.length) % this.options.length;
+                    this.scrollToActive();
+                },
+                scrollToActive() {
+                    this.$nextTick(() => {
+                        const activeEl = this.$refs.optionsList.children[this.activeIndex];
+                        if (activeEl) {
+                            activeEl.scrollIntoView({ block: 'nearest' });
+                        }
+                    });
+                }
+            }));
+        });
     </script>
 </body>
 </html>

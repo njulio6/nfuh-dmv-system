@@ -13,10 +13,12 @@ class Setting extends Model
         'favicon_path',
         'beneficiary_count',
         'single_benefit_constraint',
+        'min_savings_for_loan',
     ];
 
     protected $casts = [
         'beneficiary_count' => 'integer',
         'single_benefit_constraint' => 'boolean',
+        'min_savings_for_loan' => 'float',
     ];
 }

@@ -107,8 +107,8 @@
                 </div>
             </x-premium-card>
 
-            <!-- Right Column: Njangi Cycle Constraints -->
-            <x-premium-card title="Njangi Cycles Validation Constraints">
+            <!-- Right Column: System Rules & Constraints -->
+            <x-premium-card title="System Rules & Constraints">
                 <div class="flex flex-col gap-6">
                     <!-- Beneficiary Count -->
                     <x-premium-input 
@@ -121,6 +121,19 @@
                         required 
                     />
                     <span class="text-[10px] text-zinc-400 dark:text-zinc-500 -mt-4">Defines the minimum number of members that must be marked as beneficiaries for each session.</span>
+
+                    <!-- Minimum Savings for Loan Eligibility -->
+                    <x-premium-input 
+                        type="number"
+                        step="0.01"
+                        label="Minimum Savings for Loan Eligibility ($)" 
+                        name="min_savings_for_loan" 
+                        value="{{ old('min_savings_for_loan', $settings->min_savings_for_loan ?? 500.00) }}" 
+                        placeholder="e.g. 500.00"
+                        min="0"
+                        required 
+                    />
+                    <span class="text-[10px] text-zinc-400 dark:text-zinc-500 -mt-4">Defines the minimum savings balance required for members to become eligible to request a loan.</span>
 
                     <!-- Single Benefit Constraint -->
                     <div class="flex flex-col gap-1.5">

@@ -149,7 +149,7 @@
             }
         @endphp
         <!-- Njangi Overview Stats Grid (Full Width) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 select-none mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 select-none mb-6">
             
             <!-- Current Cycle -->
             <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 hover:shadow-md transition-all duration-200">
@@ -157,7 +157,7 @@
                 <div class="text-lg font-display font-black text-zinc-800 dark:text-white leading-none tracking-tight">
                     {{ $activeCycle->name }}
                 </div>
-                <p class="text-[11px] text-zinc-550 dark:text-zinc-400 mt-2 font-semibold">Active Round Year: {{ $activeCycle->year }}</p>
+                <p class="text-[11px] text-zinc-555 dark:text-zinc-400 mt-2 font-semibold">Active Round Year: {{ $activeCycle->year }}</p>
             </div>
 
             <!-- Benefit Draw Position -->
@@ -166,7 +166,7 @@
                 <div class="text-xl font-display font-black text-zinc-800 dark:text-white leading-none tracking-tight">
                     #{{ $benefitOrder ?? '-' }}
                 </div>
-                <p class="text-[11px] text-zinc-550 dark:text-zinc-400 mt-2 font-semibold">
+                <p class="text-[11px] text-zinc-555 dark:text-zinc-400 mt-2 font-semibold">
                     @if($hasBenefited)
                         Status: <span class="text-emerald-600 dark:text-emerald-400 font-bold uppercase">Benefited</span>
                     @else
@@ -200,11 +200,32 @@
                         {{ $benefitSession ? $benefitSession->session_date->format('M d, Y') : 'Not scheduled' }}
                     @endif
                 </div>
-                <p class="text-[11px] text-zinc-550 dark:text-zinc-400 mt-2.5 font-semibold">
+                <p class="text-[11px] text-zinc-555 dark:text-zinc-400 mt-2.5 font-semibold">
                     @if($hasBenefited)
                         Post-benefit repayment count
                     @else
                         Upcoming benefit session
+                    @endif
+                </p>
+            </div>
+
+            <!-- Savings Balance -->
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 hover:shadow-md transition-all duration-200">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Savings Balance</span>
+                <div class="text-xl font-display font-black text-zinc-800 dark:text-white leading-none tracking-tight">
+                    ${{ number_format($member->savings_balance, 2) }}
+                </div>
+                <p class="text-[11px] text-zinc-555 dark:text-zinc-400 mt-2 font-semibold">
+                    @if($member->participates_in_savings)
+                        @if($member->savings_balance >= ($appSettings->min_savings_for_loan ?? 500))
+                            <span class="text-emerald-600 dark:text-emerald-400 font-bold uppercase inline-flex items-center gap-1">
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Loan Eligible
+                            </span>
+                        @else
+                            <span class="text-amber-600 dark:text-amber-500 font-bold uppercase">Under ${{ number_format($appSettings->min_savings_for_loan ?? 500, 0) }} Limit</span>
+                        @endif
+                    @else
+                        <span class="text-zinc-500 font-bold uppercase">Not Enrolled</span>
                     @endif
                 </p>
             </div>

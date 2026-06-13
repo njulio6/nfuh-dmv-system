@@ -70,6 +70,18 @@ class Member extends Model
         return $this->hasMany(NjangiContribution::class, 'beneficiary_member_id');
     }
 
+    public function savingsTransactions(): HasMany
+    {
+        return $this->hasMany(SavingsTransaction::class);
+    }
+
+    public function getSavingsBalanceAttribute(): float
+    {
+        $deposits = $this->savingsTransactions()->whereIn('type', ['deposit', 'adjustment'])->where('status', 'approved')->sum('amount');
+        $withdrawals = $this->savingsTransactions()->where('type', 'withdrawal')->where('status', 'approved')->sum('amount');
+        return (float) max(0, $deposits - $withdrawals);
+    }
+
     public function getNameAttribute(): string
     {
         return trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? ''));
