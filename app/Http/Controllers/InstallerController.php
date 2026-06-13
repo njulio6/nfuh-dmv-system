@@ -213,6 +213,13 @@ class InstallerController extends Controller
         // Write the installation lock file
         try {
             file_put_contents(storage_path('installed'), 'Installation Complete: ' . now());
+            
+            // Generate public storage symlink automatically
+            try {
+                Artisan::call('storage:link');
+            } catch (\Exception $e) {
+                // Ignore if link already exists or lacks permissions
+            }
         } catch (\Exception $e) {
             return redirect()->route('install.admin')->with('error', 'Failed to write installation lock file: ' . $e->getMessage());
         }
