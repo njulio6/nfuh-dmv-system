@@ -246,13 +246,13 @@
                                 <div class="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 z-30 pointer-events-none bg-zinc-900 text-zinc-100 text-[11px] font-medium p-2 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap border border-zinc-800">
                                     <div class="font-bold text-[11px] mb-0.5 text-white">{{ $data['month'] }} {{ $selectedYear }}</div>
                                     <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm bg-zinc-100 border border-transparent"></div> Contributions: <b>{{ $data['contributions'] }}</b></div>
-                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm bg-zinc-450"></div> Submissions: <b>{{ $data['submissions'] }}</b></div>
+                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm bg-zinc-300 dark:bg-zinc-600"></div> Submissions: <b>{{ $data['submissions'] }}</b></div>
                                 </div>
 
                                 <!-- Contribution Bar -->
                                 <div class="w-[35%] max-w-[18px] min-w-[6px] shrink-0 bg-zinc-900 dark:bg-zinc-100 rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-70" style="height: {{ $contribPct }}%; min-height: {{ $data['contributions'] > 0 ? '3px' : '0' }};"></div>
                                 <!-- Submission Bar -->
-                                <div class="w-[35%] max-w-[18px] min-w-[6px] shrink-0 bg-zinc-350 dark:bg-zinc-600 rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-70" style="height: {{ $subPct }}%; min-height: {{ $data['submissions'] > 0 ? '3px' : '0' }};"></div>
+                                <div class="w-[35%] max-w-[18px] min-w-[6px] shrink-0 bg-zinc-300 dark:bg-zinc-600 rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-70" style="height: {{ $subPct }}%; min-height: {{ $data['submissions'] > 0 ? '3px' : '0' }};"></div>
                             </div>
                         @endforeach
                     </div>
