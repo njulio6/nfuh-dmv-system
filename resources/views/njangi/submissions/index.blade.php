@@ -86,7 +86,7 @@
                                 </form>
                             </div>
                         @else
-                            <span class="text-zinc-400 dark:text-zinc-600 text-xs font-semibold select-none">Audited</span>
+                            <span class="text-zinc-400 dark:text-zinc-600 text-xs font-semibold">Audited</span>
                         @endif
                     </td>
                 </x-premium-table-row>

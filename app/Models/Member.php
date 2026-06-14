@@ -35,6 +35,11 @@ class Member extends Model
         'participates_in_savings' => 'boolean',
     ];
 
+    protected $appends = [
+        'name',
+    ];
+
+
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
@@ -70,8 +75,40 @@ class Member extends Model
         return $this->hasMany(NjangiContribution::class, 'beneficiary_member_id');
     }
 
+    public function savingsTransactions(): HasMany
+    {
+        return $this->hasMany(SavingsTransaction::class);
+    }
+
+    public function getSavingsBalanceAttribute(): float
+    {
+        $deposits = $this->savingsTransactions()->whereIn('type', ['deposit', 'adjustment'])->where('status', 'approved')->sum('amount');
+        $withdrawals = $this->savingsTransactions()->where('type', 'withdrawal')->where('status', 'approved')->sum('amount');
+        return (float) max(0, $deposits - $withdrawals);
+    }
+
     public function getNameAttribute(): string
     {
         return trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? ''));
+    }
+
+    public function loanRequests(): HasMany
+    {
+        return $this->hasMany(LoanRequest::class);
+    }
+
+    public function guaranteeRequests(): HasMany
+    {
+        return $this->hasMany(LoanGuarantor::class, 'guarantor_member_id');
+    }
+
+    public function getOutstandingLoanBalanceAttribute(): float
+    {
+        $activeLoans = $this->loanRequests()->where('status', 'active')->get();
+        $balance = 0.0;
+        foreach ($activeLoans as $loan) {
+            $balance += $loan->remaining_balance;
+        }
+        return (float) $balance;
     }
 }

@@ -19,7 +19,7 @@
 </style>
 
     <!-- Welcome Greeting Row -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none mb-4">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
         <div class="flex flex-col gap-1">
             <div class="flex items-center gap-2.5">
                 <span class="text-zinc-900 dark:text-zinc-100 shrink-0">
@@ -36,7 +36,7 @@
         </div>
 
         @if(isset($memberCycles) && $memberCycles->count() > 1)
-            <div class="flex items-center gap-2 flex-shrink-0 self-start sm:self-center select-none"
+            <div class="flex items-center gap-2 flex-shrink-0 self-start sm:self-center"
                  x-data="{ 
                      dropdownOpen: false, 
                      activeCycleId: '{{ $activeCycle->id ?? '' }}', 
@@ -72,7 +72,7 @@
                         x-transition:leave="transition ease-in duration-80"
                         x-transition:leave-start="opacity-100 transform scale-100 translate-y-0"
                         x-transition:leave-end="opacity-0 transform scale-95 -translate-y-2"
-                        class="absolute right-0 z-50 mt-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl w-64 overflow-hidden py-1.5 select-none"
+                        class="absolute right-0 z-50 mt-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl w-64 overflow-hidden py-1.5"
                         style="display: none;"
                     >
                         <div class="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 border-b border-zinc-100 dark:border-zinc-800 mb-1">
@@ -122,7 +122,7 @@
     @if(!$activeCycle || !$cycleMember)
         <!-- Enrollment Warning Card -->
         <x-premium-card class="-mt-1">
-            <div class="flex flex-col items-center justify-center text-center p-8 gap-3 select-none">
+            <div class="flex flex-col items-center justify-center text-center p-8 gap-3">
                 <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-full text-zinc-300 dark:text-zinc-700">
                     <i data-lucide="alert-circle" class="w-8 h-8"></i>
                 </div>
@@ -133,6 +133,27 @@
             </div>
         </x-premium-card>
     @else
+        @if(isset($pendingGuarantees) && $pendingGuarantees->isNotEmpty())
+            <!-- Guarantor Alert Banner -->
+            <div class="mb-6 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/60 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 bg-amber-500/10 text-amber-600 dark:text-amber-450 rounded-xl">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-amber-905 dark:text-amber-300">Pending Guarantor Requests</h4>
+                        <p class="text-[11px] text-amber-700 dark:text-amber-405 mt-0.5 font-semibold">
+                            You have {{ $pendingGuarantees->count() }} request(s) to guarantee loans for other members.
+                        </p>
+                    </div>
+                </div>
+                <a href="{{ route('member.loans') }}" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold rounded-xl transition-all cursor-pointer shadow-xs flex items-center gap-1.5 self-stretch md:self-auto text-center justify-center select-none">
+                    <span>Respond Now</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </a>
+            </div>
+        @endif
+
         @php
             $sessionsData = [];
             foreach ($sessions as $s) {
@@ -149,7 +170,7 @@
             }
         @endphp
         <!-- Njangi Overview Stats Grid (Full Width) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 select-none mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             
             <!-- Current Cycle -->
             <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 hover:shadow-md transition-all duration-200">
@@ -157,7 +178,7 @@
                 <div class="text-lg font-display font-black text-zinc-800 dark:text-white leading-none tracking-tight">
                     {{ $activeCycle->name }}
                 </div>
-                <p class="text-[11px] text-zinc-550 dark:text-zinc-400 mt-2 font-semibold">Active Round Year: {{ $activeCycle->year }}</p>
+                <p class="text-[11px] text-zinc-555 dark:text-zinc-400 mt-2 font-semibold">Active Round Year: {{ $activeCycle->year }}</p>
             </div>
 
             <!-- Benefit Draw Position -->
@@ -166,7 +187,7 @@
                 <div class="text-xl font-display font-black text-zinc-800 dark:text-white leading-none tracking-tight">
                     #{{ $benefitOrder ?? '-' }}
                 </div>
-                <p class="text-[11px] text-zinc-550 dark:text-zinc-400 mt-2 font-semibold">
+                <p class="text-[11px] text-zinc-555 dark:text-zinc-400 mt-2 font-semibold">
                     @if($hasBenefited)
                         Status: <span class="text-emerald-600 dark:text-emerald-400 font-bold uppercase">Benefited</span>
                     @else
@@ -200,11 +221,32 @@
                         {{ $benefitSession ? $benefitSession->session_date->format('M d, Y') : 'Not scheduled' }}
                     @endif
                 </div>
-                <p class="text-[11px] text-zinc-550 dark:text-zinc-400 mt-2.5 font-semibold">
+                <p class="text-[11px] text-zinc-555 dark:text-zinc-400 mt-2.5 font-semibold">
                     @if($hasBenefited)
                         Post-benefit repayment count
                     @else
                         Upcoming benefit session
+                    @endif
+                </p>
+            </div>
+
+            <!-- Savings Balance -->
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 hover:shadow-md transition-all duration-200">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Savings Balance</span>
+                <div class="text-xl font-display font-black text-zinc-800 dark:text-white leading-none tracking-tight">
+                    ${{ number_format($member->savings_balance, 2) }}
+                </div>
+                <p class="text-[11px] text-zinc-555 dark:text-zinc-400 mt-2 font-semibold">
+                    @if($member->participates_in_savings)
+                        @if($member->savings_balance >= ($appSettings->min_savings_for_loan ?? 500))
+                            <span class="text-emerald-600 dark:text-emerald-400 font-bold uppercase inline-flex items-center gap-1">
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Loan Eligible
+                            </span>
+                        @else
+                            <span class="text-amber-600 dark:text-amber-500 font-bold uppercase">Under ${{ number_format($appSettings->min_savings_for_loan ?? 500, 0) }} Limit</span>
+                        @endif
+                    @else
+                        <span class="text-zinc-500 font-bold uppercase">Not Enrolled</span>
                     @endif
                 </p>
             </div>
@@ -221,7 +263,7 @@
             <div class="lg:col-span-7 xl:col-span-8 order-2 lg:order-1 w-full flex flex-col gap-6">
                 <!-- Profile Summary Card -->
                 <x-premium-card title="My Profile Summary">
-                    <div class="flex flex-col md:flex-row gap-6 items-start md:items-center py-2 select-none">
+                    <div class="flex flex-col md:flex-row gap-6 items-start md:items-center py-2">
                         <!-- Avatar & Title Column -->
                         <div class="flex flex-col items-center gap-2.5 text-center shrink-0 w-full md:w-auto md:border-r md:border-zinc-200/60 dark:md:border-zinc-800/60 md:pr-8">
                             <div class="w-16 h-16 rounded-full bg-zinc-100/60 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-center text-zinc-400 dark:text-zinc-500 shrink-0 shadow-3xs">
@@ -298,7 +340,7 @@
                     </div>
 
                     <!-- Participation Badges -->
-                    <div class="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800/80 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-wider select-none">
+                    <div class="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800/80 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-wider">
                         <span class="px-2.5 py-1 rounded-lg border {{ $member->participates_in_njangi ? 'bg-emerald-50/50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-800/40' : 'bg-zinc-50 text-zinc-400 border-zinc-200 dark:bg-zinc-900/50 dark:border-zinc-800' }}">
                             Njangi: {{ $member->participates_in_njangi ? 'Enrolled' : 'Not Enrolled' }}
                         </span>
@@ -382,8 +424,62 @@
                 </x-premium-card>
             </div>
             
-            <!-- Right: Submit Njangi Play Form -->
-            <div class="lg:col-span-5 xl:col-span-4 order-1 lg:order-2 w-full">
+            <!-- Right: Active Loans & Submit Njangi Play Form -->
+            <div class="lg:col-span-5 xl:col-span-4 order-1 lg:order-2 w-full flex flex-col gap-6">
+                
+                @if(isset($activeLoans) && $activeLoans->isNotEmpty())
+                    @foreach($activeLoans as $loan)
+                        <x-premium-card title="Active Loan Progress">
+                            <div class="flex flex-col gap-4 py-2">
+                                <!-- Top details -->
+                                <div class="flex justify-between items-center text-xs">
+                                    <div class="flex flex-col">
+                                        <span class="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-black tracking-wider">Remaining Balance</span>
+                                        <span class="text-2xl font-black text-zinc-950 dark:text-white mt-1 leading-none tracking-tight">
+                                            ${{ number_format($loan->remaining_balance, 2) }}
+                                        </span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-black tracking-wider block">Total Borrowed</span>
+                                        <span class="text-sm font-bold text-zinc-850 dark:text-zinc-200 mt-1 block">
+                                            ${{ number_format($loan->amount, 2) }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Progress Bar -->
+                                <div>
+                                    @php
+                                        $repaidAmount = $loan->amount - $loan->remaining_balance;
+                                        $percentage = $loan->amount > 0 ? min(105, max(0, ($repaidAmount / $loan->amount) * 100)) : 0;
+                                    @endphp
+                                    <div class="flex justify-between items-center text-[10px] font-bold text-zinc-400 uppercase mb-1">
+                                        <span>Repayment Progress</span>
+                                        <span>{{ number_format($percentage, 0) }}% Paid</span>
+                                    </div>
+                                    <div class="w-full bg-zinc-100 dark:bg-zinc-950 rounded-full h-1.5 overflow-hidden border border-zinc-200/40 dark:border-zinc-800/40">
+                                        <div class="bg-zinc-950 dark:bg-zinc-50 h-full rounded-full transition-all duration-500" style="width: {{ $percentage }}%"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Bottom row -->
+                                <div class="grid grid-cols-2 gap-4 text-xs pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
+                                    <div>
+                                        <span class="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-black tracking-wider block">Duration</span>
+                                        <span class="font-bold text-zinc-800 dark:text-zinc-200 mt-0.5 block">{{ $loan->duration_months }} Months</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-black tracking-wider block">Repayment Due</span>
+                                        <span class="font-mono font-bold text-zinc-800 dark:text-zinc-200 mt-0.5 block">
+                                            {{ $loan->repayment_due_date ? $loan->repayment_due_date->format('M d, Y') : '-' }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </x-premium-card>
+                    @endforeach
+                @endif
+
                 <x-premium-card title="Submit Njangi Play">
                     <div class="w-full py-2">
                         <form action="{{ route('member.submissions.store') }}" method="POST" enctype="multipart/form-data" class="flex flex-col gap-6">
@@ -391,7 +487,7 @@
 
                             <!-- Session Selector Dropdown -->
                             <div class="flex flex-col w-full relative">
-                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                                     Njangi Session <span class="text-red-500">*</span>
                                 </label>
                                 
@@ -426,7 +522,7 @@
                                         x-transition:leave="transition ease-in duration-80"
                                         x-transition:leave-start="opacity-100 transform scale-100 translate-y-0"
                                         x-transition:leave-end="opacity-0 transform scale-98 -translate-y-2"
-                                        class="absolute left-0 right-0 z-40 mt-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl max-h-60 overflow-y-auto py-1.5 select-none scrollbar-thin"
+                                        class="absolute left-0 right-0 z-40 mt-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl max-h-60 overflow-y-auto py-1.5 scrollbar-thin"
                                         style="display: none;"
                                     >
                                         <template x-for="sId in Object.keys(sessions)">
@@ -451,7 +547,7 @@
 
                             <!-- Beneficiaries information panel -->
                             <template x-if="selectedSessionId && sessions[selectedSessionId]">
-                                <div class="text-xs font-semibold text-zinc-550 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200/40 dark:border-zinc-800/40 rounded-xl p-3.5 flex flex-col gap-1 select-none animate-fadeIn">
+                                <div class="text-xs font-semibold text-zinc-550 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200/40 dark:border-zinc-800/40 rounded-xl p-3.5 flex flex-col gap-1 animate-fadeIn">
                                     <span class="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Beneficiaries in this Session:</span>
                                     <span class="text-zinc-800 dark:text-zinc-200 text-xs font-bold" x-text="sessions[selectedSessionId].beneficiaries.join(', ') || 'No Beneficiaries Assigned'"></span>
                                 </div>
@@ -470,7 +566,7 @@
 
                             <!-- Attendance Toggle -->
                             <div class="flex flex-col w-full">
-                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                                     Will you attend physically? <span class="text-red-500">*</span>
                                 </label>
                                 <div class="flex items-center gap-3">
@@ -491,7 +587,7 @@
 
                             <!-- Zelle Screenshot File Input with preview -->
                             <div class="flex flex-col w-full" x-data="{ imagePreview: null }">
-                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                                     Zelle Screenshot <span class="text-red-500">*</span>
                                 </label>
                                 <div class="relative w-full">
@@ -515,7 +611,7 @@
                                     >
                                     <label 
                                         for="screenshot"
-                                        class="w-full flex flex-col items-center justify-center bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-5 cursor-pointer text-center select-none transition-all group"
+                                        class="w-full flex flex-col items-center justify-center bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-5 cursor-pointer text-center transition-all group"
                                         :class="imagePreview ? 'border-zinc-950 dark:border-zinc-50' : 'hover:border-zinc-450 dark:hover:border-zinc-700'"
                                     >
                                         <template x-if="!imagePreview">
@@ -540,7 +636,7 @@
 
                             <!-- Optional Note -->
                             <div class="flex flex-col w-full">
-                                <label for="member_note" class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">
+                                <label for="member_note" class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                                     Note to Treasurer (Optional)
                                 </label>
                                 <textarea 

@@ -83,7 +83,7 @@
     </div>
 
     <!-- ─── Sibling Block 3: Pagination Footer Card ─── -->
-    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-zinc-900/40 p-4 md:p-5 rounded-[10px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-xs mb-6 select-none">
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-zinc-900/40 p-4 md:p-5 rounded-[10px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-xs mb-6">
         <!-- Left: Rows per Page buttons -->
         <div class="flex items-center gap-3">
             <span class="text-[11px] font-black uppercase text-zinc-500 dark:text-zinc-400">
@@ -182,7 +182,7 @@
     <div 
         x-show="showFilterModal" 
         x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 select-none"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
     >
         <!-- Modal Backdrop -->
         <div
@@ -206,13 +206,13 @@
             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
             x-transition:leave-end="opacity-0 scale-95 translate-y-4"
         >
-            <h3 class="text-sm font-bold text-zinc-900 dark:text-white mb-4 select-none">
+            <h3 class="text-sm font-bold text-zinc-900 dark:text-white mb-4">
                 Filter Members
             </h3>
 
             <div class="space-y-4" x-data="{ statusVal: '{{ request('status') }}', stateVal: '{{ request('state_code') }}' }">
                 <div>
-                    <label class="block text-[11px] font-black uppercase text-zinc-500 dark:text-zinc-400 mb-1.5 select-none">
+                    <label class="block text-[11px] font-black uppercase text-zinc-500 dark:text-zinc-400 mb-1.5">
                         Status
                     </label>
                     <div class="relative flex items-center">
@@ -230,7 +230,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-[11px] font-black uppercase text-zinc-500 dark:text-zinc-400 mb-1.5 select-none">
+                    <label class="block text-[11px] font-black uppercase text-zinc-500 dark:text-zinc-400 mb-1.5">
                         State code
                     </label>
                     <div class="relative flex items-center">
@@ -271,7 +271,7 @@
     <div 
         x-show="showDeleteModal" 
         x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 select-none"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
     >
         <!-- Modal Backdrop -->
         <div

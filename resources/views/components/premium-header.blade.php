@@ -1,5 +1,5 @@
 @props(['title', 'subtitle' => null, 'backUrl' => null, 'backTitle' => 'Go Back'])
-<div class="flex items-center gap-4 border-b border-zinc-100 dark:border-zinc-800/60 pb-3 mb-0 select-none {{ $attributes->get('class') }}">
+<div class="flex items-center gap-4 border-b border-zinc-100 dark:border-zinc-800/60 pb-3 mb-0 {{ $attributes->get('class') }}">
     @if($backUrl)
         <a 
             href="{{ $backUrl }}" 

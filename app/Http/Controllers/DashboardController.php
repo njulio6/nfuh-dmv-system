@@ -151,6 +151,7 @@ class DashboardController extends Controller
             ->with(['cycleMember.member', 'session'])
             ->get();
 
+
             $refundSummary = $cycleBeneficiaries->groupBy('njangi_cycle_member_id')->map(function ($beneficiarySessions) use ($member, $activeCycle) {
                 $first = $beneficiarySessions->first();
                 if (!$first || !$first->cycleMember || !$first->cycleMember->member) return null;
@@ -197,6 +198,16 @@ class DashboardController extends Controller
             ->values();
         }
 
+        $activeLoans = collect();
+        $pendingGuarantees = collect();
+        if ($member) {
+            $activeLoans = $member->loanRequests()->where('status', 'active')->with('repayments')->get();
+            $pendingGuarantees = \App\Models\LoanGuarantor::where('guarantor_member_id', $member->id)
+                ->where('status', 'pending')
+                ->with('loanRequest.member')
+                ->get();
+        }
+
         return view('dashboard.member', compact(
             'member',
             'activeCycle',
@@ -210,7 +221,9 @@ class DashboardController extends Controller
             'memberCycles',
             'contributionsMade',
             'contributionsReceived',
-            'refundSummary'
+            'refundSummary',
+            'activeLoans',
+            'pendingGuarantees'
         ));
     }
 }

@@ -10,7 +10,7 @@
 
     <!-- Validation Errors Alert Block -->
     @if ($errors->any())
-        <div class="p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/60 rounded-xl text-red-800 dark:text-red-400 text-xs font-semibold flex flex-col gap-1.5 select-none">
+        <div class="p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/60 rounded-xl text-red-800 dark:text-red-400 text-xs font-semibold flex flex-col gap-1.5">
             <div class="flex items-center gap-2">
                 <i data-lucide="alert-triangle" class="w-4 h-4 text-red-650 shrink-0"></i>
                 <span class="font-bold">Please correct the following errors:</span>
@@ -41,7 +41,7 @@
 
                     <!-- Light Logo File Upload -->
                     <div class="flex flex-col w-full">
-                        <label for="logo_light" class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">
+                        <label for="logo_light" class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                             Logo (Light Theme)
                         </label>
                         <div class="flex items-center gap-4">
@@ -63,7 +63,7 @@
 
                     <!-- Dark Logo File Upload -->
                     <div class="flex flex-col w-full">
-                        <label for="logo_dark" class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">
+                        <label for="logo_dark" class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                             Logo (Dark Theme)
                         </label>
                         <div class="flex items-center gap-4">
@@ -85,7 +85,7 @@
 
                     <!-- Favicon File Upload -->
                     <div class="flex flex-col w-full">
-                        <label for="favicon" class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">
+                        <label for="favicon" class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                             Favicon
                         </label>
                         <div class="flex items-center gap-4">
@@ -107,8 +107,8 @@
                 </div>
             </x-premium-card>
 
-            <!-- Right Column: Njangi Cycle Constraints -->
-            <x-premium-card title="Njangi Cycles Validation Constraints">
+            <!-- Right Column: System Rules & Constraints -->
+            <x-premium-card title="System Rules & Constraints">
                 <div class="flex flex-col gap-6">
                     <!-- Beneficiary Count -->
                     <x-premium-input 
@@ -122,9 +122,22 @@
                     />
                     <span class="text-[10px] text-zinc-400 dark:text-zinc-500 -mt-4">Defines the minimum number of members that must be marked as beneficiaries for each session.</span>
 
+                    <!-- Minimum Savings for Loan Eligibility -->
+                    <x-premium-input 
+                        type="number"
+                        step="0.01"
+                        label="Minimum Savings for Loan Eligibility ($)" 
+                        name="min_savings_for_loan" 
+                        value="{{ old('min_savings_for_loan', $settings->min_savings_for_loan ?? 500.00) }}" 
+                        placeholder="e.g. 500.00"
+                        min="0"
+                        required 
+                    />
+                    <span class="text-[10px] text-zinc-400 dark:text-zinc-500 -mt-4">Defines the minimum savings balance required for members to become eligible to request a loan.</span>
+
                     <!-- Single Benefit Constraint -->
                     <div class="flex flex-col gap-1.5">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 select-none">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
                             Benefit Restrictions
                         </span>
                         

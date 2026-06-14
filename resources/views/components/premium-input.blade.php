@@ -1,7 +1,7 @@
 @props(['label' => null, 'required' => false, 'name' => null])
 <div class="flex flex-col w-full">
     @if($label)
-        <label @if($name) for="{{ $name }}" @endif class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">
+        <label @if($name) for="{{ $name }}" @endif class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
             {{ $label }}
             @if($required) <span class="text-red-500">*</span> @endif
         </label>

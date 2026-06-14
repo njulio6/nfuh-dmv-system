@@ -15,7 +15,7 @@
         <!-- Left: Quick Info Badge Card -->
         <x-premium-card class="lg:col-span-4 items-center text-center">
             <!-- Large Initials Avatar -->
-            <div class="w-20 h-20 rounded-2xl bg-zinc-950 dark:bg-zinc-50 text-white dark:text-zinc-950 font-black text-3xl flex items-center justify-center select-none shadow-md mb-4">
+            <div class="w-20 h-20 rounded-2xl bg-zinc-950 dark:bg-zinc-50 text-white dark:text-zinc-950 font-black text-3xl flex items-center justify-center shadow-md mb-4">
                 {{ mb_substr($member->first_name, 0, 1) }}{{ mb_substr($member->last_name, 0, 1) }}
             </div>
             
@@ -29,7 +29,7 @@
             </div>
 
             <!-- Status Badge -->
-            <div class="mb-5 select-none">
+            <div class="mb-5">
                 @if ($member->status === 'active')
                     <span class="px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40">
                         Active Member
@@ -96,19 +96,19 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                     <!-- Email -->
                     <div class="flex flex-col border-b border-zinc-50 dark:border-zinc-800/40 pb-2">
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1 select-none">Email Address</span>
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1">Email Address</span>
                         <span class="font-semibold text-zinc-800 dark:text-zinc-200">{{ $member->email ?: 'N/A' }}</span>
                     </div>
 
                     <!-- Phone -->
                     <div class="flex flex-col border-b border-zinc-50 dark:border-zinc-800/40 pb-2">
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1 select-none">Phone Number</span>
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1">Phone Number</span>
                         <span class="font-semibold text-zinc-800 dark:text-zinc-200">{{ $member->phone ?: 'N/A' }}</span>
                     </div>
 
                     <!-- Address -->
                     <div class="flex flex-col border-b border-zinc-50 dark:border-zinc-800/40 pb-2 md:col-span-2">
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1 select-none">Address</span>
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1">Address</span>
                         <span class="font-semibold text-zinc-800 dark:text-zinc-200">
                             {{ $member->address }}{{ $member->state_code ? ", {$member->state_code}" : '' }}
                         </span>
@@ -122,25 +122,25 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                     <!-- Name -->
                     <div class="flex flex-col border-b border-zinc-50 dark:border-zinc-800/40 pb-2">
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1 select-none">Kin Name</span>
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1">Kin Name</span>
                         <span class="font-semibold text-zinc-800 dark:text-zinc-200">{{ $member->next_of_kin_name ?: 'N/A' }}</span>
                     </div>
 
                     <!-- Phone -->
                     <div class="flex flex-col border-b border-zinc-50 dark:border-zinc-800/40 pb-2">
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1 select-none">Kin Phone</span>
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1">Kin Phone</span>
                         <span class="font-semibold text-zinc-800 dark:text-zinc-200">{{ $member->next_of_kin_phone ?: 'N/A' }}</span>
                     </div>
 
                     <!-- Email -->
                     <div class="flex flex-col border-b border-zinc-50 dark:border-zinc-800/40 pb-2">
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1 select-none">Kin Email</span>
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1">Kin Email</span>
                         <span class="font-semibold text-zinc-800 dark:text-zinc-200">{{ $member->next_of_kin_email ?: 'N/A' }}</span>
                     </div>
 
                     <!-- Address -->
                     <div class="flex flex-col border-b border-zinc-50 dark:border-zinc-800/40 pb-2 md:col-span-3">
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1 select-none">Kin Address</span>
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1">Kin Address</span>
                         <span class="font-semibold text-zinc-800 dark:text-zinc-200">{{ $member->next_of_kin_address ?: 'N/A' }}</span>
                     </div>
                 </div>
@@ -152,7 +152,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <!-- Njangi Rotation -->
                     <div class="flex items-center justify-between p-3.5 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/20 dark:bg-zinc-950/20">
-                        <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300 select-none">Njangi Rotations</span>
+                        <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300">Njangi Rotations</span>
                         @if ($member->participates_in_njangi)
                             <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0"></i>
                         @else
@@ -162,7 +162,7 @@
 
                     <!-- Savings Program -->
                     <div class="flex items-center justify-between p-3.5 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/20 dark:bg-zinc-950/20">
-                        <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300 select-none">Savings Account</span>
+                        <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300">Savings Account</span>
                         @if ($member->participates_in_savings)
                             <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0"></i>
                         @else
