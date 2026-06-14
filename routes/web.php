@@ -130,6 +130,16 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/reports/export/savings', [\App\Http\Controllers\ReportsController::class, 'exportSavingsCsv'])
         ->name('reports.export.savings');
 
+    // System Tools routes
+    Route::get('/admin/tools', [\App\Http\Controllers\SystemToolsController::class, 'index'])
+        ->name('admin.tools');
+    Route::post('/admin/tools/migrate', [\App\Http\Controllers\SystemToolsController::class, 'runMigrations'])
+        ->name('admin.tools.migrate');
+    Route::post('/admin/tools/clear-cache', [\App\Http\Controllers\SystemToolsController::class, 'clearCache'])
+        ->name('admin.tools.clear-cache');
+    Route::post('/admin/tools/storage-link', [\App\Http\Controllers\SystemToolsController::class, 'storageLink'])
+        ->name('admin.tools.storage-link');
+
 });
 
 // Web-Based Visual Setup Wizard (Installer)

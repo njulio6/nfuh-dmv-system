@@ -636,6 +636,17 @@
                                 <i data-lucide="settings" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('settings.*') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
                                 <span x-show="!sidebarCollapsed" class="truncate">Settings</span>
                             </a>
+
+                            <a 
+                                href="{{ route('admin.tools') }}" 
+                                class="group flex items-center gap-2 overflow-hidden rounded-[10px] text-sm outline-none transition-all duration-200 relative select-none cursor-pointer {{ Route::is('admin.tools') ? 'bg-zinc-100 dark:bg-zinc-800 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}"
+                                :class="sidebarCollapsed ? 'size-8 p-2 justify-center' : 'h-7 px-2 w-full'"
+                                title="System Tools"
+                                x-show="!searchQuery || 'system tools terminal cache migration'.includes(searchQuery.toLowerCase())"
+                            >
+                                <i data-lucide="terminal" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('admin.tools') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                <span x-show="!sidebarCollapsed" class="truncate">System Tools</span>
+                            </a>
                         </div>
                     </div>
                 @else
@@ -1064,6 +1075,10 @@
                             <a href="{{ route('settings.edit') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('settings.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="settings" class="w-[18px] h-[18px] shrink-0 text-zinc-500 dark:text-zinc-400"></i>
                                 <span>Settings</span>
+                            </a>
+                            <a href="{{ route('admin.tools') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('admin.tools') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="terminal" class="w-[18px] h-[18px] shrink-0 text-zinc-500 dark:text-zinc-400"></i>
+                                <span>System Tools</span>
                             </a>
                         </div>
                     @endif
