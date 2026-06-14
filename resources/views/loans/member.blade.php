@@ -32,7 +32,7 @@
         <!-- Outstanding Loan Balance -->
         <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-3xs">
             <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">My Outstanding Balance</span>
-            <div class="text-2xl font-black text-zinc-955 dark:text-white leading-none tracking-tight">
+            <div class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
                 ${{ number_format($member->outstanding_loan_balance, 2) }}
             </div>
             <p class="text-[10px] text-zinc-555 mt-2 font-semibold">Total active loans principal remaining</p>
@@ -41,7 +41,7 @@
         <!-- My Savings Balance -->
         <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-3xs">
             <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">My Savings Balance</span>
-            <div class="text-2xl font-black text-zinc-955 dark:text-white leading-none tracking-tight">
+            <div class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
                 ${{ number_format($member->savings_balance, 2) }}
             </div>
             <p class="text-[10px] mt-2 font-bold uppercase">
@@ -108,7 +108,7 @@
                                 <button 
                                     type="button" 
                                     @click="openResponseModal('{{ route('member.loans.guarantee.decline', $req->id) }}', 'decline', {{ json_encode($req->load('loanRequest.member')) }})"
-                                    class="w-full lg:w-auto px-5 py-2.5 border border-red-200 dark:border-red-950/60 bg-red-50 hover:bg-red-100 dark:bg-red-955/10 text-red-655 dark:text-red-400 text-xs font-bold rounded-xl transition-all cursor-pointer text-center active:scale-[0.97]"
+                                    class="w-full lg:w-auto px-5 py-2.5 border border-red-200 dark:border-red-955/60 bg-red-50 hover:bg-red-100 dark:bg-red-950/10 text-red-655 dark:text-red-400 text-xs font-bold rounded-xl transition-all cursor-pointer text-center active:scale-[0.97]"
                                 >
                                     Decline
                                 </button>
@@ -156,7 +156,7 @@
             <!-- List of guarantors -->
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[60vh] pr-1">
                 <template x-for="(g, index) in activeGuarantors" :key="index">
-                    <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl flex flex-col gap-2.5">
+                    <div class="p-4 bg-zinc-50 dark:bg-zinc-905 border border-zinc-200 dark:border-zinc-850 rounded-xl flex flex-col gap-2.5">
                         <div class="flex justify-between items-start">
                             <div class="flex flex-col min-w-0">
                                 <span class="font-bold text-zinc-900 dark:text-zinc-100 text-sm truncate" x-text="g.name"></span>
@@ -220,7 +220,7 @@
             class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-md relative z-50 p-6 flex flex-col gap-4"
         >
             <div class="flex justify-between items-center pb-4 border-b border-zinc-100 dark:border-zinc-800/80 mb-1">
-                <h3 class="text-sm font-black text-zinc-955 dark:text-white uppercase tracking-wider" x-text="responseType === 'approve' ? 'Approve Loan Guarantee' : 'Decline Loan Guarantee'"></h3>
+                <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider" x-text="responseType === 'approve' ? 'Approve Loan Guarantee' : 'Decline Loan Guarantee'"></h3>
                 <button @click="showResponseModal = false" class="text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-250 cursor-pointer">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>

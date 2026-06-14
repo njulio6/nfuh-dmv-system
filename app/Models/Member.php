@@ -104,7 +104,7 @@ class Member extends Model
 
     public function getOutstandingLoanBalanceAttribute(): float
     {
-        $activeLoans = $this->loanRequests()->where('status', 'active')->get();
+        $activeLoans = $this->loanRequests()->whereIn('status', ['active', 'defaulted'])->get();
         $balance = 0.0;
         foreach ($activeLoans as $loan) {
             $balance += $loan->remaining_balance;

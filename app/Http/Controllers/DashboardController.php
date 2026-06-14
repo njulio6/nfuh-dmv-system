@@ -201,7 +201,7 @@ class DashboardController extends Controller
         $activeLoans = collect();
         $pendingGuarantees = collect();
         if ($member) {
-            $activeLoans = $member->loanRequests()->where('status', 'active')->with('repayments')->get();
+            $activeLoans = $member->loanRequests()->whereIn('status', ['active', 'defaulted'])->with('repayments')->get();
             $pendingGuarantees = \App\Models\LoanGuarantor::where('guarantor_member_id', $member->id)
                 ->where('status', 'pending')
                 ->with('loanRequest.member')

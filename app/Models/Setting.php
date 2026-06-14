@@ -14,11 +14,15 @@ class Setting extends Model
         'beneficiary_count',
         'single_benefit_constraint',
         'min_savings_for_loan',
+        'loan_guarantor_min',
+        'loan_guarantor_max',
     ];
 
     protected $casts = [
         'beneficiary_count' => 'integer',
         'single_benefit_constraint' => 'boolean',
         'min_savings_for_loan' => 'float',
+        'loan_guarantor_min' => 'integer',
+        'loan_guarantor_max' => 'integer',
     ];
 }

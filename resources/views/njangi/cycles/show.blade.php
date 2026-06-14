@@ -88,7 +88,7 @@
                 <form action="{{ route('njangi-cycles.destroy', $njangiCycle) }}" method="POST" onsubmit="return confirm('Delete this cycle?');" class="inline">
                     @csrf
                     @method('DELETE')
-                    <x-premium-button type="submit" variant="secondary" class="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-955/20 border-red-105">Delete Cycle</x-premium-button>
+                    <x-premium-button type="submit" variant="secondary" class="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20 border-red-105">Delete Cycle</x-premium-button>
                 </form>
             @endif
 

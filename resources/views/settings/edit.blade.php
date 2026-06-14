@@ -135,6 +135,34 @@
                     />
                     <span class="text-[10px] text-zinc-400 dark:text-zinc-500 -mt-4">Defines the minimum savings balance required for members to become eligible to request a loan.</span>
 
+                    <!-- Loan Guarantor Limits -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-1">
+                            <x-premium-input 
+                                type="number"
+                                label="Min Guarantors Required" 
+                                name="loan_guarantor_min" 
+                                value="{{ old('loan_guarantor_min', $settings->loan_guarantor_min ?? 1) }}" 
+                                placeholder="e.g. 1"
+                                min="1"
+                                required 
+                            />
+                            <span class="text-[10px] text-zinc-400 dark:text-zinc-500">Minimum number of guarantors a member must designate when applying for a loan.</span>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <x-premium-input 
+                                type="number"
+                                label="Max Guarantors Allowed" 
+                                name="loan_guarantor_max" 
+                                value="{{ old('loan_guarantor_max', $settings->loan_guarantor_max ?? 3) }}" 
+                                placeholder="e.g. 3"
+                                min="1"
+                                required 
+                            />
+                            <span class="text-[10px] text-zinc-400 dark:text-zinc-500">Maximum number of guarantors allowed per loan application. Must be ≥ minimum.</span>
+                        </div>
+                    </div>
+
                     <!-- Single Benefit Constraint -->
                     <div class="flex flex-col gap-1.5">
                         <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
@@ -178,5 +206,6 @@
             </x-premium-button>
         </div>
     </form>
+
 </div>
 @endsection
