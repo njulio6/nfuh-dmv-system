@@ -14,6 +14,7 @@ class LoanRequest extends Model
         'amount',
         'duration_months',
         'status',
+        'sub_status_id',
         'purpose',
         'disbursed_at',
         'repayment_due_date',
@@ -35,6 +36,11 @@ class LoanRequest extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    public function subStatus(): BelongsTo
+    {
+        return $this->belongsTo(LoanSubStatus::class, 'sub_status_id');
     }
 
     public function guarantors(): HasMany

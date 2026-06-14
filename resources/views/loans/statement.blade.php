@@ -234,12 +234,17 @@
                                 <span class="text-lg font-black text-zinc-900 leading-none text-print-dark">${{ number_format($loan->amount, 2) }}</span>
                                 <span class="text-[11px] text-zinc-500 mt-1 font-semibold text-print-muted">{{ $loan->duration_months }} Months Term &bull; Requested on {{ $loan->created_at->format('M d, Y') }}</span>
                             </div>
-                            <div>
                                 <!-- Clean text border outline badge -->
-                                <span class="print-badge inline-block px-2.5 py-0.5 rounded border border-zinc-400 text-[9px] font-bold uppercase tracking-wider text-zinc-700">
-                                    {{ str_replace('_', ' ', $loan->status) }}
-                                </span>
-                            </div>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="print-badge inline-block px-2.5 py-0.5 rounded border border-zinc-400 text-[9px] font-bold uppercase tracking-wider text-zinc-700">
+                                        {{ str_replace('_', ' ', $loan->status) }}
+                                    </span>
+                                    @if($loan->subStatus)
+                                        <span class="print-badge inline-block px-2.5 py-0.5 rounded border border-zinc-400 text-[9px] font-bold uppercase tracking-wider text-zinc-500">
+                                            {{ $loan->subStatus->name }}
+                                        </span>
+                                    @endif
+                                </div>
                         </div>
 
                         <!-- Financial breakdown numbers -->

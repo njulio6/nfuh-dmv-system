@@ -11,16 +11,17 @@
         activeGuarantors: [],
         activeAdminNote: '',
         showRequestModal: false,
-        guarantors: [''],
+        guarantors: {{ Js::from(array_fill(0, $minGuarantors, '')) }},
+        minGuarantors: {{ $minGuarantors }},
+        maxGuarantors: {{ $maxGuarantors }},
         addGuarantor() {
-            if (this.guarantors.length < 3) {
+            if (this.guarantors.length < this.maxGuarantors) {
                 this.guarantors.push('');
             }
         },
         removeGuarantor(index) {
-            this.guarantors.splice(index, 1);
-            if (this.guarantors.length === 0) {
-                this.guarantors.push('');
+            if (this.guarantors.length > this.minGuarantors) {
+                this.guarantors.splice(index, 1);
             }
         }
     }"
@@ -102,18 +103,18 @@
     </div>
 
     <!-- ─── Data Table Card ─── -->
-    <div class="bg-white dark:bg-zinc-900 rounded-[10px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-2xs overflow-hidden relative mb-6">
+    <div class="bg-white dark:bg-zinc-900 rounded-[10px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-2xs overflow-x-auto relative mb-6">
         <x-premium-table :headers="[
-            ['label' => 'SI', 'width' => 'w-12', 'align' => 'center'],
-            ['label' => 'Application Date'],
-            ['label' => 'Amount Requested'],
-            ['label' => 'Term'],
-            ['label' => 'Purpose'],
-            ['label' => 'Outstanding Balance'],
-            ['label' => 'Statement', 'width' => 'w-28'],
-            ['label' => 'Status'],
-            ['label' => 'Actions', 'width' => 'w-28', 'align' => 'center']
-        ]" class="min-w-[900px]">
+            ['label' => 'SI', 'width' => 'min-w-[40px]', 'align' => 'center'],
+            ['label' => 'Application Date', 'width' => 'min-w-[130px]'],
+            ['label' => 'Amount Requested', 'width' => 'min-w-[130px]'],
+            ['label' => 'Term', 'width' => 'min-w-[90px]'],
+            ['label' => 'Purpose', 'width' => 'min-w-[100px]'],
+            ['label' => 'Outstanding Balance', 'width' => 'min-w-[140px]'],
+            ['label' => 'Statement', 'width' => 'min-w-[90px]'],
+            ['label' => 'Status', 'width' => 'min-w-[190px]'],
+            ['label' => 'Actions', 'width' => 'min-w-[90px]', 'align' => 'center']
+        ]">  
             @forelse($loans as $index => $loan)
                 @php
                     $serialIndex = $index + 1 + ($loans->currentPage() - 1) * $loans->perPage();
@@ -163,37 +164,57 @@
                     </td>
 
                     <!-- Status -->
-                    <td class="py-3 px-3">
-                        <div class="flex flex-col items-start gap-1">
-                            @if($loan->status === 'pending_guarantors')
-                                <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-zinc-100 text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700/60">
-                                    Guarantor Review
-                                </span>
-                            @elseif($loan->status === 'pending_committee')
-                                <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 dark:bg-purple-950/20 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/40">
-                                    Committee Review
-                                </span>
-                            @elseif($loan->status === 'approved')
-                                <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/40">
-                                    Approved
-                                </span>
-                            @elseif($loan->status === 'active')
-                                <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-55 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
-                                    Active
-                                </span>
-                            @elseif($loan->status === 'completed')
-                                <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 border border-zinc-900/60 dark:border-zinc-300/40">
-                                    Completed
-                                </span>
-                            @elseif($loan->status === 'rejected')
-                                <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400 border border-red-200/60 dark:border-red-800/40">
-                                    Rejected
-                                </span>
-                            @else
-                                <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-zinc-100 text-zinc-655 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
-                                    {{ $loan->status }}
-                                </span>
-                            @endif
+                    <td class="py-3 px-3 whitespace-nowrap">
+                        <div class="flex flex-nowrap items-center gap-1.5">
+                                @if($loan->status === 'pending_guarantors')
+                                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-zinc-100 text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700/60">
+                                        Guarantor Review
+                                    </span>
+                                @elseif($loan->status === 'pending_committee')
+                                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 dark:bg-purple-950/20 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/40">
+                                        Committee Review
+                                    </span>
+                                @elseif($loan->status === 'approved')
+                                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/40">
+                                        Approved
+                                    </span>
+                                @elseif($loan->status === 'active')
+                                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
+                                        Active
+                                    </span>
+                                @elseif($loan->status === 'completed')
+                                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-zinc-100 text-zinc-650 dark:bg-zinc-800/60 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700/60">
+                                        Completed
+                                    </span>
+                                @elseif($loan->status === 'rejected')
+                                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400 border border-red-200/60 dark:border-red-800/40">
+                                        Rejected
+                                    </span>
+                                @elseif($loan->status === 'defaulted')
+                                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-900/40">
+                                        Defaulted
+                                    </span>
+                                @else
+                                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-zinc-100 text-zinc-655 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
+                                        {{ $loan->status }}
+                                    </span>
+                                @endif
+
+                                @if($loan->subStatus)
+                                    @php
+                                        $subStatusColorClass = match($loan->subStatus->color) {
+                                            'red' => 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400 border-red-200/60 dark:border-red-800/40',
+                                            'amber' => 'bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/40',
+                                            'emerald' => 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40',
+                                            'blue' => 'bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 border-blue-200/60 dark:border-blue-800/40',
+                                            'indigo' => 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-400 border-indigo-200/60 dark:border-indigo-800/40',
+                                            default => 'bg-zinc-50 text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400 border-zinc-200/60 dark:border-zinc-700/60',
+                                        };
+                                    @endphp
+                                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border {{ $subStatusColorClass }}">
+                                        {{ $loan->subStatus->name }}
+                                    </span>
+                                @endif
                         </div>
                     </td>
 
@@ -384,6 +405,7 @@
                             <option value="active">Active</option>
                             <option value="completed">Completed</option>
                             <option value="rejected">Rejected</option>
+                            <option value="defaulted">Defaulted</option>
                         </select>
                         <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-400 dark:text-zinc-500 absolute right-3 pointer-events-none"><polyline points="6 9 12 15 18 9"></polyline></svg>
                     </div>
@@ -578,10 +600,10 @@
                         <button 
                             type="button" 
                             @click="addGuarantor()" 
-                            x-show="guarantors.length < 3"
+                            x-show="guarantors.length < maxGuarantors"
                             class="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white cursor-pointer select-none"
                         >
-                            + Add (Max 3)
+                            + Add (Max <span x-text="maxGuarantors"></span>)
                         </button>
                     </div>
 

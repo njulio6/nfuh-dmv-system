@@ -360,7 +360,7 @@
                                     <button
                                         type="button"
                                         @click="selectMember(m.id, m.name, m.code)"
-                                        class="w-full text-left px-4 py-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-sm font-semibold text-zinc-750 dark:text-zinc-300 hover:text-zinc-955 dark:hover:text-white cursor-pointer flex justify-between items-center transition-colors"
+                                        class="w-full text-left px-4 py-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-sm font-semibold text-zinc-750 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white cursor-pointer flex justify-between items-center transition-colors"
                                     >
                                         <span x-text="m.name"></span>
                                         <span class="font-mono text-xs text-zinc-450 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-950 px-2 py-0.5 rounded" x-text="m.code"></span>

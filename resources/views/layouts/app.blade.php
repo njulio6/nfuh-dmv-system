@@ -354,9 +354,12 @@
             elseif ($routeName === 'member.savings') $pageTitle = 'My Savings';
             elseif ($routeName === 'member.savings.requests') $pageTitle = 'My Deposit Requests';
             elseif ($routeName === 'loans.index') $pageTitle = 'Loan Management';
+            elseif ($routeName === 'loans.sub-statuses') $pageTitle = 'Loan Sub Statuses';
             elseif ($routeName === 'member.loans') $pageTitle = 'My Loans';
             elseif ($routeName === 'member.loans.applications') $pageTitle = 'My Loan Applications';
             elseif (str_starts_with($routeName, 'loans.statement')) $pageTitle = 'Member Statement';
+            elseif ($routeName === 'settings.edit') $pageTitle = 'System Settings';
+            elseif ($routeName === 'admin.tools') $pageTitle = 'System Tools';
         }
     @endphp
 
@@ -610,6 +613,15 @@
                                         >
                                             <i data-lucide="landmark" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('loans.index') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
                                             <span class="truncate">Overview</span>
+                                        </a>
+
+                                        <!-- Loan Sub-Statuses -->
+                                        <a 
+                                            href="{{ route('loans.sub-statuses') }}" 
+                                            class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('loans.sub-statuses') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
+                                        >
+                                            <i data-lucide="tag" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('loans.sub-statuses') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                            <span class="truncate">Sub Statuses</span>
                                         </a>
                                     </div>
                                 </div>
@@ -966,30 +978,49 @@
                     </div>
 
                     @if(!$isAdminUser)
-                        <div class="space-y-1" x-data="{ open: {{ Route::is('member.savings*') ? 'true' : 'false' }} }">
-                            <button @click="open = !open" class="flex w-full items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-zinc-900 dark:text-zinc-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40">
-                                <div class="flex items-center gap-3">
-                                    <i data-lucide="piggy-bank" class="w-[18px] h-[18px] shrink-0"></i>
-                                    <span>Financials</span>
+                        <div class="space-y-1">
+                            <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Financials</span>
+
+                            <!-- Savings Dropdown -->
+                            <div x-data="{ open: {{ (Route::is('member.savings') || Route::is('member.savings.requests')) ? 'true' : 'false' }} }" class="flex flex-col">
+                                <button @click="open = !open" class="flex w-full items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium {{ (Route::is('member.savings') || Route::is('member.savings.requests')) ? 'bg-zinc-100/60 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 dark:text-zinc-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                    <div class="flex items-center gap-3">
+                                        <i data-lucide="piggy-bank" class="w-[18px] h-[18px] shrink-0 text-zinc-500 dark:text-zinc-400"></i>
+                                        <span>Savings</span>
+                                    </div>
+                                    <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-400 transition-transform duration-200" :class="open ? 'rotate-90' : ''"></i>
+                                </button>
+                                <div x-show="open" class="pl-4 space-y-1 mt-1">
+                                    <a href="{{ route('member.savings') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.savings') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
+                                        <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0 text-zinc-550 dark:text-zinc-400"></i>
+                                        <span>My Savings</span>
+                                    </a>
+                                    <a href="{{ route('member.savings.requests') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.savings.requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
+                                        <i data-lucide="inbox" class="w-4 h-4 shrink-0 text-zinc-550 dark:text-zinc-400"></i>
+                                        <span>Deposit Requests</span>
+                                    </a>
                                 </div>
-                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 transition-transform" :class="open ? 'rotate-90' : ''"></i>
-                            </button>
-                            <div x-show="open" class="pl-4 space-y-1 mt-1">
-                                <a href="{{ route('member.savings') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.savings') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100' }}">My Savings</a>
-                                <a href="{{ route('member.savings.requests') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.savings.requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100' }}">Deposit Requests</a>
                             </div>
-                        </div>
-                        <div class="space-y-1" x-data="{ open: {{ Route::is('member.loans*') ? 'true' : 'false' }} }">
-                            <button @click="open = !open" class="flex w-full items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-zinc-900 dark:text-zinc-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40">
-                                <div class="flex items-center gap-3">
-                                    <i data-lucide="trending-up" class="w-[18px] h-[18px] shrink-0"></i>
-                                    <span>Loans</span>
+
+                            <!-- Loans Dropdown -->
+                            <div x-data="{ open: {{ (Route::is('member.loans') || Route::is('member.loans.applications')) ? 'true' : 'false' }} }" class="flex flex-col">
+                                <button @click="open = !open" class="flex w-full items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium {{ (Route::is('member.loans') || Route::is('member.loans.applications')) ? 'bg-zinc-100/60 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 dark:text-zinc-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                    <div class="flex items-center gap-3">
+                                        <i data-lucide="percent" class="w-[18px] h-[18px] shrink-0 text-zinc-500 dark:text-zinc-400"></i>
+                                        <span>Loans</span>
+                                    </div>
+                                    <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-400 transition-transform duration-200" :class="open ? 'rotate-90' : ''"></i>
+                                </button>
+                                <div x-show="open" class="pl-4 space-y-1 mt-1">
+                                    <a href="{{ route('member.loans') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.loans') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
+                                        <i data-lucide="trending-up" class="w-4 h-4 shrink-0 text-zinc-550 dark:text-zinc-400"></i>
+                                        <span>Overview</span>
+                                    </a>
+                                    <a href="{{ route('member.loans.applications') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.loans.applications') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
+                                        <i data-lucide="inbox" class="w-4 h-4 shrink-0 text-zinc-550 dark:text-zinc-400"></i>
+                                        <span>My Applications</span>
+                                    </a>
                                 </div>
-                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 transition-transform" :class="open ? 'rotate-90' : ''"></i>
-                            </button>
-                            <div x-show="open" class="pl-4 space-y-1 mt-1">
-                                <a href="{{ route('member.loans') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.loans') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100' }}">Overview</a>
-                                <a href="{{ route('member.loans.applications') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.loans.applications') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100' }}">My Applications</a>
                             </div>
                         </div>
                         <div class="space-y-1">
@@ -1062,8 +1093,11 @@
                                     <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-400 transition-transform duration-200" :class="open ? 'rotate-90' : ''"></i>
                                 </button>
                                 <div x-show="open" x-collapse class="mt-0.5 ml-5 flex flex-col gap-0.5 border-l border-zinc-200 dark:border-zinc-800 pl-3">
-                                    <a href="{{ route('loans.index') }}" class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[13px] font-medium {{ Route::is('loans.index') ? 'text-zinc-900 dark:text-zinc-100 font-semibold bg-zinc-100/60 dark:bg-zinc-800/40' : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
+                                    <a href="{{ route('loans.index') }}" class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[13px] font-medium {{ Route::is('loans.index') ? 'text-zinc-900 dark:text-zinc-100 font-semibold bg-zinc-100/60 dark:bg-zinc-800/40' : 'text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
                                         <i data-lucide="landmark" class="w-4 h-4 shrink-0"></i><span>Overview</span>
+                                    </a>
+                                    <a href="{{ route('loans.sub-statuses') }}" class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[13px] font-medium {{ Route::is('loans.sub-statuses') ? 'text-zinc-900 dark:text-zinc-100 font-semibold bg-zinc-100/60 dark:bg-zinc-800/40' : 'text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
+                                        <i data-lucide="tag" class="w-4 h-4 shrink-0"></i><span>Sub Statuses</span>
                                     </a>
                                 </div>
                             </div>

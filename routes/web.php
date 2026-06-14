@@ -123,6 +123,22 @@ Route::middleware(['auth', 'admin'])->group(function () {
         ->name('loans.reject');
     Route::post('/loans/{loan}/repay', [\App\Http\Controllers\LoanController::class, 'repay'])
         ->name('loans.repay');
+    Route::post('/loans/{loan}/sub-status', [\App\Http\Controllers\LoanController::class, 'updateSubStatus'])
+        ->name('loans.update-sub-status');
+    Route::post('/loans/{loan}/mark-defaulted', [\App\Http\Controllers\LoanController::class, 'markAsDefaulted'])
+        ->name('loans.mark-defaulted');
+    Route::post('/loans/{loan}/mark-active', [\App\Http\Controllers\LoanController::class, 'markAsActive'])
+        ->name('loans.mark-active');
+
+    // Admin Custom Loan Sub-Status routes
+    Route::get('/loans/sub-statuses', [\App\Http\Controllers\LoanController::class, 'subStatusesIndex'])
+        ->name('loans.sub-statuses');
+    Route::post('/settings/loan-sub-statuses', [\App\Http\Controllers\LoanController::class, 'storeSubStatus'])
+        ->name('admin.settings.store-sub-status');
+    Route::patch('/settings/loan-sub-statuses/{subStatus}', [\App\Http\Controllers\LoanController::class, 'updateSubStatusDefinition'])
+        ->name('admin.settings.update-sub-status');
+    Route::delete('/settings/loan-sub-statuses/{subStatus}', [\App\Http\Controllers\LoanController::class, 'destroySubStatus'])
+        ->name('admin.settings.destroy-sub-status');
 
     // Reports and CSV Exports
     Route::get('/reports/export/loans', [\App\Http\Controllers\ReportsController::class, 'exportLoansCsv'])

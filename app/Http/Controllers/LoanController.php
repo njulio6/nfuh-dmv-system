@@ -7,6 +7,7 @@ use App\Models\LoanRequest;
 use App\Models\LoanGuarantor;
 use App\Models\LoanRepayment;
 use App\Models\Setting;
+use App\Models\LoanSubStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,7 +18,7 @@ class LoanController extends Controller
      */
     public function index(Request $request)
     {
-        $query = LoanRequest::with(['member', 'guarantors.guarantorMember', 'repayments']);
+        $query = LoanRequest::with(['member', 'guarantors.guarantorMember', 'repayments', 'subStatus']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -32,6 +33,10 @@ class LoanController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->filled('sub_status_id')) {
+            $query->where('sub_status_id', $request->sub_status_id);
+        }
+
         $perPage = (int) $request->input('per_page', 10);
         if (!in_array($perPage, [5, 10, 20, 30, 50])) {
             $perPage = 10;
@@ -40,10 +45,10 @@ class LoanController extends Controller
         $loans = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         // Metrics
-        $totalActiveAmount = LoanRequest::where('status', 'active')->sum('amount');
+        $totalActiveAmount = LoanRequest::whereIn('status', ['active', 'defaulted'])->sum('amount');
         
         $totalRemainingBalance = 0;
-        $activeLoans = LoanRequest::where('status', 'active')->with('repayments')->get();
+        $activeLoans = LoanRequest::whereIn('status', ['active', 'defaulted'])->with('repayments')->get();
         foreach ($activeLoans as $al) {
             $totalRemainingBalance += $al->remaining_balance;
         }
@@ -53,7 +58,10 @@ class LoanController extends Controller
         // Get members for dropdown filters / manual logging
         $allMembers = Member::orderBy('first_name')->get();
 
-        return view('loans.index', compact('loans', 'totalActiveAmount', 'totalRemainingBalance', 'pendingReviewsCount', 'allMembers'));
+        // Fetch all custom sub-statuses for layout rendering
+        $subStatuses = LoanSubStatus::orderBy('name')->get();
+
+        return view('loans.index', compact('loans', 'totalActiveAmount', 'totalRemainingBalance', 'pendingReviewsCount', 'allMembers', 'subStatuses'));
     }
 
     /**
@@ -113,8 +121,8 @@ class LoanController extends Controller
      */
     public function repay(Request $request, LoanRequest $loan)
     {
-        if ($loan->status !== 'active') {
-            return redirect()->back()->with('error', 'Can only record payments on active loans.');
+        if (!in_array($loan->status, ['active', 'defaulted'])) {
+            return redirect()->back()->with('error', 'Can only record payments on active or defaulted loans.');
         }
 
         $validated = $request->validate([
@@ -162,7 +170,7 @@ class LoanController extends Controller
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
 
-        $loansQuery = $member->loanRequests()->with(['guarantors.guarantorMember', 'repayments']);
+        $loansQuery = $member->loanRequests()->with(['guarantors.guarantorMember', 'repayments', 'subStatus']);
 
         $perPage = (int) $request->input('per_page', 10);
         if (!in_array($perPage, [5, 10, 20, 30, 50])) {
@@ -204,7 +212,7 @@ class LoanController extends Controller
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
 
-        $query = $member->loanRequests()->with(['guarantors.guarantorMember', 'repayments']);
+        $query = $member->loanRequests()->with(['guarantors.guarantorMember', 'repayments', 'subStatus']);
 
         // Search amount or purpose
         if ($request->filled('search')) {
@@ -235,8 +243,10 @@ class LoanController extends Controller
 
         $appSettings = Setting::first();
         $minSavings = $appSettings?->min_savings_for_loan ?? 500.00;
+        $minGuarantors = $appSettings?->loan_guarantor_min ?? 1;
+        $maxGuarantors = $appSettings?->loan_guarantor_max ?? 3;
 
-        return view('loans.member_applications', compact('member', 'loans', 'otherMembers', 'minSavings'));
+        return view('loans.member_applications', compact('member', 'loans', 'otherMembers', 'minSavings', 'minGuarantors', 'maxGuarantors'));
     }
 
 
@@ -264,12 +274,18 @@ class LoanController extends Controller
             return redirect()->back()->with('error', "You must have at least $" . number_format($minSavings, 2) . " in savings to apply for a loan. Current savings: $" . number_format($member->savings_balance, 2));
         }
 
+        $guarantorMin = $appSettings?->loan_guarantor_min ?? 1;
+        $guarantorMax = $appSettings?->loan_guarantor_max ?? 3;
+
         $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0.01'],
+            'amount'          => ['required', 'numeric', 'min:0.01'],
             'duration_months' => ['required', 'integer', 'min:1', 'max:60'],
-            'purpose' => ['nullable', 'string', 'max:1000'],
-            'guarantors' => ['required', 'array', 'min:1', 'max:3'],
-            'guarantors.*' => ['required', 'exists:members,id', 'different:member_id'],
+            'purpose'         => ['nullable', 'string', 'max:1000'],
+            'guarantors'      => ['required', 'array', 'min:' . $guarantorMin, 'max:' . $guarantorMax],
+            'guarantors.*'    => ['required', 'exists:members,id', 'different:member_id'],
+        ], [
+            'guarantors.min' => "You must select at least {$guarantorMin} guarantor(s) for your loan request.",
+            'guarantors.max' => "You may select no more than {$guarantorMax} guarantor(s) for your loan request.",
         ]);
 
         // Ensure member doesn't select themselves
@@ -401,5 +417,121 @@ class LoanController extends Controller
 
         return view('loans.statement', compact('member', 'loans'));
     }
+
+    /**
+     * Update the operational sub-status of a loan.
+     */
+    public function updateSubStatus(Request $request, LoanRequest $loan)
+    {
+        $validated = $request->validate([
+            'sub_status_id' => ['nullable', 'exists:loan_sub_statuses,id'],
+        ]);
+
+        $loan->update([
+            'sub_status_id' => $validated['sub_status_id'],
+        ]);
+
+        return redirect()->back()->with('success', 'Loan sub-status updated successfully.');
+    }
+
+    /**
+     * Store a new custom sub-status (admin only, managed in Settings).
+     */
+    public function storeSubStatus(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:50', 'unique:loan_sub_statuses,name'],
+            'color' => ['required', 'string', 'max:30'],
+        ]);
+
+        LoanSubStatus::create([
+            'name' => $validated['name'],
+            'color' => $validated['color'],
+        ]);
+
+        return redirect()->back()->with('success', 'Custom loan sub-status created successfully.');
+    }
+
+    /**
+     * Display the list of custom loan sub-statuses for management on a separate page.
+     */
+    public function subStatusesIndex(Request $request)
+    {
+        $query = LoanSubStatus::query();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [5, 10, 20, 30, 50])) {
+            $perPage = 10;
+        }
+
+        $subStatuses = $query->orderBy('name')->paginate($perPage);
+
+        return view('loans.sub_statuses', compact('subStatuses'));
+    }
+
+    /**
+     * Update a custom sub-status (admin only).
+     */
+    public function updateSubStatusDefinition(Request $request, LoanSubStatus $subStatus)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:50', 'unique:loan_sub_statuses,name,' . $subStatus->id],
+            'color' => ['required', 'string', 'max:30'],
+        ]);
+
+        $subStatus->update([
+            'name' => $validated['name'],
+            'color' => $validated['color'],
+        ]);
+
+        return redirect()->back()->with('success', 'Custom loan sub-status updated successfully.');
+    }
+
+    /**
+     * Delete a custom sub-status (admin only, managed in Settings).
+     */
+    public function destroySubStatus(LoanSubStatus $subStatus)
+    {
+        $subStatus->delete();
+        return redirect()->back()->with('success', 'Custom loan sub-status deleted.');
+    }
+
+    /**
+     * Mark a loan request as defaulted (transitions core status from active to defaulted).
+     */
+    public function markAsDefaulted(LoanRequest $loan)
+    {
+        if ($loan->status !== 'active') {
+            return redirect()->back()->with('error', 'Only active loans can be marked as defaulted.');
+        }
+
+        $loan->update([
+            'status' => 'defaulted',
+        ]);
+
+        return redirect()->back()->with('success', 'Loan status marked as Defaulted.');
+    }
+
+    /**
+     * Mark a defaulted loan request back as active.
+     */
+    public function markAsActive(LoanRequest $loan)
+    {
+        if ($loan->status !== 'defaulted') {
+            return redirect()->back()->with('error', 'Only defaulted loans can be marked as active.');
+        }
+
+        $loan->update([
+            'status' => 'active',
+        ]);
+
+        return redirect()->back()->with('success', 'Loan status restored to Active.');
+    }
 }
+
 

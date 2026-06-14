@@ -15,6 +15,11 @@
         reviewBorrower: '',
         reviewAmount: '',
         reviewNotes: '',
+        showDefaultModal: false,
+        showRestoreModal: false,
+        statusActionUrl: '',
+        statusBorrower: '',
+        statusAmount: '',
         openReviewModal(actionUrl, type, borrower, amount) {
             this.reviewActionUrl = actionUrl;
             this.reviewType = type;
@@ -22,6 +27,16 @@
             this.reviewAmount = amount;
             this.reviewNotes = '';
             this.showReviewModal = true;
+        },
+        openStatusModal(actionUrl, isDefault, borrower, amount) {
+            this.statusActionUrl = actionUrl;
+            this.statusBorrower = borrower;
+            this.statusAmount = amount;
+            if (isDefault) {
+                this.showDefaultModal = true;
+            } else {
+                this.showRestoreModal = true;
+            }
         }
     }"
     class="w-full"
@@ -30,6 +45,7 @@
     <form id="loans-filter-form" method="GET" action="{{ route('loans.index') }}" x-ref="form" class="hidden">
         <input type="hidden" name="search" value="{{ request('search') }}" x-ref="searchInput">
         <input type="hidden" name="status" value="{{ request('status') }}" x-ref="statusInput">
+        <input type="hidden" name="sub_status_id" value="{{ request('sub_status_id') }}" x-ref="subStatusInput">
         <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}" x-ref="perPageInput">
         <input type="hidden" name="page" value="{{ $loans->currentPage() }}" x-ref="pageInput">
     </form>
@@ -111,11 +127,11 @@
             <button 
                 type="button"
                 @click="showFilterModal = true"
-                class="p-2.5 border rounded-[10px] cursor-pointer transition-all active:scale-[0.96] relative select-none {{ request('status') ? 'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400' : 'text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-950/40 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800' }}"
+                class="p-2.5 border rounded-[10px] cursor-pointer transition-all active:scale-[0.96] relative select-none {{ (request('status') || request('sub_status_id')) ? 'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400' : 'text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-950/40 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800' }}"
                 title="Filters"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
-                @if(request('status'))
+                @if(request('status') || request('sub_status_id'))
                     <span class="absolute top-1 right-1 w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
                 @endif
             </button>
@@ -123,16 +139,15 @@
     </div>
 
     <!-- Main Data Table -->
-    <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 shadow-3xs overflow-hidden mb-6">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 shadow-3xs overflow-x-auto mb-6">
         <x-premium-table :headers="[
-            'Borrower',
-            'Amount ($)',
-            'Duration',
-            'Status',
-            'Admin Note',
-            'Repay Progress',
-            'Statement',
-            ['label' => 'Actions', 'align' => 'center']
+            ['label' => 'Borrower', 'width' => 'min-w-[140px]'],
+            ['label' => 'Amount ($)', 'width' => 'min-w-[110px]'],
+            ['label' => 'Duration', 'width' => 'min-w-[90px]'],
+            ['label' => 'Status', 'width' => 'min-w-[190px]'],
+            ['label' => 'Repay Progress', 'width' => 'min-w-[140px]'],
+            ['label' => 'Statement', 'width' => 'min-w-[90px]'],
+            ['label' => 'Actions', 'align' => 'center', 'width' => 'min-w-[160px]']
         ]">
             @forelse($loans as $loan)
                 <x-premium-table-row :is-even="$loop->index % 2 === 1">
@@ -159,53 +174,138 @@
                         <span class="font-bold text-zinc-700 dark:text-zinc-300 text-xs">{{ $loan->duration_months }} Months</span>
                     </td>
 
-                    <!-- Status Badge -->
-                    <td class="py-3.5 px-3">
-                        <div class="flex flex-col items-start gap-1">
+                    <!-- Status & Sub-Status Dropdown -->
+                    <td class="py-3.5 px-3 whitespace-nowrap">
+                        <div class="flex flex-nowrap items-center gap-1.5">
                             @if($loan->status === 'pending_guarantors')
-                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-zinc-100 text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700/60">
+                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-zinc-100 text-zinc-650 dark:bg-zinc-800/60 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700/60">
                                     Guarantor Review
                                 </span>
                             @elseif($loan->status === 'pending_committee')
-                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 dark:bg-purple-950/20 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/40">
+                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-50 text-purple-755 dark:bg-purple-950/20 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/40">
                                     Committee Review
                                 </span>
                             @elseif($loan->status === 'approved')
-                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/40">
+                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-755 dark:bg-blue-950/20 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/40">
                                     Approved
                                 </span>
                             @elseif($loan->status === 'active')
-                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
+                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-755 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
                                     Active
                                 </span>
                             @elseif($loan->status === 'completed')
-                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 border border-zinc-900/60 dark:border-zinc-300/40">
+                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-zinc-100 text-zinc-650 dark:bg-zinc-800/60 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700/60">
                                     Completed
                                 </span>
-                            @else
+                            @elseif($loan->status === 'rejected')
                                 <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400 border border-red-200/60 dark:border-red-800/40">
                                     Rejected
                                 </span>
+                            @elseif($loan->status === 'defaulted')
+                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-850 dark:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-900/40">
+                                    Defaulted
+                                </span>
+                            @else
+                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-zinc-50 text-zinc-700 border border-zinc-200">
+                                    {{ $loan->status }}
+                                </span>
+                            @endif
+
+                            @if(in_array($loan->status, ['active', 'defaulted']))
+                                <div x-data="{ open: false, openUp: false, dropdownTop: 0, dropdownLeft: 0 }" class="relative inline-block text-left" @click.outside="open = false" @scroll.window="open = false">
+                                    @if($loan->subStatus)
+                                        @php
+                                            $subStatusColorClass = match($loan->subStatus->color) {
+                                                'red' => 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400 border-red-200/60 dark:border-red-800/40 hover:bg-red-100/40 dark:hover:bg-red-950/30',
+                                                'amber' => 'bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/40 hover:bg-amber-100/40 dark:hover:bg-amber-950/30',
+                                                'emerald' => 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40 hover:bg-emerald-100/40 dark:hover:bg-emerald-950/30',
+                                                'blue' => 'bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 border-blue-200/60 dark:border-blue-800/40 hover:bg-blue-100/40 dark:hover:bg-blue-950/30',
+                                                'indigo' => 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-400 border-indigo-200/60 dark:border-indigo-800/40 hover:bg-indigo-100/40 dark:hover:bg-indigo-950/30',
+                                                default => 'bg-zinc-50 text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400 border-zinc-200/60 dark:border-zinc-700/60 hover:bg-zinc-100/40 dark:hover:bg-zinc-900/40',
+                                            };
+                                        @endphp
+                                        <button 
+                                            type="button" 
+                                            @click="open = !open; if (open) { $nextTick(() => { const rect = $el.getBoundingClientRect(); openUp = (window.innerHeight - rect.bottom) < 220; dropdownLeft = rect.left; if (openUp) { dropdownTop = rect.top - $refs.menu.offsetHeight - 6; } else { dropdownTop = rect.bottom + 6; } }) }"
+                                            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border cursor-pointer select-none transition-all duration-200 shadow-3xs {{ $subStatusColorClass }}"
+                                        >
+                                            <span>{{ $loan->subStatus->name }}</span>
+                                            <svg class="w-2.5 h-2.5 shrink-0 transition-transform duration-250 opacity-60" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+                                        </button>
+                                    @else
+                                        <!-- Plus button for assigning tag -->
+                                        <button 
+                                            type="button" 
+                                            @click="open = !open; if (open) { $nextTick(() => { const rect = $el.getBoundingClientRect(); openUp = (window.innerHeight - rect.bottom) < 220; dropdownLeft = rect.left; if (openUp) { dropdownTop = rect.top - $refs.menu.offsetHeight - 6; } else { dropdownTop = rect.bottom + 6; } }) }"
+                                            class="inline-flex items-center justify-center size-5 rounded-full border border-dashed border-zinc-300 dark:border-zinc-700 bg-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-650 dark:hover:text-zinc-300 hover:bg-zinc-100/50 dark:hover:bg-zinc-850/50 hover:border-zinc-450 dark:hover:border-zinc-600 transition-all duration-200 cursor-pointer shadow-3xs"
+                                            title="Add Sub-Status Tag"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="w-2.5 h-2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                        </button>
+                                    @endif
+
+                                    <!-- Dropdown Options Menu -->
+                                    <div 
+                                        x-ref="menu"
+                                        x-show="open"
+                                        x-cloak
+                                        x-transition:enter="transition ease-out duration-100"
+                                        x-transition:enter-start="opacity-0 scale-95"
+                                        x-transition:enter-end="opacity-100 scale-100"
+                                        x-transition:leave="transition ease-in duration-75"
+                                        x-transition:leave-start="opacity-100 scale-100"
+                                        x-transition:leave-end="opacity-0 scale-95"
+                                        class="fixed z-50 w-44 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl p-1.5 flex flex-col gap-0.5"
+                                        :style="`top: ${dropdownTop}px; left: ${dropdownLeft}px;`"
+                                        style="display: none;"
+                                    >
+                                        <div class="text-[8px] font-black uppercase tracking-wider text-zinc-400 dark:text-zinc-500 px-2.5 py-1 select-none">
+                                            Select Tag
+                                        </div>
+                                        
+                                        <form method="POST" action="{{ route('loans.update-sub-status', $loan->id) }}" id="subStatusForm{{ $loan->id }}" class="m-0 p-0">
+                                            @csrf
+                                            <input type="hidden" name="sub_status_id" id="sub_status_id_{{ $loan->id }}" value="">
+                                            
+                                            <!-- Option: No Tag -->
+                                            <button
+                                                type="button"
+                                                @click="document.getElementById('sub_status_id_{{ $loan->id }}').value = ''; document.getElementById('subStatusForm{{ $loan->id }}').submit()"
+                                                class="w-full text-left px-2.5 py-2 text-[10px] font-bold uppercase rounded-lg transition-colors flex items-center justify-between cursor-pointer border border-transparent {{ !$loan->sub_status_id ? 'bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white' : 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900/60 hover:text-zinc-900 dark:hover:text-zinc-250' }}"
+                                            >
+                                                <span>No Tag</span>
+                                                @if(!$loan->sub_status_id)
+                                                    <span class="text-zinc-950 dark:text-white">✓</span>
+                                                @endif
+                                            </button>
+                                            
+                                            @foreach($subStatuses as $ss)
+                                                @php
+                                                    $optionBadgeColor = match($ss->color) {
+                                                        'red' => 'bg-red-50 text-red-700 dark:bg-red-905/20 dark:text-red-400 border-red-200/60 dark:border-red-800/40',
+                                                        'amber' => 'bg-amber-50 text-amber-700 dark:bg-amber-905/20 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/40',
+                                                        'emerald' => 'bg-emerald-50 text-emerald-700 dark:bg-emerald-905/20 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40',
+                                                        'blue' => 'bg-blue-50 text-blue-700 dark:bg-blue-905/20 dark:text-blue-400 border-blue-200/60 dark:border-blue-800/40',
+                                                        'indigo' => 'bg-indigo-50 text-indigo-700 dark:bg-indigo-905/20 dark:text-indigo-400 border-indigo-200/60 dark:border-indigo-800/40',
+                                                        default => 'bg-zinc-50 text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400 border-zinc-200/60 dark:border-zinc-700/60',
+                                                    };
+                                                @endphp
+                                                <button
+                                                    type="button"
+                                                    @click="document.getElementById('sub_status_id_{{ $loan->id }}').value = '{{ $ss->id }}'; document.getElementById('subStatusForm{{ $loan->id }}').submit()"
+                                                    class="w-full text-left px-2.5 py-1.5 text-[10px] font-bold uppercase rounded-lg transition-colors flex items-center justify-between cursor-pointer border border-transparent {{ $loan->sub_status_id == $ss->id ? 'bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white' : 'text-zinc-550 hover:bg-zinc-50 dark:hover:bg-zinc-900/60 hover:text-zinc-900 dark:hover:text-zinc-250' }}"
+                                                >
+                                                    <span class="inline-block px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider border {{ $optionBadgeColor }}">{{ $ss->name }}</span>
+                                                    @if($loan->sub_status_id == $ss->id)
+                                                        <span class="text-zinc-955 dark:text-white">✓</span>
+                                                    @endif
+                                                </button>
+                                            @endforeach
+                                        </form>
+                                    </div>
+                                </div>
                             @endif
                         </div>
-                    </td>
-
-                    <!-- Admin Note -->
-                    <td class="py-3.5 px-3 max-w-[160px]">
-                        @if($loan->admin_notes)
-                            <div class="flex items-start gap-1">
-                                <span class="text-[10px] text-zinc-500 dark:text-zinc-400 italic leading-relaxed" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                    "{{ $loan->admin_notes }}"
-                                </span>
-                                @if(strlen($loan->admin_notes) > 60)
-                                    <span title="{{ $loan->admin_notes }}" class="cursor-help flex-shrink-0 mt-0.5 text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                    </span>
-                                @endif
-                            </div>
-                        @else
-                            <span class="text-zinc-300 dark:text-zinc-700 text-xs">—</span>
-                        @endif
                     </td>
 
                     <!-- Repayment Progress -->
@@ -280,11 +380,42 @@
                                     " 
                                     class="inline-flex items-center gap-1 px-3 py-1.5 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-[11px] font-bold rounded-[8px] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-3xs select-none"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 text-zinc-500"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-zinc-500"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                     <span>Log Repay</span>
                                 </button>
+                                <button 
+                                    type="button"
+                                    @click="openStatusModal('{{ route('loans.mark-defaulted', $loan->id) }}', true, '{{ addslashes($loan->member->name) }}', '{{ $loan->amount }}')"
+                                    class="px-2.5 py-1.5 border border-red-200 dark:border-red-950/60 bg-red-50 hover:bg-red-100 dark:bg-red-950/10 text-red-655 dark:text-red-400 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all flex items-center justify-center select-none active:scale-[0.96]"
+                                    title="Mark Loan as Defaulted"
+                                >
+                                    Mark Defaulted
+                                </button>
+                            @elseif($loan->status === 'defaulted')
+                                <!-- Post manual repayment -->
+                                <button 
+                                    @click="
+                                        loanId = '{{ $loan->id }}';
+                                        loanAmount = '{{ $loan->amount }}';
+                                        loanRemaining = '{{ $loan->remaining_balance }}';
+                                        loanBorrower = '{{ $loan->member->name }}';
+                                        showRepayModal = true;
+                                    " 
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-[11px] font-bold rounded-[8px] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-3xs select-none"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-zinc-500"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    <span>Log Repay</span>
+                                </button>
+                                <button 
+                                    type="button"
+                                    @click="openStatusModal('{{ route('loans.mark-active', $loan->id) }}', false, '{{ addslashes($loan->member->name) }}', '{{ $loan->amount }}')"
+                                    class="px-2.5 py-1.5 border border-emerald-200 dark:border-emerald-950/60 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/10 text-emerald-655 dark:text-emerald-400 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all flex items-center justify-center select-none active:scale-[0.96]"
+                                    title="Restore Loan to Active"
+                                >
+                                    Restore Active
+                                </button>
                             @else
-                                <span class="text-zinc-400 dark:text-zinc-600 text-xs">-</span>
+                                <span class="text-zinc-400 dark:text-zinc-650 text-xs">-</span>
                             @endif
                         </div>
                     </td>
@@ -606,6 +737,18 @@
                     <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
                     <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
                     <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                    <option value="defaulted" {{ request('status') === 'defaulted' ? 'selected' : '' }}>Defaulted</option>
+                </x-premium-select>
+
+                <x-premium-select 
+                    label="Filter Sub-Status" 
+                    id="filter-sub-status-select" 
+                    @change="$refs.subStatusInput.value = $el.value"
+                >
+                    <option value="">All Sub-Statuses</option>
+                    @foreach($subStatuses as $ss)
+                        <option value="{{ $ss->id }}" {{ request('sub_status_id') == $ss->id ? 'selected' : '' }}>{{ $ss->name }}</option>
+                    @endforeach
                 </x-premium-select>
 
                 <div class="flex gap-2 pt-2">
@@ -697,6 +840,116 @@
                         :class="reviewType === 'approve' ? 'bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950' : 'bg-red-650 hover:bg-red-750 text-white dark:text-white'"
                         x-text="reviewType === 'approve' ? 'Confirm Approval' : 'Confirm Rejection'"
                     >
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CONFIRM MARK DEFAULTED MODAL -->
+    <div 
+        x-show="showDefaultModal" 
+        x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+        style="display: none;"
+    >
+        <div 
+            @click="showDefaultModal = false" 
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"
+            x-show="showDefaultModal"
+            x-transition:enter="ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+        ></div>
+
+        <div 
+            x-show="showDefaultModal"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+            x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+            x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+            class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-sm w-full p-6 relative z-10 text-center"
+        >
+            <div class="w-12 h-12 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-500 flex items-center justify-center mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+
+            <h3 class="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider mb-2">Mark Loan as Defaulted?</h3>
+            <p class="text-xs text-zinc-650 dark:text-zinc-400 mb-5 leading-relaxed">
+                Are you sure you want to mark the loan of <strong class="text-zinc-900 dark:text-white font-bold" x-text="statusBorrower"></strong> (<span x-text="'$' + Number(statusAmount).toLocaleString('en-US', {minimumFractionDigits: 2})"></span>) as <strong class="text-red-655 dark:text-red-400 font-bold">Defaulted</strong>?
+            </p>
+
+            <form method="POST" :action="statusActionUrl" class="m-0 p-0">
+                @csrf
+                <div class="flex gap-2.5">
+                    <x-premium-button type="button" variant="secondary" class="flex-1 py-2 text-xs" @click="showDefaultModal = false">
+                        Keep Active
+                    </x-premium-button>
+                    <button 
+                        type="submit"
+                        class="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer text-center shadow-xs active:scale-95"
+                    >
+                        Yes, Default
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CONFIRM RESTORE ACTIVE MODAL -->
+    <div 
+        x-show="showRestoreModal" 
+        x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+        style="display: none;"
+    >
+        <div 
+            @click="showRestoreModal = false" 
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"
+            x-show="showRestoreModal"
+            x-transition:enter="ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+        ></div>
+
+        <div 
+            x-show="showRestoreModal"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+            x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+            x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+            class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-sm w-full p-6 relative z-10 text-center"
+        >
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500 flex items-center justify-center mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+
+            <h3 class="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider mb-2">Restore Loan to Active?</h3>
+            <p class="text-xs text-zinc-650 dark:text-zinc-400 mb-5 leading-relaxed">
+                Are you sure you want to restore the loan of <strong class="text-zinc-900 dark:text-white font-bold" x-text="statusBorrower"></strong> (<span x-text="'$' + Number(statusAmount).toLocaleString('en-US', {minimumFractionDigits: 2})"></span>) back to <strong class="text-emerald-655 dark:text-emerald-400 font-bold">Active</strong> status?
+            </p>
+
+            <form method="POST" :action="statusActionUrl" class="m-0 p-0">
+                @csrf
+                <div class="flex gap-2.5">
+                    <x-premium-button type="button" variant="secondary" class="flex-1 py-2 text-xs" @click="showRestoreModal = false">
+                        Keep Defaulted
+                    </x-premium-button>
+                    <button 
+                        type="submit"
+                        class="flex-1 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer text-center shadow-xs active:scale-95"
+                    >
+                        Yes, Restore Active
                     </button>
                 </div>
             </form>
