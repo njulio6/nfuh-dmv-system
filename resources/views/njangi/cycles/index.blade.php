@@ -127,7 +127,7 @@
     </div>
 
     <!-- ─── Sibling Block 3: Pagination Footer Card ─── -->
-    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-zinc-900/40 p-4 md:p-5 rounded-[10px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-xs mb-6 select-none">
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-zinc-900/40 p-4 md:p-5 rounded-[10px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-xs mb-6">
         <!-- Left: Rows per Page buttons -->
         <div class="flex items-center gap-3">
             <span class="text-[11px] font-black uppercase text-zinc-500 dark:text-zinc-400">

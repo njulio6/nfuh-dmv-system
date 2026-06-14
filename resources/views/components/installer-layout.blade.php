@@ -108,7 +108,7 @@
                 $currentIndex = array_search($currentRouteName, $keys);
                 if ($currentIndex === false) $currentIndex = 0;
             @endphp
-            <div class="w-full flex items-center justify-between relative px-2 mb-2 select-none">
+            <div class="w-full flex items-center justify-between relative px-2 mb-2">
                 <!-- Line background -->
                 <div class="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-0.5 bg-zinc-100 dark:bg-zinc-800 -z-10"></div>
                 <!-- Line active progress -->

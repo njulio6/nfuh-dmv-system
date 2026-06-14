@@ -44,7 +44,7 @@
         </div>
 
         <!-- Right: Action Buttons Group -->
-        <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto xl:justify-end select-none">
+        <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto xl:justify-end">
             <!-- Request Deposit Button -->
             <button 
                 type="button" 
@@ -114,7 +114,7 @@
 
                     <!-- Status Cell -->
                     <td class="py-2.5 px-3">
-                        <div class="flex justify-center select-none">
+                        <div class="flex justify-center">
                             @if($req->status === 'pending')
                                 <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40">
                                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
@@ -192,7 +192,7 @@
             @empty
                 <tr>
                     <td colspan="8" class="text-center text-zinc-400 dark:text-zinc-600 py-16">
-                        <div class="flex flex-col items-center justify-center gap-2.5 select-none">
+                        <div class="flex flex-col items-center justify-center gap-2.5">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-zinc-300 dark:text-zinc-700"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                             <span class="text-xs font-semibold text-zinc-500">No deposit requests found.</span>
                         </div>
@@ -203,7 +203,7 @@
     </div>
 
     <!-- ─── Sibling Block 3: Pagination Footer Card ─── -->
-    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-zinc-900/40 p-4 md:p-5 rounded-[10px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-xs select-none">
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-zinc-900/40 p-4 md:p-5 rounded-[10px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-xs">
         <!-- Left: Rows per Page buttons -->
         <div class="flex items-center gap-3">
             <span class="text-[11px] font-black uppercase text-zinc-500 dark:text-zinc-400">
@@ -302,7 +302,7 @@
     <div 
         x-show="showFilterModal" 
         x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 select-none"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
     >
         <!-- Modal Backdrop -->
         <div
@@ -326,13 +326,13 @@
             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
             x-transition:leave-end="opacity-0 scale-95 translate-y-4"
         >
-            <h3 class="text-sm font-bold text-zinc-900 dark:text-white mb-4 select-none">
+            <h3 class="text-sm font-bold text-zinc-900 dark:text-white mb-4">
                 Filter Deposit Requests
             </h3>
 
             <div class="space-y-4" x-data="{ statusVal: '{{ request('status') }}' }">
                 <div>
-                    <label class="block text-[11px] font-black uppercase text-zinc-500 dark:text-zinc-400 mb-1.5 select-none">
+                    <label class="block text-[11px] font-black uppercase text-zinc-500 dark:text-zinc-400 mb-1.5">
                         Status
                     </label>
                     <div class="relative flex items-center">
@@ -389,7 +389,7 @@
             x-transition:leave-end="opacity-0 scale-95"
             class="bg-white dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-md relative z-50 animate-fadeIn"
         >
-            <div class="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between select-none">
+            <div class="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between">
                 <h3 class="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Request Savings Deposit</h3>
                 <button @click="showRequestModal = false" class="text-zinc-400 hover:text-zinc-650 dark:hover:text-white transition-colors cursor-pointer select-none">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -420,10 +420,10 @@
 
                 <!-- Screenshot Proof -->
                 <div>
-                    <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none block">
+                    <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 block">
                         Proof of Payment Receipt <span class="text-red-500">*</span>
                     </label>
-                    <div class="relative border border-dashed border-zinc-350 dark:border-zinc-800 rounded-xl p-4 bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer select-none group">
+                    <div class="relative border border-dashed border-zinc-350 dark:border-zinc-800 rounded-xl p-4 bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer group">
                         <input 
                             type="file" 
                             name="screenshot" 
@@ -456,7 +456,7 @@
                 />
 
                 <!-- Footer Actions -->
-                <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 mt-2 w-full select-none">
+                <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 mt-2 w-full">
                     <x-premium-button type="button" variant="secondary" @click="showRequestModal = false" class="py-2.5 w-full sm:w-1/2">
                         Cancel
                     </x-premium-button>
@@ -488,7 +488,7 @@
             x-transition:leave-end="opacity-0 scale-95"
             class="bg-white dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-2xl relative z-50 overflow-hidden flex flex-col"
         >
-            <div class="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between select-none">
+            <div class="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between">
                 <h3 class="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Proof of Payment Receipt</h3>
                 <button @click="showReceiptModal = false" class="text-zinc-400 hover:text-zinc-650 dark:hover:text-white transition-colors cursor-pointer select-none">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>

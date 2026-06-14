@@ -198,7 +198,7 @@
                     <p class="text-xs text-zinc-500 dark:text-zinc-400">Contributions & payment submissions per month</p>
                 </div>
                 
-                <div class="flex items-center gap-4 flex-shrink-0 select-none">
+                <div class="flex items-center gap-4 flex-shrink-0">
                     <!-- Legend -->
                     <div class="flex items-center gap-3">
                         <div class="flex items-center gap-1.5">
@@ -217,7 +217,7 @@
                 </div>
             </div>
 
-            <div class="w-full overflow-x-auto overflow-y-hidden pb-1 select-none">
+            <div class="w-full overflow-x-auto overflow-y-hidden pb-1">
                 <div class="relative w-full min-w-[400px] flex-1 min-h-[220px]">
                     <!-- Y-axis labels -->
                     <div class="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-[11px] text-zinc-400 dark:text-zinc-500 pointer-events-none select-none z-10 w-8 text-right pr-1.5">
@@ -261,7 +261,7 @@
                     <div class="absolute left-8 right-0 bottom-0 h-5 flex justify-between">
                         @foreach ($chartData as $data)
                             <div class="flex-1 text-center">
-                                <span class="text-[11px] text-zinc-550 dark:text-zinc-400 select-none font-medium">{{ $data['month'] }}</span>
+                                <span class="text-[11px] text-zinc-550 dark:text-zinc-400 font-medium">{{ $data['month'] }}</span>
                             </div>
                         @endforeach
                     </div>

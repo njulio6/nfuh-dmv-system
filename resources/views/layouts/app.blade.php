@@ -353,6 +353,10 @@
             elseif ($routeName === 'savings.requests') $pageTitle = 'Deposit Requests';
             elseif ($routeName === 'member.savings') $pageTitle = 'My Savings';
             elseif ($routeName === 'member.savings.requests') $pageTitle = 'My Deposit Requests';
+            elseif ($routeName === 'loans.index') $pageTitle = 'Loan Management';
+            elseif ($routeName === 'member.loans') $pageTitle = 'My Loans';
+            elseif ($routeName === 'member.loans.applications') $pageTitle = 'My Loan Applications';
+            elseif (str_starts_with($routeName, 'loans.statement')) $pageTitle = 'Member Statement';
         }
     @endphp
 
@@ -482,76 +486,132 @@
                     </div>
 
                     <!-- Group 3: Financials (Admin) -->
-                    <div class="relative flex w-full min-w-0 flex-col px-2 py-1"
-                         x-data="{ 
-                             open: {{ Route::is('savings.*') ? 'true' : 'false' }} 
-                          }"
-                         x-effect="if (searchQuery !== '') { open = 'savings'.includes(searchQuery.toLowerCase()) || 'balances'.includes(searchQuery.toLowerCase()) || 'transactions'.includes(searchQuery.toLowerCase()); }"
-                    >
+                    <div class="relative flex w-full min-w-0 flex-col px-2 py-1">
                         <div 
                             class="flex h-8 shrink-0 items-center rounded-[10px] px-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 select-none"
-                            x-show="!sidebarCollapsed && (!searchQuery || 'savings'.includes(searchQuery.toLowerCase()) || 'balances'.includes(searchQuery.toLowerCase()) || 'transactions'.includes(searchQuery.toLowerCase()))"
+                            x-show="!sidebarCollapsed && (!searchQuery || 'savings'.includes(searchQuery.toLowerCase()) || 'loans'.includes(searchQuery.toLowerCase()) || 'balances'.includes(searchQuery.toLowerCase()) || 'transactions'.includes(searchQuery.toLowerCase()))"
                         >
                             Financials
                         </div>
 
-                        <!-- Collapsible Header/Trigger (Only when sidebar is NOT collapsed) -->
-                        <button 
-                            @click="open = !open"
-                            class="group flex items-center justify-between w-full h-7 px-2 rounded-[10px] text-sm outline-none transition-all duration-205 select-none cursor-pointer {{ Route::is('savings.*') ? 'bg-zinc-100/60 dark:bg-zinc-800/50 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}"
-                            x-show="!sidebarCollapsed && (!searchQuery || 'savings'.includes(searchQuery.toLowerCase()) || 'balances'.includes(searchQuery.toLowerCase()) || 'transactions'.includes(searchQuery.toLowerCase()))"
+                        <!-- Savings Dropdown -->
+                        <div 
+                             x-data="{ 
+                                 open: {{ Route::is('savings.*') ? 'true' : 'false' }} 
+                              }"
+                             x-effect="if (searchQuery !== '') { open = 'savings'.includes(searchQuery.toLowerCase()) || 'balances'.includes(searchQuery.toLowerCase()) || 'transactions'.includes(searchQuery.toLowerCase()); }"
+                             class="flex flex-col gap-1 w-full"
                         >
-                            <div class="flex items-center gap-2">
-                                <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0"></i>
-                                <span>Savings</span>
-                            </div>
-                            <i data-lucide="chevron-right" class="w-3.5 h-3.5 transition-transform duration-200" :class="open ? 'rotate-90' : ''"></i>
-                        </button>
-
-                        <!-- When collapsed, show icon directly pointing to Savings Balances -->
-                        <div x-show="sidebarCollapsed" class="flex justify-center w-full">
-                            <a 
-                                href="{{ route('savings.index') }}"
-                                class="group flex items-center justify-center size-8 rounded-[10px] text-sm outline-none transition-all duration-200 relative select-none cursor-pointer {{ Route::is('savings.*') ? 'bg-zinc-100 dark:bg-zinc-800 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50' }}"
-                                title="Savings"
+                            <!-- Collapsible Header/Trigger (Only when sidebar is NOT collapsed) -->
+                            <button 
+                                @click="open = !open"
+                                class="group flex items-center justify-between w-full h-7 px-2 rounded-[10px] text-sm outline-none transition-all duration-205 select-none cursor-pointer {{ Route::is('savings.*') ? 'bg-zinc-100/60 dark:bg-zinc-800/50 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}"
+                                x-show="!sidebarCollapsed && (!searchQuery || 'savings'.includes(searchQuery.toLowerCase()) || 'balances'.includes(searchQuery.toLowerCase()) || 'transactions'.includes(searchQuery.toLowerCase()))"
                             >
-                                <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0"></i>
-                            </a>
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0"></i>
+                                    <span>Savings</span>
+                                </div>
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 transition-transform duration-200" :class="open ? 'rotate-90' : ''"></i>
+                            </button>
+
+                            <!-- When collapsed, show icon directly pointing to Savings Balances -->
+                            <div x-show="sidebarCollapsed" class="flex justify-center w-full">
+                                <a 
+                                    href="{{ route('savings.index') }}"
+                                    class="group flex items-center justify-center size-8 rounded-[10px] text-sm outline-none transition-all duration-200 relative select-none cursor-pointer {{ Route::is('savings.*') ? 'bg-zinc-100 dark:bg-zinc-800 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50' }}"
+                                    title="Savings"
+                                >
+                                    <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0"></i>
+                                </a>
+                            </div>
+
+                            <!-- Dropdown Items container -->
+                            <div 
+                                class="dropdown-collapse {{ Route::is('savings.*') ? 'open opacity-100 mt-1' : 'opacity-0 mt-0' }}"
+                                :class="{ 'open opacity-100 mt-1': open && !sidebarCollapsed, 'opacity-0 mt-0': !open || sidebarCollapsed }"
+                            >
+                                <div class="overflow-hidden">
+                                    <div class="flex w-full min-w-0 flex-col gap-1 pl-4 border-l border-zinc-150 dark:border-zinc-800/80 ml-4">
+                                        <!-- Savings Balances -->
+                                        <a 
+                                            href="{{ route('savings.index') }}" 
+                                            class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('savings.index') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
+                                        >
+                                            <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('savings.index') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                            <span class="truncate">Balances</span>
+                                        </a>
+
+                                        <!-- Deposit Requests -->
+                                        <a 
+                                            href="{{ route('savings.requests') }}" 
+                                            class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('savings.requests') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
+                                        >
+                                            <i data-lucide="inbox" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('savings.requests') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                            <span class="truncate">Deposit Requests</span>
+                                        </a>
+
+                                        <!-- Savings Transactions -->
+                                        <a 
+                                            href="{{ route('savings.transactions') }}" 
+                                            class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('savings.transactions') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
+                                        >
+                                            <i data-lucide="history" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('savings.transactions') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                            <span class="truncate">Transactions</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Dropdown Items container -->
+                        <!-- Loans Dropdown -->
                         <div 
-                            class="dropdown-collapse {{ Route::is('savings.*') ? 'open opacity-100 mt-1' : 'opacity-0 mt-0' }}"
-                            :class="{ 'open opacity-100 mt-1': open && !sidebarCollapsed, 'opacity-0 mt-0': !open || sidebarCollapsed }"
+                             x-data="{ 
+                                 open: {{ Route::is('loans.*') ? 'true' : 'false' }} 
+                              }"
+                             x-effect="if (searchQuery !== '') { open = 'loans'.includes(searchQuery.toLowerCase()) || 'balances'.includes(searchQuery.toLowerCase()); }"
+                             class="flex flex-col gap-1 w-full mt-1"
                         >
-                            <div class="overflow-hidden">
-                                <div class="flex w-full min-w-0 flex-col gap-1 pl-4 border-l border-zinc-150 dark:border-zinc-800/80 ml-4">
-                                    <!-- Savings Balances -->
-                                    <a 
-                                        href="{{ route('savings.index') }}" 
-                                        class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('savings.index') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
-                                    >
-                                        <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('savings.index') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
-                                        <span class="truncate">Balances</span>
-                                    </a>
+                            <!-- Collapsible Header/Trigger -->
+                            <button 
+                                @click="open = !open"
+                                class="group flex items-center justify-between w-full h-7 px-2 rounded-[10px] text-sm outline-none transition-all duration-205 select-none cursor-pointer {{ Route::is('loans.*') ? 'bg-zinc-100/60 dark:bg-zinc-800/50 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}"
+                                x-show="!sidebarCollapsed && (!searchQuery || 'loans'.includes(searchQuery.toLowerCase()) || 'balances'.includes(searchQuery.toLowerCase()))"
+                            >
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="percent" class="w-4 h-4 shrink-0"></i>
+                                    <span>Loans</span>
+                                </div>
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 transition-transform duration-200" :class="open ? 'rotate-90' : ''"></i>
+                            </button>
 
-                                    <!-- Deposit Requests -->
-                                    <a 
-                                        href="{{ route('savings.requests') }}" 
-                                        class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('savings.requests') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
-                                    >
-                                        <i data-lucide="inbox" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('savings.requests') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
-                                        <span class="truncate">Deposit Requests</span>
-                                    </a>
+                            <!-- When collapsed, show icon directly pointing to Loan index -->
+                            <div x-show="sidebarCollapsed" class="flex justify-center w-full">
+                                <a 
+                                    href="{{ route('loans.index') }}"
+                                    class="group flex items-center justify-center size-8 rounded-[10px] text-sm outline-none transition-all duration-200 relative select-none cursor-pointer {{ Route::is('loans.*') ? 'bg-zinc-100 dark:bg-zinc-800 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50' }}"
+                                    title="Loans"
+                                >
+                                    <i data-lucide="percent" class="w-4 h-4 shrink-0"></i>
+                                </a>
+                            </div>
 
-                                    <!-- Savings Transactions -->
-                                    <a 
-                                        href="{{ route('savings.transactions') }}" 
-                                        class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('savings.transactions') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
-                                    >
-                                        <i data-lucide="history" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('savings.transactions') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
-                                        <span class="truncate">Transactions</span>
-                                    </a>
+                            <!-- Dropdown Items container -->
+                            <div 
+                                class="dropdown-collapse {{ Route::is('loans.*') ? 'open opacity-100 mt-1' : 'opacity-0 mt-0' }}"
+                                :class="{ 'open opacity-100 mt-1': open && !sidebarCollapsed, 'opacity-0 mt-0': !open || sidebarCollapsed }"
+                            >
+                                <div class="overflow-hidden">
+                                    <div class="flex w-full min-w-0 flex-col gap-1 pl-4 border-l border-zinc-150 dark:border-zinc-800/80 ml-4">
+                                        <!-- Loan Management -->
+                                        <a 
+                                            href="{{ route('loans.index') }}" 
+                                            class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('loans.index') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
+                                        >
+                                            <i data-lucide="landmark" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('loans.index') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                            <span class="truncate">Overview</span>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -580,67 +640,132 @@
                     </div>
                 @else
                     <!-- Group 2: Financials (Member) -->
-                    <div class="relative flex w-full min-w-0 flex-col px-2 py-1"
-                         x-data="{ 
-                              open: {{ (Route::is('member.savings') || Route::is('member.savings.requests')) ? 'true' : 'false' }} 
-                           }"
-                         x-effect="if (searchQuery !== '') { open = 'my savings'.includes(searchQuery.toLowerCase()) || 'deposit requests'.includes(searchQuery.toLowerCase()); }"
-                    >
+                    <div class="relative flex w-full min-w-0 flex-col px-2 py-1">
                         <div 
                             class="flex h-8 shrink-0 items-center rounded-[10px] px-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 select-none"
-                            x-show="!sidebarCollapsed && (!searchQuery || 'my savings'.includes(searchQuery.toLowerCase()) || 'deposit requests'.includes(searchQuery.toLowerCase()))"
+                            x-show="!sidebarCollapsed && (!searchQuery || 'my savings'.includes(searchQuery.toLowerCase()) || 'deposit requests'.includes(searchQuery.toLowerCase()) || 'my loans'.includes(searchQuery.toLowerCase()))"
                         >
                             Financials
                         </div>
 
-                        <!-- Collapsible Header/Trigger (Only when sidebar is NOT collapsed) -->
-                        <button 
-                            @click="open = !open"
-                            class="group flex items-center justify-between w-full h-7 px-2 rounded-[10px] text-sm outline-none transition-all duration-205 select-none cursor-pointer {{ (Route::is('member.savings') || Route::is('member.savings.requests')) ? 'bg-zinc-100/60 dark:bg-zinc-800/50 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}"
-                            x-show="!sidebarCollapsed && (!searchQuery || 'my savings'.includes(searchQuery.toLowerCase()) || 'deposit requests'.includes(searchQuery.toLowerCase()))"
+                        <!-- Savings Dropdown -->
+                        <div 
+                             x-data="{ 
+                                  open: {{ (Route::is('member.savings') || Route::is('member.savings.requests')) ? 'true' : 'false' }} 
+                               }"
+                             x-effect="if (searchQuery !== '') { open = 'my savings'.includes(searchQuery.toLowerCase()) || 'deposit requests'.includes(searchQuery.toLowerCase()); }"
+                             class="flex flex-col gap-1 w-full"
                         >
-                            <div class="flex items-center gap-2">
-                                <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0"></i>
-                                <span>Savings</span>
-                            </div>
-                            <i data-lucide="chevron-right" class="w-3.5 h-3.5 transition-transform duration-200" :class="open ? 'rotate-90' : ''"></i>
-                        </button>
-
-                        <!-- When collapsed, show icon directly pointing to My Savings -->
-                        <div x-show="sidebarCollapsed" class="flex justify-center w-full">
-                            <a 
-                                href="{{ route('member.savings') }}"
-                                class="group flex items-center justify-center size-8 rounded-[10px] text-sm outline-none transition-all duration-200 relative select-none cursor-pointer {{ (Route::is('member.savings') || Route::is('member.savings.requests')) ? 'bg-zinc-100 dark:bg-zinc-800 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50' }}"
-                                title="Savings"
+                            <!-- Collapsible Header/Trigger (Only when sidebar is NOT collapsed) -->
+                            <button 
+                                @click="open = !open"
+                                class="group flex items-center justify-between w-full h-7 px-2 rounded-[10px] text-sm outline-none transition-all duration-205 select-none cursor-pointer {{ (Route::is('member.savings') || Route::is('member.savings.requests')) ? 'bg-zinc-100/60 dark:bg-zinc-800/50 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}"
+                                x-show="!sidebarCollapsed && (!searchQuery || 'my savings'.includes(searchQuery.toLowerCase()) || 'deposit requests'.includes(searchQuery.toLowerCase()))"
                             >
-                                <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0"></i>
-                            </a>
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0"></i>
+                                    <span>Savings</span>
+                                </div>
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 transition-transform duration-200" :class="open ? 'rotate-90' : ''"></i>
+                            </button>
+
+                            <!-- When collapsed, show icon directly pointing to My Savings -->
+                            <div x-show="sidebarCollapsed" class="flex justify-center w-full">
+                                <a 
+                                    href="{{ route('member.savings') }}"
+                                    class="group flex items-center justify-center size-8 rounded-[10px] text-sm outline-none transition-all duration-200 relative select-none cursor-pointer {{ (Route::is('member.savings') || Route::is('member.savings.requests')) ? 'bg-zinc-100 dark:bg-zinc-800 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50' }}"
+                                    title="Savings"
+                                >
+                                    <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0"></i>
+                                </a>
+                            </div>
+
+                            <!-- Dropdown Items container -->
+                            <div 
+                                class="dropdown-collapse {{ (Route::is('member.savings') || Route::is('member.savings.requests')) ? 'open opacity-100 mt-1' : 'opacity-0 mt-0' }}"
+                                :class="{ 'open opacity-100 mt-1': open && !sidebarCollapsed, 'opacity-0 mt-0': !open || sidebarCollapsed }"
+                            >
+                                <div class="overflow-hidden">
+                                    <div class="flex w-full min-w-0 flex-col gap-1 pl-4 border-l border-zinc-150 dark:border-zinc-800/80 ml-4">
+                                        <!-- My Savings -->
+                                        <a 
+                                            href="{{ route('member.savings') }}" 
+                                            class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('member.savings') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
+                                        >
+                                            <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('member.savings') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                            <span class="truncate">My Savings</span>
+                                        </a>
+
+                                        <!-- Deposit Requests -->
+                                        <a 
+                                            href="{{ route('member.savings.requests') }}" 
+                                            class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('member.savings.requests') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
+                                        >
+                                            <i data-lucide="inbox" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('member.savings.requests') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                            <span class="truncate">Deposit Requests</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Dropdown Items container -->
+                        <!-- Loans Dropdown -->
                         <div 
-                            class="dropdown-collapse {{ (Route::is('member.savings') || Route::is('member.savings.requests')) ? 'open opacity-100 mt-1' : 'opacity-0 mt-0' }}"
-                            :class="{ 'open opacity-100 mt-1': open && !sidebarCollapsed, 'opacity-0 mt-0': !open || sidebarCollapsed }"
+                             x-data="{ 
+                                  open: {{ (Route::is('member.loans') || Route::is('member.loans.applications')) ? 'true' : 'false' }} 
+                               }"
+                             x-effect="if (searchQuery !== '') { open = 'my loans'.includes(searchQuery.toLowerCase()) || 'applications'.includes(searchQuery.toLowerCase()); }"
+                             class="flex flex-col gap-1 w-full mt-1"
                         >
-                            <div class="overflow-hidden">
-                                <div class="flex w-full min-w-0 flex-col gap-1 pl-4 border-l border-zinc-150 dark:border-zinc-800/80 ml-4">
-                                    <!-- My Savings -->
-                                    <a 
-                                        href="{{ route('member.savings') }}" 
-                                        class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('member.savings') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
-                                    >
-                                        <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('member.savings') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
-                                        <span class="truncate">My Savings</span>
-                                    </a>
+                            <!-- Collapsible Header/Trigger (Only when sidebar is NOT collapsed) -->
+                            <button 
+                                @click="open = !open"
+                                class="group flex items-center justify-between w-full h-7 px-2 rounded-[10px] text-sm outline-none transition-all duration-205 select-none cursor-pointer {{ (Route::is('member.loans') || Route::is('member.loans.applications')) ? 'bg-zinc-100/60 dark:bg-zinc-800/50 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}"
+                                x-show="!sidebarCollapsed && (!searchQuery || 'my loans'.includes(searchQuery.toLowerCase()) || 'applications'.includes(searchQuery.toLowerCase()))"
+                            >
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="percent" class="w-4 h-4 shrink-0"></i>
+                                    <span>Loans</span>
+                                </div>
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 transition-transform duration-200" :class="open ? 'rotate-90' : ''"></i>
+                            </button>
 
-                                    <!-- Deposit Requests -->
-                                    <a 
-                                        href="{{ route('member.savings.requests') }}" 
-                                        class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('member.savings.requests') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
-                                    >
-                                        <i data-lucide="inbox" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('member.savings.requests') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
-                                        <span class="truncate">Deposit Requests</span>
-                                    </a>
+                            <!-- When collapsed, show icon directly pointing to My Loans -->
+                            <div x-show="sidebarCollapsed" class="flex justify-center w-full">
+                                <a 
+                                    href="{{ route('member.loans') }}"
+                                    class="group flex items-center justify-center size-8 rounded-[10px] text-sm outline-none transition-all duration-200 relative select-none cursor-pointer {{ (Route::is('member.loans') || Route::is('member.loans.applications')) ? 'bg-zinc-100 dark:bg-zinc-800 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50' }}"
+                                    title="Loans"
+                                >
+                                    <i data-lucide="percent" class="w-4 h-4 shrink-0"></i>
+                                </a>
+                            </div>
+
+                            <!-- Dropdown Items container -->
+                            <div 
+                                class="dropdown-collapse {{ (Route::is('member.loans') || Route::is('member.loans.applications')) ? 'open opacity-100 mt-1' : 'opacity-0 mt-0' }}"
+                                :class="{ 'open opacity-100 mt-1': open && !sidebarCollapsed, 'opacity-0 mt-0': !open || sidebarCollapsed }"
+                            >
+                                <div class="overflow-hidden">
+                                    <div class="flex w-full min-w-0 flex-col gap-1 pl-4 border-l border-zinc-150 dark:border-zinc-800/80 ml-4">
+                                        <!-- Loans Overview -->
+                                        <a 
+                                            href="{{ route('member.loans') }}" 
+                                            class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('member.loans') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
+                                        >
+                                            <i data-lucide="trending-up" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('member.loans') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                            <span class="truncate">Overview</span>
+                                        </a>
+
+                                        <!-- My Applications -->
+                                        <a 
+                                            href="{{ route('member.loans.applications') }}" 
+                                            class="group flex items-center gap-2 h-7 px-2 rounded-[8px] text-sm outline-none transition-all duration-150 relative select-none cursor-pointer {{ Route::is('member.loans.applications') ? 'sidebar-text-primary font-semibold' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}"
+                                        >
+                                            <i data-lucide="inbox" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('member.loans.applications') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                            <span class="truncate">My Applications</span>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -709,7 +834,7 @@
             <div class="p-2 border-t border-zinc-200/60 dark:border-zinc-800/60 bg-white dark:bg-zinc-900 flex-shrink-0 relative">
                 <div 
                     @click="userMenuOpen = !userMenuOpen"
-                    class="sidebar-user-card flex items-center w-full rounded-[10px] transition-all duration-200 cursor-pointer select-none"
+                    class="sidebar-user-card flex items-center w-full rounded-[10px] transition-all duration-200 cursor-pointer"
                     :class="sidebarCollapsed ? 'justify-center p-0' : 'gap-2 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800'"
                 >
                     <div class="w-8 h-8 rounded-[10px] bg-zinc-950 dark:bg-zinc-50 text-white dark:text-zinc-950 flex items-center justify-center font-bold text-xs flex-shrink-0">
@@ -830,22 +955,37 @@
                     </div>
 
                     @if(!$isAdminUser)
-                        <div class="space-y-1">
-                            <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Njangi</span>
-                            <a href="{{ route('member.njangi-report') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.njangi-report') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="file-text" class="w-[18px] h-[18px] shrink-0 text-zinc-550 dark:text-zinc-400"></i>
-                                <span>Njangi Report</span>
-                            </a>
+                        <div class="space-y-1" x-data="{ open: {{ Route::is('member.savings*') ? 'true' : 'false' }} }">
+                            <button @click="open = !open" class="flex w-full items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-zinc-900 dark:text-zinc-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="piggy-bank" class="w-[18px] h-[18px] shrink-0"></i>
+                                    <span>Financials</span>
+                                </div>
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 transition-transform" :class="open ? 'rotate-90' : ''"></i>
+                            </button>
+                            <div x-show="open" class="pl-4 space-y-1 mt-1">
+                                <a href="{{ route('member.savings') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.savings') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100' }}">My Savings</a>
+                                <a href="{{ route('member.savings.requests') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.savings.requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100' }}">Deposit Requests</a>
+                            </div>
+                        </div>
+                        <div class="space-y-1" x-data="{ open: {{ Route::is('member.loans*') ? 'true' : 'false' }} }">
+                            <button @click="open = !open" class="flex w-full items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-zinc-900 dark:text-zinc-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="trending-up" class="w-[18px] h-[18px] shrink-0"></i>
+                                    <span>Loans</span>
+                                </div>
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 transition-transform" :class="open ? 'rotate-90' : ''"></i>
+                            </button>
+                            <div x-show="open" class="pl-4 space-y-1 mt-1">
+                                <a href="{{ route('member.loans') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.loans') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100' }}">Overview</a>
+                                <a href="{{ route('member.loans.applications') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.loans.applications') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100' }}">My Applications</a>
+                            </div>
                         </div>
                         <div class="space-y-1">
-                            <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Financials</span>
-                            <a href="{{ route('member.savings') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.savings') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="piggy-bank" class="w-[18px] h-[18px] shrink-0 text-zinc-555 dark:text-zinc-400"></i>
-                                <span>My Savings</span>
-                            </a>
-                            <a href="{{ route('member.savings.requests') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.savings.requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="inbox" class="w-[18px] h-[18px] shrink-0 text-zinc-555 dark:text-zinc-400"></i>
-                                <span>Deposit Requests</span>
+                            <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Reports</span>
+                            <a href="{{ route('member.njangi-report') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.njangi-report') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100' }}">
+                                <i data-lucide="file-text" class="w-[18px] h-[18px] shrink-0"></i>
+                                <span>Njangi Report</span>
                             </a>
                         </div>
                     @endif
@@ -853,47 +993,76 @@
                     @if($isAdminUser)
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Membership</span>
-                            <a href="{{ route('members.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('members.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="users" class="w-[18px] h-[18px] shrink-0 text-zinc-550 dark:text-zinc-400"></i>
+                            <a href="{{ route('members.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('members.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400' }}">
+                                <i data-lucide="users" class="w-[18px] h-[18px] shrink-0"></i>
                                 <span>Members</span>
                             </a>
                         </div>
+
+                        {{-- Admin: Njangi flat section (no collapsible, same as desktop) --}}
+
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Njangi</span>
                             <a href="{{ route('njangi-cycles.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('njangi-cycles.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="refresh-cw" class="w-[18px] h-[18px] shrink-0 text-zinc-555 dark:text-zinc-400"></i>
+                                <i data-lucide="refresh-cw" class="w-[18px] h-[18px] shrink-0 text-zinc-500 dark:text-zinc-400"></i>
                                 <span>Cycles</span>
                             </a>
-                            <a href="{{ route('njangi-submissions.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('njangi-submissions.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="receipt" class="w-[18px] h-[18px] shrink-0 text-zinc-555 dark:text-zinc-400"></i>
+                            <a href="{{ route('njangi-submissions.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('njangi-submissions.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="receipt" class="w-[18px] h-[18px] shrink-0 text-zinc-500 dark:text-zinc-400"></i>
                                 <span>Audit Submissions</span>
                             </a>
-                            <a href="{{ route('njangi-contributions.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('njangi-contributions.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="wallet" class="w-[18px] h-[18px] shrink-0 text-zinc-555 dark:text-zinc-400"></i>
+                            <a href="{{ route('njangi-contributions.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('njangi-contributions.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="wallet" class="w-[18px] h-[18px] shrink-0 text-zinc-500 dark:text-zinc-400"></i>
                                 <span>Ledger</span>
                             </a>
                         </div>
 
+                        {{-- Admin: Financials — Savings and Loans each collapsible (same as desktop) --}}
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Financials</span>
-                            <a href="{{ route('savings.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('savings.index') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="piggy-bank" class="w-[18px] h-[18px] shrink-0 text-zinc-555 dark:text-zinc-400"></i>
-                                <span>Balances</span>
-                            </a>
-                            <a href="{{ route('savings.requests') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('savings.requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="inbox" class="w-[18px] h-[18px] shrink-0 text-zinc-555 dark:text-zinc-400"></i>
-                                <span>Deposit Requests</span>
-                            </a>
-                            <a href="{{ route('savings.transactions') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('savings.transactions') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="history" class="w-[18px] h-[18px] shrink-0 text-zinc-555 dark:text-zinc-400"></i>
-                                <span>Transactions</span>
-                            </a>
+
+                            <div x-data="{ open: {{ Route::is('savings.*') ? 'true' : 'false' }} }" class="flex flex-col">
+                                <button @click="open = !open" class="flex items-center justify-between w-full px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('savings.*') ? 'bg-zinc-100/60 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100' : 'text-zinc-900 dark:text-zinc-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                    <div class="flex items-center gap-3">
+                                        <i data-lucide="piggy-bank" class="w-[18px] h-[18px] shrink-0 text-zinc-500 dark:text-zinc-400"></i>
+                                        <span>Savings</span>
+                                    </div>
+                                    <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-400 transition-transform duration-200" :class="open ? 'rotate-90' : ''"></i>
+                                </button>
+                                <div x-show="open" x-collapse class="mt-0.5 ml-5 flex flex-col gap-0.5 border-l border-zinc-200 dark:border-zinc-800 pl-3">
+                                    <a href="{{ route('savings.index') }}" class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[13px] font-medium {{ Route::is('savings.index') ? 'text-zinc-900 dark:text-zinc-100 font-semibold bg-zinc-100/60 dark:bg-zinc-800/40' : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
+                                        <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0"></i><span>Balances</span>
+                                    </a>
+                                    <a href="{{ route('savings.requests') }}" class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[13px] font-medium {{ Route::is('savings.requests') ? 'text-zinc-900 dark:text-zinc-100 font-semibold bg-zinc-100/60 dark:bg-zinc-800/40' : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
+                                        <i data-lucide="inbox" class="w-4 h-4 shrink-0"></i><span>Deposit Requests</span>
+                                    </a>
+                                    <a href="{{ route('savings.transactions') }}" class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[13px] font-medium {{ Route::is('savings.transactions') ? 'text-zinc-900 dark:text-zinc-100 font-semibold bg-zinc-100/60 dark:bg-zinc-800/40' : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
+                                        <i data-lucide="history" class="w-4 h-4 shrink-0"></i><span>Transactions</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div x-data="{ open: {{ Route::is('loans.*') ? 'true' : 'false' }} }" class="flex flex-col">
+                                <button @click="open = !open" class="flex items-center justify-between w-full px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('loans.*') ? 'bg-zinc-100/60 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100' : 'text-zinc-900 dark:text-zinc-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                    <div class="flex items-center gap-3">
+                                        <i data-lucide="percent" class="w-[18px] h-[18px] shrink-0 text-zinc-500 dark:text-zinc-400"></i>
+                                        <span>Loans</span>
+                                    </div>
+                                    <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-400 transition-transform duration-200" :class="open ? 'rotate-90' : ''"></i>
+                                </button>
+                                <div x-show="open" x-collapse class="mt-0.5 ml-5 flex flex-col gap-0.5 border-l border-zinc-200 dark:border-zinc-800 pl-3">
+                                    <a href="{{ route('loans.index') }}" class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[13px] font-medium {{ Route::is('loans.index') ? 'text-zinc-900 dark:text-zinc-100 font-semibold bg-zinc-100/60 dark:bg-zinc-800/40' : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
+                                        <i data-lucide="landmark" class="w-4 h-4 shrink-0"></i><span>Overview</span>
+                                    </a>
+                                </div>
+                            </div>
                         </div>
 
+                        {{-- Admin: Administration flat --}}
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Administration</span>
-                            <a href="{{ route('settings.edit') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('settings.edit') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="settings" class="w-[18px] h-[18px] shrink-0 text-zinc-550 dark:text-zinc-400"></i>
+                            <a href="{{ route('settings.edit') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('settings.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="settings" class="w-[18px] h-[18px] shrink-0 text-zinc-500 dark:text-zinc-400"></i>
                                 <span>Settings</span>
                             </a>
                         </div>

@@ -3,7 +3,7 @@
 @section('content')
 <div class="flex flex-col gap-6">
     <!-- Stats Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 select-none">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         
         <!-- Net Savings Balance -->
         <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 hover:shadow-md transition-all duration-200 flex items-center justify-between">
@@ -24,11 +24,11 @@
                 <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Loan Status</span>
                 <div class="text-base font-display font-bold text-zinc-800 dark:text-white mt-1">
                     @if($member->savings_balance >= ($appSettings->min_savings_for_loan ?? 500))
-                        <span class="text-emerald-600 dark:text-emerald-400 font-bold uppercase inline-flex items-center gap-1 select-none">
+                        <span class="text-emerald-600 dark:text-emerald-400 font-bold uppercase inline-flex items-center gap-1">
                             <i data-lucide="check-circle-2" class="w-4 h-4"></i> Loan Eligible
                         </span>
                     @else
-                        <span class="text-amber-600 dark:text-amber-500 font-bold uppercase inline-flex items-center gap-1 select-none">
+                        <span class="text-amber-600 dark:text-amber-500 font-bold uppercase inline-flex items-center gap-1">
                             <i data-lucide="alert-circle" class="w-4 h-4"></i> Under Limit (${{ number_format($appSettings->min_savings_for_loan ?? 500, 0) }})
                         </span>
                     @endif

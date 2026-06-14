@@ -31,6 +31,20 @@ Route::middleware(['auth'])->group(function () {
         ->name('member.savings.requests');
     Route::post('/member/savings/request', [\App\Http\Controllers\SavingsController::class, 'requestDeposit'])
         ->name('member.savings.request');
+
+    // Member Loan Routes
+    Route::get('/member/loans', [\App\Http\Controllers\LoanController::class, 'myLoans'])
+        ->name('member.loans');
+    Route::get('/member/loans/applications', [\App\Http\Controllers\LoanController::class, 'myApplications'])
+        ->name('member.loans.applications');
+    Route::post('/member/loans/request', [\App\Http\Controllers\LoanController::class, 'requestLoan'])
+        ->name('member.loans.request');
+    Route::post('/member/loans/guarantee/{guarantor}/approve', [\App\Http\Controllers\LoanController::class, 'approveGuarantee'])
+        ->name('member.loans.guarantee.approve');
+    Route::post('/member/loans/guarantee/{guarantor}/decline', [\App\Http\Controllers\LoanController::class, 'declineGuarantee'])
+        ->name('member.loans.guarantee.decline');
+    Route::get('/member/loans/statement', [\App\Http\Controllers\LoanController::class, 'myStatement'])
+        ->name('member.loans.statement');
 });
 
 Route::middleware('auth')->group(function () {
@@ -95,6 +109,27 @@ Route::middleware(['auth', 'admin'])->group(function () {
         ->name('settings.edit');
     Route::post('/settings', [\App\Http\Controllers\SettingsController::class, 'update'])
         ->name('settings.update');
+
+    // Admin Loan & Repayment Routes
+    Route::get('/loans', [\App\Http\Controllers\LoanController::class, 'index'])
+        ->name('loans.index');
+    Route::get('/loans/member/{member}/statement', [\App\Http\Controllers\LoanController::class, 'memberStatement'])
+        ->name('loans.statement');
+    Route::post('/loans/{loan}/approve', [\App\Http\Controllers\LoanController::class, 'approve'])
+        ->name('loans.approve');
+    Route::post('/loans/{loan}/disburse', [\App\Http\Controllers\LoanController::class, 'disburse'])
+        ->name('loans.disburse');
+    Route::post('/loans/{loan}/reject', [\App\Http\Controllers\LoanController::class, 'reject'])
+        ->name('loans.reject');
+    Route::post('/loans/{loan}/repay', [\App\Http\Controllers\LoanController::class, 'repay'])
+        ->name('loans.repay');
+
+    // Reports and CSV Exports
+    Route::get('/reports/export/loans', [\App\Http\Controllers\ReportsController::class, 'exportLoansCsv'])
+        ->name('reports.export.loans');
+    Route::get('/reports/export/savings', [\App\Http\Controllers\ReportsController::class, 'exportSavingsCsv'])
+        ->name('reports.export.savings');
+
 });
 
 // Web-Based Visual Setup Wizard (Installer)

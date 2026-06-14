@@ -3,7 +3,7 @@
 
     <!-- Validation Errors Alert Block -->
     @if ($errors->any() || $errors->has('participation'))
-        <div class="p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/60 rounded-xl text-red-800 dark:text-red-400 text-xs font-semibold flex flex-col gap-1.5 mb-2 select-none">
+        <div class="p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/60 rounded-xl text-red-800 dark:text-red-400 text-xs font-semibold flex flex-col gap-1.5 mb-2">
             <div class="flex items-center gap-2">
                 <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 dark:text-red-550 shrink-0"></i>
                 <span class="font-bold">Please correct the following errors:</span>
@@ -21,14 +21,14 @@
 
     <!-- Card 1: Personal Information -->
     <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-5 shadow-none">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white select-none">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
             Personal Information
         </h3>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- First Name -->
             <div class="flex flex-col">
-                <label for="first_name" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">First Name <span class="text-red-500">*</span></label>
+                <label for="first_name" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">First Name <span class="text-red-500">*</span></label>
                 <div class="relative">
                     <input type="text" name="first_name" id="first_name"
                         value="{{ old('first_name', $member->first_name ?? '') }}" 
@@ -41,7 +41,7 @@
 
             <!-- Last Name -->
             <div class="flex flex-col">
-                <label for="last_name" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Last Name <span class="text-red-500">*</span></label>
+                <label for="last_name" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Last Name <span class="text-red-500">*</span></label>
                 <div class="relative">
                     <input type="text" name="last_name" id="last_name"
                         value="{{ old('last_name', $member->last_name ?? '') }}" 
@@ -54,7 +54,7 @@
 
             <!-- Email -->
             <div class="flex flex-col">
-                <label for="email" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Email Address</label>
+                <label for="email" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Email Address</label>
                 <div class="relative">
                     <input type="email" name="email" id="email"
                         value="{{ old('email', $member->email ?? '') }}" 
@@ -66,7 +66,7 @@
 
             <!-- Phone -->
             <div class="flex flex-col">
-                <label for="phone" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Phone Number <span class="text-red-500">*</span></label>
+                <label for="phone" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Phone Number <span class="text-red-500">*</span></label>
                 <div class="relative">
                     <input type="text" name="phone" id="phone"
                         value="{{ old('phone', $member->phone ?? '') }}" 
@@ -81,13 +81,13 @@
 
     <!-- Card 2: Organization Profile -->
     <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-5 shadow-none">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white select-none">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
             Organization Profile
         </h3>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Rank / Traditional Title Dropdown -->
-            <div class="flex flex-col relative select-none" x-data="customSelect({
+            <div class="flex flex-col relative" x-data="customSelect({
                 value: '{{ old('rank_id', $member->rank_id ?? '') }}',
                 defaultLabel: 'Warrior (Default)',
                 options: [
@@ -97,7 +97,7 @@
                     @endforeach
                 ]
             })" @click.outside="close()">
-                <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Traditional Title</label>
+                <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Traditional Title</label>
                 <input type="hidden" name="rank_id" x-ref="hiddenInput" :value="value">
                 
                 <div class="relative">
@@ -149,7 +149,7 @@
             </div>
 
             <!-- Status Dropdown -->
-            <div class="flex flex-col relative select-none" x-data="customSelect({
+            <div class="flex flex-col relative" x-data="customSelect({
                 value: '{{ old('status', $member->status ?? 'active') }}',
                 defaultLabel: 'Active',
                 options: [
@@ -158,7 +158,7 @@
                     { value: 'suspended', label: 'Suspended' }
                 ]
             })" @click.outside="close()">
-                <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Account Status <span class="text-red-500">*</span></label>
+                <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Account Status <span class="text-red-500">*</span></label>
                 <input type="hidden" name="status" x-ref="hiddenInput" :value="value">
                 
                 <div class="relative">
@@ -221,14 +221,14 @@
 
     <!-- Card 3: Location Details -->
     <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-5 shadow-none">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white select-none">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
             Location Details
         </h3>
         
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <!-- Address -->
             <div class="flex flex-col md:col-span-3">
-                <label for="address" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Street Address <span class="text-red-500">*</span></label>
+                <label for="address" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Street Address <span class="text-red-500">*</span></label>
                 <div class="relative">
                     <input type="text" name="address" id="address"
                         value="{{ old('address', $member->address ?? '') }}" 
@@ -240,7 +240,7 @@
             </div>
 
             <!-- State Code Dropdown -->
-            <div class="flex flex-col relative select-none" x-data="customSelect({
+            <div class="flex flex-col relative" x-data="customSelect({
                 value: '{{ old('state_code', $member->state_code ?? '') }}',
                 defaultLabel: 'Select State',
                 options: [
@@ -249,7 +249,7 @@
                     { value: 'DC', label: 'DC (DC)' }
                 ]
             })" @click.outside="close()">
-                <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">State <span class="text-red-500">*</span></label>
+                <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">State <span class="text-red-500">*</span></label>
                 <input type="hidden" name="state_code" x-ref="hiddenInput" :value="value" required>
                 
                 <div class="relative">
@@ -304,14 +304,14 @@
 
     <!-- Card 4: Emergency & Next of Kin Information -->
     <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-5 shadow-none">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white select-none">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
             Emergency & Next of Kin Information
         </h3>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Next of Kin Name -->
             <div class="flex flex-col">
-                <label for="next_of_kin_name" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Next of Kin Name</label>
+                <label for="next_of_kin_name" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Next of Kin Name</label>
                 <div class="relative">
                     <input type="text" name="next_of_kin_name" id="next_of_kin_name"
                         value="{{ old('next_of_kin_name', $member->next_of_kin_name ?? '') }}" 
@@ -323,7 +323,7 @@
 
             <!-- Next of Kin Phone -->
             <div class="flex flex-col">
-                <label for="next_of_kin_phone" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Next of Kin Phone</label>
+                <label for="next_of_kin_phone" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Next of Kin Phone</label>
                 <div class="relative">
                     <input type="text" name="next_of_kin_phone" id="next_of_kin_phone"
                         value="{{ old('next_of_kin_phone', $member->next_of_kin_phone ?? '') }}" 
@@ -335,7 +335,7 @@
 
             <!-- Next of Kin Email -->
             <div class="flex flex-col">
-                <label for="next_of_kin_email" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Next of Kin Email</label>
+                <label for="next_of_kin_email" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Next of Kin Email</label>
                 <div class="relative">
                     <input type="email" name="next_of_kin_email" id="next_of_kin_email"
                         value="{{ old('next_of_kin_email', $member->next_of_kin_email ?? '') }}" 
@@ -347,7 +347,7 @@
 
             <!-- Next of Kin Address -->
             <div class="flex flex-col md:col-span-3">
-                <label for="next_of_kin_address" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Next of Kin Address</label>
+                <label for="next_of_kin_address" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Next of Kin Address</label>
                 <div class="relative">
                     <textarea name="next_of_kin_address" id="next_of_kin_address" rows="2" placeholder="e.g. 1400 Constitution Ave NW, Washington, DC" 
                         class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all resize-none"
@@ -359,7 +359,7 @@
 
     <!-- Card 5: Administrative & Board Roles -->
     <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-5 shadow-none">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white select-none">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
             Administrative & Board Roles
         </h3>
         
@@ -390,7 +390,7 @@
 
     <!-- Card 6: Participation & Active Programs -->
     <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-5 shadow-none">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white select-none">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
             Participation & Active Programs
         </h3>
         
@@ -441,14 +441,14 @@
 
     <!-- Card 7: Account Password -->
     <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-5 shadow-none">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white select-none">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
             Account Password
         </h3>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- Password -->
             <div class="flex flex-col">
-                <label for="password" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">
+                <label for="password" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                     Password {{ isset($member) ? '(Leave blank to keep current)' : '(Optional)' }}
                 </label>
                 <div class="relative">
@@ -461,7 +461,7 @@
 
             <!-- Password Confirmation -->
             <div class="flex flex-col">
-                <label for="password_confirmation" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">
+                <label for="password_confirmation" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                     Confirm Password
                 </label>
                 <div class="relative">

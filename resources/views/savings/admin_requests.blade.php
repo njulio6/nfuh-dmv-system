@@ -50,9 +50,9 @@
         </div>
 
         <!-- Right: Action Buttons Group -->
-        <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto xl:justify-end select-none">
+        <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto xl:justify-end">
             @if($pendingCount > 0)
-                <div class="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-[10px] flex items-center gap-2 select-none">
+                <div class="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-[10px] flex items-center gap-2">
                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                     <span class="text-[11px] font-bold text-amber-700 dark:text-amber-400">{{ $pendingCount }} Pending Approval</span>
                 </div>
@@ -155,7 +155,7 @@
                     <td class="py-2.5 px-3">
                         <div class="flex items-center justify-center">
                             @if($req->status === 'pending')
-                                <div class="flex items-center gap-1.5 select-none">
+                                <div class="flex items-center gap-1.5">
                                     <x-premium-button
                                         type="button"
                                         variant="primary"
@@ -190,13 +190,13 @@
                                     </x-premium-button>
                                 </div>
                             @else
-                                <div class="text-xs select-none">
+                                <div class="text-xs">
                                     @if($req->status === 'approved')
-                                        <span class="text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider inline-flex items-center gap-1 select-none">
+                                        <span class="text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider inline-flex items-center gap-1">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Approved
                                         </span>
                                     @elseif($req->status === 'rejected')
-                                        <span class="text-red-650 dark:text-red-400 font-bold uppercase tracking-wider inline-flex items-center gap-1 select-none" title="Reason: {{ $req->review_note }}">
+                                        <span class="text-red-650 dark:text-red-400 font-bold uppercase tracking-wider inline-flex items-center gap-1" title="Reason: {{ $req->review_note }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> Rejected
                                         </span>
                                     @endif
@@ -208,7 +208,7 @@
             @empty
                 <tr>
                     <td colspan="8" class="text-center text-zinc-400 dark:text-zinc-600 py-16">
-                        <div class="flex flex-col items-center justify-center gap-2.5 select-none">
+                        <div class="flex flex-col items-center justify-center gap-2.5">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-zinc-300 dark:text-zinc-700"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                             <span class="text-xs font-semibold text-zinc-500">No deposit requests found in this queue state.</span>
                         </div>
@@ -219,7 +219,7 @@
     </div>
 
     <!-- ─── Sibling Block 3: Pagination Footer Card ─── -->
-    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-zinc-900/40 p-4 md:p-5 rounded-[10px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-xs select-none">
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-zinc-900/40 p-4 md:p-5 rounded-[10px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-xs">
         <!-- Left: Rows per Page buttons -->
         <div class="flex items-center gap-3">
             <span class="text-[11px] font-black uppercase text-zinc-500 dark:text-zinc-400">
@@ -318,7 +318,7 @@
     <div 
         x-show="showFilterModal" 
         x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 select-none"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
     >
         <!-- Modal Backdrop -->
         <div
@@ -342,7 +342,7 @@
             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
             x-transition:leave-end="opacity-0 scale-95 translate-y-4"
         >
-            <h3 class="text-base font-bold text-zinc-900 dark:text-white mb-5 select-none">
+            <h3 class="text-base font-bold text-zinc-900 dark:text-white mb-5">
                     <!-- Member JSON Data Store (avoids double quotes in HTML attributes) -->
             <script id="members-data" type="application/json">
                 {!! json_encode($allMembers->map(fn($m) => ['id' => $m->id, 'name' => $m->first_name . ' ' . $m->last_name, 'code' => $m->member_code])) !!}
@@ -389,7 +389,7 @@
             >
                 <!-- Status filter -->
                 <div class="relative animate-fadeIn" x-data="{ open: false }" @click.outside="open = false">
-                    <label class="block text-xs font-black uppercase text-zinc-500 dark:text-zinc-400 mb-2 select-none">
+                    <label class="block text-xs font-black uppercase text-zinc-500 dark:text-zinc-400 mb-2">
                         Status Queue
                     </label>
                     <div class="relative w-full">
@@ -449,7 +449,7 @@
 
                 <!-- Member Filter (Searchable Dropdown) -->
                 <div class="relative">
-                    <label class="block text-xs font-black uppercase text-zinc-500 dark:text-zinc-400 mb-2 select-none">
+                    <label class="block text-xs font-black uppercase text-zinc-500 dark:text-zinc-400 mb-2">
                         Filter by Member
                     </label>
                     <div class="relative w-full">
@@ -512,7 +512,7 @@
                                         <span class="font-mono text-xs text-zinc-450 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-950 px-2 py-0.5 rounded" x-text="m.code"></span>
                                     </button>
                                 </template>
-                                <div x-show="filteredMembers.length === 0" class="px-3 py-2 text-center text-xs text-zinc-400 dark:text-zinc-600 font-semibold select-none">
+                                <div x-show="filteredMembers.length === 0" class="px-3 py-2 text-center text-xs text-zinc-400 dark:text-zinc-600 font-semibold">
                                     No members found
                                 </div>
                             </div>
@@ -560,7 +560,7 @@
             x-transition:leave-end="opacity-0 scale-95"
             class="bg-white dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-2xl relative z-50 overflow-hidden flex flex-col"
         >
-            <div class="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between select-none">
+            <div class="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between">
                 <h3 class="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Proof of Payment Receipt</h3>
                 <button @click="showReceiptModal = false" class="text-zinc-400 hover:text-zinc-650 dark:hover:text-white transition-colors cursor-pointer select-none">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -592,7 +592,7 @@
             x-transition:leave-end="opacity-0 scale-95"
             class="bg-white dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-lg relative z-50 animate-fadeIn"
         >
-            <div class="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between select-none">
+            <div class="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between">
                 <h3 class="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Approve Deposit Request</h3>
                 <button @click="showApproveModal = false" class="text-zinc-400 hover:text-zinc-650 dark:hover:text-white transition-colors cursor-pointer select-none">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -632,7 +632,7 @@
                 />
 
                 <!-- Footer Actions -->
-                <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 mt-2 w-full select-none">
+                <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 mt-2 w-full">
                     <x-premium-button type="button" variant="secondary" @click="showApproveModal = false" class="py-2.5 w-full sm:w-1/2">
                         Cancel
                     </x-premium-button>
@@ -664,7 +664,7 @@
             x-transition:leave-end="opacity-0 scale-95"
             class="bg-white dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-lg relative z-50 animate-fadeIn"
         >
-            <div class="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between select-none">
+            <div class="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between">
                 <h3 class="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Reject Deposit Request</h3>
                 <button @click="showRejectModal = false" class="text-zinc-400 hover:text-zinc-650 dark:hover:text-white transition-colors cursor-pointer select-none">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -682,7 +682,7 @@
 
                 <!-- Rejection Reason (Required) -->
                 <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                         Rejection Reason <span class="text-red-500">*</span>
                     </label>
                     <textarea 
@@ -696,7 +696,7 @@
                 </div>
 
                 <!-- Footer Actions -->
-                <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 mt-2 w-full select-none">
+                <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 mt-2 w-full">
                     <x-premium-button type="button" variant="secondary" @click="showRejectModal = false" class="py-2.5 w-full sm:w-1/2">
                         Cancel
                     </x-premium-button>

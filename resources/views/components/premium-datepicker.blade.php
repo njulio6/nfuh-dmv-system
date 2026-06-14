@@ -4,13 +4,13 @@
     'value' => '',
     'required' => false
 ])
-<div class="flex flex-col relative select-none w-full" x-data="datepicker({
+<div class="flex flex-col relative w-full" x-data="datepicker({
     name: '{{ $name }}',
     value: '{{ $value }}',
     required: {{ $required ? 'true' : 'false' }}
 })" @click.outside="open = false; monthOpen = false; yearOpen = false">
     @if($label)
-        <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">
+        <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
             {{ $label }}
             @if($required) <span class="text-red-500">*</span> @endif
         </label>
@@ -50,7 +50,7 @@
             
             <div class="flex items-center gap-1.5 font-bold text-xs">
                 <!-- Custom Month Dropdown -->
-                <div class="relative select-none">
+                <div class="relative">
                     <button type="button" @click.stop="monthOpen = !monthOpen; yearOpen = false" class="flex items-center gap-1 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 px-2 py-1 rounded-lg transition-colors cursor-pointer text-xs font-bold text-zinc-800 dark:text-white">
                         <span x-text="months[month]"></span>
                         <i data-lucide="chevron-down" class="w-3 h-3 text-zinc-450 dark:text-zinc-550 transition-transform" :class="monthOpen ? 'rotate-180 text-zinc-900 dark:text-white' : ''"></i>
@@ -75,10 +75,10 @@
                     </div>
                 </div>
                 
-                <span class="text-zinc-300 dark:text-zinc-600 font-bold select-none">/</span>
+                <span class="text-zinc-300 dark:text-zinc-600 font-bold">/</span>
                 
                 <!-- Custom Year Dropdown -->
-                <div class="relative select-none">
+                <div class="relative">
                     <button type="button" @click.stop="yearOpen = !yearOpen; monthOpen = false" class="flex items-center gap-1 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 px-2 py-1 rounded-lg transition-colors cursor-pointer text-xs font-bold text-zinc-800 dark:text-white">
                         <span x-text="year"></span>
                         <i data-lucide="chevron-down" class="w-3 h-3 text-zinc-450 dark:text-zinc-550 transition-transform" :class="yearOpen ? 'rotate-180 text-zinc-900 dark:text-white' : ''"></i>
@@ -110,7 +110,7 @@
         </div>
 
         <!-- Weekdays -->
-        <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 py-1 select-none">
+        <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 py-1">
             <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
         </div>
 

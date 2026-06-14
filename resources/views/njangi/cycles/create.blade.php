@@ -14,7 +14,7 @@
 
         <!-- Validation Errors Alert Block -->
         @if ($errors->any())
-            <div class="p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/60 rounded-xl text-red-800 dark:text-red-400 text-xs font-semibold flex flex-col gap-1.5 mb-2 select-none">
+            <div class="p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/60 rounded-xl text-red-800 dark:text-red-400 text-xs font-semibold flex flex-col gap-1.5 mb-2">
                 <div class="flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-red-650 dark:text-red-500 shrink-0"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     <span class="font-bold">Please correct the following errors:</span>
@@ -32,7 +32,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 
                 <!-- Organization Dropdown -->
-                <div class="flex flex-col relative select-none md:col-span-2" x-data="customSelect({
+                <div class="flex flex-col relative md:col-span-2" x-data="customSelect({
                     value: '{{ old('organization_id') }}',
                     defaultLabel: 'Select organization',
                     options: [
@@ -42,7 +42,7 @@
                         @endforeach
                     ]
                 })" @click.outside="close()">
-                    <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Organization <span class="text-red-500">*</span></label>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Organization <span class="text-red-500">*</span></label>
                     <input type="hidden" name="organization_id" x-ref="hiddenInput" :value="value">
                     
                     <div class="relative">
@@ -127,7 +127,7 @@
                 />
 
                 <!-- Status Dropdown -->
-                <div class="flex flex-col relative select-none md:col-span-2" x-data="customSelect({
+                <div class="flex flex-col relative md:col-span-2" x-data="customSelect({
                     value: '{{ old('status', 'draft') }}',
                     defaultLabel: 'Draft',
                     options: [
@@ -137,7 +137,7 @@
                         { value: 'cancelled', label: 'Cancelled' }
                     ]
                 })" @click.outside="close()">
-                    <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Status <span class="text-red-500">*</span></label>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Status <span class="text-red-500">*</span></label>
                     <input type="hidden" name="status" x-ref="hiddenInput" :value="value">
                     
                     <div class="relative">

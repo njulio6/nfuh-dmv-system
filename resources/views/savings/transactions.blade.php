@@ -130,7 +130,7 @@
     </div>
 
     <!-- ─── Sibling Block 3: Pagination Footer Card ─── -->
-    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-zinc-900/40 p-4 md:p-5 rounded-[10px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-xs select-none">
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-zinc-900/40 p-4 md:p-5 rounded-[10px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-xs">
         <!-- Left: Rows per Page buttons -->
         <div class="flex items-center gap-3">
             <span class="text-[11px] font-black uppercase text-zinc-500 dark:text-zinc-400">
@@ -229,7 +229,7 @@
     <div 
         x-show="showFilterModal" 
         x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 select-none"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
     >
         <!-- Modal Backdrop -->
         <div
@@ -253,7 +253,7 @@
             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
             x-transition:leave-end="opacity-0 scale-95 translate-y-4"
         >
-            <h3 class="text-base font-bold text-zinc-900 dark:text-white mb-5 select-none">
+            <h3 class="text-base font-bold text-zinc-900 dark:text-white mb-5">
                 Filter Transactions
             </h3>
 
@@ -303,7 +303,7 @@
             >
                 <!-- Member Filter (Searchable Dropdown) -->
                 <div class="relative">
-                    <label class="block text-xs font-black uppercase text-zinc-500 dark:text-zinc-400 mb-2 select-none">
+                    <label class="block text-xs font-black uppercase text-zinc-500 dark:text-zinc-400 mb-2">
                         Filter by Member
                     </label>
                     <div class="relative w-full">
@@ -366,7 +366,7 @@
                                         <span class="font-mono text-xs text-zinc-450 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-950 px-2 py-0.5 rounded" x-text="m.code"></span>
                                     </button>
                                 </template>
-                                <div x-show="filteredMembers.length === 0" class="px-3 py-2 text-center text-xs text-zinc-400 dark:text-zinc-650 font-semibold select-none">
+                                <div x-show="filteredMembers.length === 0" class="px-3 py-2 text-center text-xs text-zinc-400 dark:text-zinc-650 font-semibold">
                                     No members found
                                 </div>
                             </div>
@@ -375,7 +375,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-black uppercase text-zinc-500 dark:text-zinc-400 mb-2 select-none">
+                    <label class="block text-xs font-black uppercase text-zinc-500 dark:text-zinc-400 mb-2">
                         Transaction Type
                     </label>
                     <div class="relative flex items-center">
