@@ -128,7 +128,11 @@
             <div>
                 <h4 class="text-xs font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wider">Not Enrolled in Njangi</h4>
                 <p class="text-[11px] text-amber-700 dark:text-amber-400 mt-1 font-semibold">
-                    You are not currently enrolled in an active Njangi rotational cycle. Please contact the Financial Secretary or Treasurer to register your participation.
+                    @if($member->participates_in_njangi)
+                        You are registered for Njangi participation but have not yet been assigned to an active Njangi cycle. Please contact the Financial Secretary or Treasurer.
+                    @else
+                        You are not currently enrolled in an active Njangi rotational cycle. Please contact the Financial Secretary or Treasurer to register your participation.
+                    @endif
                 </p>
             </div>
         </div>

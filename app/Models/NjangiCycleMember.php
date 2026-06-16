@@ -14,6 +14,7 @@ class NjangiCycleMember extends Model
         'benefit_order',
         'subscription_amount',
         'is_active',
+        'status',
         'notes',
     ];
 
