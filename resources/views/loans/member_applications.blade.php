@@ -11,6 +11,11 @@
         activeGuarantors: [],
         activeAdminNote: '',
         showRequestModal: false,
+        showRepayModal: false,
+        repayLoanId: '',
+        repayLoanRemaining: 0,
+        repayFileName: '',
+        repayPreviewUrl: '',
         guarantors: {{ Js::from(array_fill(0, $minGuarantors, '')) }},
         minGuarantors: {{ $minGuarantors }},
         maxGuarantors: {{ $maxGuarantors }},
@@ -154,7 +159,7 @@
                     <!-- Statement Link -->
                     <td class="py-3 px-3">
                         <a
-                            href="{{ route('member.loans.statement') }}"
+                            href="{{ route('member.loans.statement', $loan->id) }}"
                             target="_blank"
                             class="inline-flex items-center gap-1 text-[11px] font-bold text-zinc-650 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white hover:underline transition-colors"
                         >
@@ -243,6 +248,23 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                                 Details
                             </button>
+
+                            @if(in_array($loan->status, ['active', 'defaulted']))
+                                <button 
+                                    type="button"
+                                    @click="
+                                        repayLoanId = '{{ $loan->id }}';
+                                        repayLoanRemaining = {{ $loan->remaining_balance }};
+                                        repayFileName = '';
+                                        repayPreviewUrl = '';
+                                        showRepayModal = true;
+                                    "
+                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 border border-zinc-950 dark:border-zinc-50 text-white dark:text-zinc-950 text-[11px] font-bold rounded-[8px] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-3xs select-none"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><rect x="14" y="10" width="8" height="4" rx="2"/></svg>
+                                    Repay
+                                </button>
+                            @endif
                         </div>
                     </td>
 
@@ -548,7 +570,7 @@
             x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
-            class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-md relative z-50 p-6 flex flex-col gap-4"
+            class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-md relative z-50 p-6 flex flex-col gap-4 max-h-[90vh] overflow-y-auto"
         >
             <div class="flex justify-between items-center pb-4 border-b border-zinc-100 dark:border-zinc-800 mb-1">
                 <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider">Apply for a Loan</h3>
@@ -741,6 +763,188 @@
                     <button type="submit" class="flex-grow py-2.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-xs active:scale-95 text-center select-none">
                         Submit Request
                     </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SUBMIT LOAN REPAYMENT REQUEST MODAL -->
+    <div 
+        x-show="showRepayModal" 
+        x-cloak 
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+        style="display: none;"
+    >
+        <!-- Overlay Backing -->
+        <div @click="showRepayModal = false" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
+
+        <!-- Modal Content Container -->
+        <div 
+            x-show="showRepayModal"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95"
+            class="bg-white dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-md relative z-50 animate-fadeIn max-h-[90vh] overflow-y-auto"
+        >
+            <div class="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Submit Loan Repayment</h3>
+                <button @click="showRepayModal = false" class="text-zinc-400 hover:text-zinc-650 dark:hover:text-white transition-colors cursor-pointer select-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <form :action="'{{ url('/member/loans') }}/' + repayLoanId + '/repay-request'" method="POST" enctype="multipart/form-data" class="p-6 flex flex-col gap-4">
+                @csrf
+
+                <div class="bg-zinc-50 dark:bg-zinc-900 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs">
+                    <div class="flex justify-between mb-1">
+                        <span class="text-zinc-400">Loan ID:</span>
+                        <span class="font-bold text-zinc-800 dark:text-zinc-200" x-text="`#${repayLoanId}`"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-zinc-400">Outstanding Balance:</span>
+                        <span class="font-bold text-zinc-950 dark:text-white" x-text="'$' + repayLoanRemaining.toFixed(2)"></span>
+                    </div>
+                </div>
+
+                <!-- Repayment Amount -->
+                <x-premium-input 
+                    label="Repayment Amount ($)" 
+                    name="amount" 
+                    type="number" 
+                    step="0.01" 
+                    min="0.01" 
+                    ::max="repayLoanRemaining"
+                    required 
+                    placeholder="e.g. 200.00" 
+                />
+
+                <!-- Payment Date -->
+                <x-premium-datepicker 
+                    label="Payment Date" 
+                    name="payment_date" 
+                    required 
+                    value="{{ now()->toDateString() }}" 
+                />
+
+                <!-- Payment Method -->
+                <div 
+                    x-data="{ 
+                        isOpen: false, 
+                        selectedMethod: 'zelle', 
+                        methods: [
+                            { value: 'zelle', label: 'Zelle Transfer' },
+                            { value: 'cash', label: 'Cash Payment' },
+                            { value: 'check', label: 'Check' },
+                            { value: 'other', label: 'Other' }
+                        ],
+                        get label() {
+                            return this.methods.find(m => m.value === this.selectedMethod)?.label || '';
+                        }
+                    }"
+                    class="flex flex-col w-full relative"
+                    @click.outside="isOpen = false"
+                >
+                    <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+                        Payment Method <span class="text-red-500">*</span>
+                    </label>
+                    <input type="hidden" name="payment_method" :value="selectedMethod" required />
+
+                    <div class="relative w-full">
+                        <button 
+                            type="button" 
+                            @click="isOpen = !isOpen"
+                            class="w-full flex items-center justify-between bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 text-zinc-800 dark:text-white px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all cursor-pointer text-left select-none"
+                            :class="isOpen ? 'border-zinc-950 dark:border-zinc-50 bg-white dark:bg-zinc-900' : ''"
+                        >
+                            <span x-text="label" class="truncate"></span>
+                            <svg class="h-4 w-4 text-zinc-400 dark:text-zinc-500 transition-transform duration-200" :class="isOpen ? 'rotate-180' : ''" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+
+                        <div 
+                            x-show="isOpen"
+                            x-transition:enter="transition ease-out duration-100"
+                            x-transition:enter-start="opacity-0 scale-95"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-75"
+                            x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            class="absolute z-50 mt-1.5 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl p-1.5 flex flex-col gap-0.5"
+                            style="display: none;"
+                        >
+                            <template x-for="item in methods" :key="item.value">
+                                <button
+                                    type="button"
+                                    @click="selectedMethod = item.value; isOpen = false"
+                                    class="w-full text-left px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors flex items-center justify-between cursor-pointer"
+                                    :class="selectedMethod === item.value ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-white font-bold' : 'text-zinc-650 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-900 dark:hover:text-zinc-200'"
+                                >
+                                    <span x-text="item.label"></span>
+                                    <span x-show="selectedMethod === item.value" class="text-zinc-950 dark:text-white font-bold">✓</span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reference Number -->
+                <x-premium-input 
+                    label="Reference Number / Payment ID" 
+                    name="reference_number" 
+                    type="text" 
+                    placeholder="e.g. Zelle transaction ID" 
+                />
+
+                <!-- Screenshot Proof -->
+                <div>
+                    <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 block">
+                        Proof of Payment Receipt <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative border border-dashed border-zinc-350 dark:border-zinc-800 rounded-xl p-4 bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer group">
+                        <input 
+                            type="file" 
+                            name="screenshot" 
+                            id="repay_screenshot" 
+                            required 
+                            accept="image/*"
+                            class="absolute inset-0 opacity-0 cursor-pointer"
+                            @change="const file = $event.target.files[0]; if (file) { repayFileName = file.name; repayPreviewUrl = URL.createObjectURL(file); }"
+                        />
+                        <div class="p-3 bg-zinc-100 dark:bg-zinc-900 rounded-2xl border border-zinc-200/50 dark:border-zinc-800 group-hover:scale-110 transition-transform">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-zinc-555 dark:text-zinc-450"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                        </div>
+                        <div class="text-xs font-bold text-zinc-800 dark:text-zinc-200 text-center" x-text="repayFileName || 'Upload Screenshot / Receipt'"></div>
+                        <div class="text-[10px] text-zinc-400 dark:text-zinc-500 text-center">PNG, JPG, JPEG up to 2MB</div>
+                        <template x-if="repayPreviewUrl">
+                            <div class="mt-2 w-full max-h-32 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex items-center justify-center p-1 relative z-10">
+                                <img :src="repayPreviewUrl" class="max-h-28 object-contain rounded" />
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <x-premium-textarea 
+                    label="Reference Notes / Description" 
+                    name="notes" 
+                    id="repay_notes" 
+                    rows="2" 
+                    placeholder="Provide details about the transfer..."
+                />
+
+                <!-- Footer Actions -->
+                <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 mt-2 w-full">
+                    <x-premium-button type="button" variant="secondary" @click="showRepayModal = false" class="py-2.5 w-full sm:w-1/2">
+                        Cancel
+                    </x-premium-button>
+                    <x-premium-button type="submit" variant="primary" class="py-2.5 w-full sm:w-1/2">
+                        Submit Repayment
+                    </x-premium-button>
                 </div>
             </form>
         </div>

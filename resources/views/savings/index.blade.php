@@ -10,6 +10,65 @@
     }"
     class="w-full"
 >
+    <!-- Macro KPIs Row -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Total Savings Pool -->
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex items-center gap-5">
+            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-900 dark:text-zinc-50 border border-zinc-100 dark:border-zinc-850">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            </div>
+            <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Savings Pool</span>
+                <span class="text-2xl font-black text-zinc-955 dark:text-white leading-none tracking-tight">
+                    ${{ number_format($totalSavingsPool, 2) }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Active Depositors -->
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex items-center gap-5">
+            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-900 dark:text-zinc-50 border border-zinc-100 dark:border-zinc-850">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Active Depositors</span>
+                <span class="text-2xl font-black text-zinc-955 dark:text-white leading-none tracking-tight">
+                    {{ $activeDepositorsCount }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Total Withdrawals -->
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex items-center gap-5">
+            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-900 dark:text-zinc-50 border border-zinc-100 dark:border-zinc-850">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            </div>
+            <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Withdrawals</span>
+                <span class="text-2xl font-black text-zinc-955 dark:text-white leading-none tracking-tight">
+                    ${{ number_format($totalWithdrawals, 2) }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Pending Deposit Requests -->
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex items-center gap-5">
+            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-900 dark:text-zinc-50 border border-zinc-100 dark:border-zinc-850">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+            </div>
+            <div>
+                <div class="flex items-center gap-1.5 mb-1">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Pending Requests</span>
+                    @if($pendingRequestsCount > 0)
+                        <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    @endif
+                </div>
+                <span class="text-2xl font-black text-zinc-955 dark:text-white leading-none tracking-tight">
+                    {{ $pendingRequestsCount }}
+                </span>
+            </div>
+        </div>
+    </div>
     <!-- Main Form container tracking filters, search, page & size -->
     <form id="savings-filter-form" method="GET" action="{{ route('savings.index') }}" x-ref="form" class="hidden">
         <input type="hidden" name="search" value="{{ request('search') }}" x-ref="searchInput">

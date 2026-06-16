@@ -8,41 +8,27 @@ use App\Models\LoanGuarantor;
 use App\Models\LoanRepayment;
 use App\Models\Setting;
 use App\Models\LoanSubStatus;
+use App\Models\LoanRepaymentRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class LoanController extends Controller
 {
     /**
-     * Admin Dashboard for Loans
+     * Admin Dashboard for Loans (Option B - Card Grid)
      */
-    public function index(Request $request)
+    public function index()
     {
-        $query = LoanRequest::with(['member', 'guarantors.guarantorMember', 'repayments', 'subStatus']);
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('member', function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('member_code', 'like', "%{$search}%");
-            });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('sub_status_id')) {
-            $query->where('sub_status_id', $request->sub_status_id);
-        }
-
-        $perPage = (int) $request->input('per_page', 10);
-        if (!in_array($perPage, [5, 10, 20, 30, 50])) {
-            $perPage = 10;
-        }
-
-        $loans = $query->orderBy('created_at', 'desc')->paginate($perPage);
+        // Counts for all loan request statuses
+        $counts = [
+            'pending_guarantors' => LoanRequest::where('status', 'pending_guarantors')->count(),
+            'pending_committee'  => LoanRequest::where('status', 'pending_committee')->count(),
+            'active'             => LoanRequest::where('status', 'active')->count(),
+            'defaulted'          => LoanRequest::where('status', 'defaulted')->count(),
+            'completed'          => LoanRequest::where('status', 'completed')->count(),
+            'rejected'           => LoanRequest::where('status', 'rejected')->count(),
+            'repayments'         => LoanRepayment::count(),
+        ];
 
         // Metrics
         $totalActiveAmount = LoanRequest::whereIn('status', ['active', 'defaulted'])->sum('amount');
@@ -53,15 +39,88 @@ class LoanController extends Controller
             $totalRemainingBalance += $al->remaining_balance;
         }
 
-        $pendingReviewsCount = LoanRequest::where('status', 'pending_committee')->count();
+        $totalRepaymentsCollected = LoanRepayment::sum('amount');
 
-        // Get members for dropdown filters / manual logging
+        $totalDefaultedBalance = 0;
+        $defaultedLoans = LoanRequest::where('status', 'defaulted')->with('repayments')->get();
+        foreach ($defaultedLoans as $dl) {
+            $totalDefaultedBalance += $dl->remaining_balance;
+        }
+
+        return view('loans.index', compact(
+            'counts', 
+            'totalActiveAmount', 
+            'totalRemainingBalance',
+            'totalRepaymentsCollected',
+            'totalDefaultedBalance'
+        ));
+    }
+
+    /**
+     * Display a specific status queue list of loan requests.
+     */
+    public function statusList(Request $request, $status)
+    {
+        $validStatuses = ['pending_guarantors', 'pending_committee', 'approved', 'active', 'completed', 'rejected', 'defaulted'];
+        if (!in_array($status, $validStatuses)) {
+            abort(404, 'Status queue not found.');
+        }
+
+        $query = LoanRequest::where('status', $status)
+            ->with(['member', 'guarantors.guarantorMember', 'repayments', 'subStatus']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('member', function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('member_code', 'like', "%{$search}%");
+            });
+        }
+
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [5, 10, 20, 30, 50])) {
+            $perPage = 10;
+        }
+
+        $loans = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+        // Fetch all custom sub-statuses for layout rendering / assigning tags
+        $subStatuses = LoanSubStatus::orderBy('name')->get();
+        
+        // Needed for Log Repay modal dropdowns
         $allMembers = Member::orderBy('first_name')->get();
 
-        // Fetch all custom sub-statuses for layout rendering
-        $subStatuses = LoanSubStatus::orderBy('name')->get();
+        return view('loans.status_list', compact('loans', 'status', 'subStatuses', 'allMembers'));
+    }
 
-        return view('loans.index', compact('loans', 'totalActiveAmount', 'totalRemainingBalance', 'pendingReviewsCount', 'allMembers', 'subStatuses'));
+    /**
+     * Display a table of verified repayment transactions.
+     */
+    public function repaymentsLog(Request $request)
+    {
+        $query = LoanRepayment::with(['loanRequest.member']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('loanRequest.member', function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('member_code', 'like', "%{$search}%");
+            })->orWhere('notes', 'like', "%{$search}%")
+              ->orWhere('reference_number', 'like', "%{$search}%");
+        }
+
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [5, 10, 20, 30, 50])) {
+            $perPage = 10;
+        }
+
+        $repayments = $query->orderBy('payment_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate($perPage);
+
+        return view('loans.repayments_log', compact('repayments'));
     }
 
     /**
@@ -381,14 +440,12 @@ class LoanController extends Controller
     /**
      * Printable member statement for loans
      */
-    public function memberStatement(Member $member)
+    public function memberStatement(LoanRequest $loan)
     {
+        $member = $loan->member;
         $member->load(['rank', 'organization']);
 
-        $loans = $member->loanRequests()
-            ->with(['repayments', 'guarantors.guarantorMember'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $loans = [$loan->load(['repayments', 'guarantors.guarantorMember'])];
 
         return view('loans.statement', compact('member', 'loans'));
     }
@@ -396,7 +453,7 @@ class LoanController extends Controller
     /**
      * Member views their own loan statement (member portal)
      */
-    public function myStatement()
+    public function myStatement(LoanRequest $loan)
     {
         $user = Auth::user();
         if (!$user) {
@@ -408,12 +465,14 @@ class LoanController extends Controller
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
 
+        // Security check: ensure the logged-in member owns this loan
+        if ($loan->member_id !== $member->id) {
+            abort(403, 'Unauthorized action. You do not own this loan.');
+        }
+
         $member->load(['rank', 'organization']);
 
-        $loans = $member->loanRequests()
-            ->with(['repayments', 'guarantors.guarantorMember'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $loans = [$loan->load(['repayments', 'guarantors.guarantorMember'])];
 
         return view('loans.statement', compact('member', 'loans'));
     }
@@ -531,6 +590,218 @@ class LoanController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Loan status restored to Active.');
+    }
+
+    /**
+     * Submit a loan repayment request (member only).
+     */
+    public function requestRepayment(Request $request, LoanRequest $loan)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $member = Member::where('email', $user->email)->first();
+        if (!$member) {
+            abort(403, 'Unauthorized action. User profile is not linked to a member record.');
+        }
+
+        // Verify the loan belongs to the member and is active/defaulted
+        if ($loan->member_id !== $member->id) {
+            abort(403, 'Unauthorized action. You do not own this loan.');
+        }
+
+        if (!in_array($loan->status, ['active', 'defaulted'])) {
+            return redirect()->back()->with('error', 'Can only submit repayments on active or defaulted loans.');
+        }
+
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'payment_date' => ['required', 'date'],
+            'payment_method' => ['required', 'string', 'max:50'],
+            'screenshot' => ['required', 'image', 'max:2048'],
+            'reference_number' => ['nullable', 'string', 'max:100'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $remaining = $loan->remaining_balance;
+        if ($validated['amount'] > $remaining + 0.01) {
+            return redirect()->back()->with('error', 'Repayment amount exceeds the outstanding loan balance.');
+        }
+
+        $path = $request->file('screenshot')->store('repayment_proofs', 'public');
+
+        LoanRepaymentRequest::create([
+            'loan_request_id' => $loan->id,
+            'member_id' => $member->id,
+            'organization_id' => $member->organization_id,
+            'amount' => $validated['amount'],
+            'status' => 'pending',
+            'screenshot_path' => $path,
+            'payment_date' => $validated['payment_date'],
+            'payment_method' => $validated['payment_method'],
+            'reference_number' => $validated['reference_number'],
+            'notes' => $validated['notes'],
+            'submitted_at' => now(),
+        ]);
+
+        return redirect()
+            ->route('member.loans.repayment-requests')
+            ->with('success', 'Repayment request submitted successfully and is pending review.');
+    }
+
+    /**
+     * Display member's own loan repayment requests.
+     */
+    public function myRepaymentRequests(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $member = Member::where('email', $user->email)->first();
+        if (!$member) {
+            abort(403, 'Unauthorized action. User profile is not linked to a member record.');
+        }
+
+        $query = LoanRepaymentRequest::where('member_id', $member->id)->with('loanRequest');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('notes', 'like', "%{$search}%")
+                  ->orWhere('amount', 'like', "%{$search}%")
+                  ->orWhere('reference_number', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [5, 10, 20, 30, 50])) {
+            $perPage = 10;
+        }
+
+        $requests = $query->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate($perPage);
+
+        return view('loans.member_repayment_requests', compact('member', 'requests'));
+    }
+
+    /**
+     * Display all loan repayment requests for admin approval/rejection.
+     */
+    public function adminRepaymentRequests(Request $request)
+    {
+        $query = LoanRepaymentRequest::with(['member', 'loanRequest']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('member', function ($mq) use ($search) {
+                    $mq->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('member_code', 'like', "%{$search}%");
+                })->orWhere('notes', 'like', "%{$search}%")
+                  ->orWhere('amount', 'like', "%{$search}%")
+                  ->orWhere('reference_number', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('member_id')) {
+            $query->where('member_id', $request->member_id);
+        }
+
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [5, 10, 20, 30, 50])) {
+            $perPage = 10;
+        }
+
+        $requests = $query->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
+            ->orderBy('submitted_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate($perPage);
+
+        $pendingCount = LoanRepaymentRequest::where('status', 'pending')->count();
+        $allMembers = Member::orderBy('first_name')->orderBy('last_name')->get();
+
+        return view('loans.repayment_requests', compact('requests', 'pendingCount', 'allMembers'));
+    }
+
+    /**
+     * Approve a pending loan repayment request (admin only).
+     */
+    public function approveRepayment(Request $request, LoanRepaymentRequest $repaymentRequest)
+    {
+        if ($repaymentRequest->status !== 'pending') {
+            return redirect()->back()->with('error', 'This request is not pending.');
+        }
+
+        $loan = $repaymentRequest->loanRequest;
+        $remaining = $loan->remaining_balance;
+        if ($repaymentRequest->amount > $remaining + 0.01) {
+            return redirect()->back()->with('error', 'Approved amount exceeds the outstanding loan balance.');
+        }
+
+        $repaymentRequest->update([
+            'status' => 'approved',
+            'reviewed_by' => Auth::id(),
+            'reviewed_at' => now(),
+            'review_note' => $request->input('review_note'),
+        ]);
+
+        // Create actual financial ledger entry on approval
+        LoanRepayment::create([
+            'loan_request_id' => $repaymentRequest->loan_request_id,
+            'amount' => $repaymentRequest->amount,
+            'payment_date' => $repaymentRequest->payment_date,
+            'payment_method' => $repaymentRequest->payment_method,
+            'reference_number' => $repaymentRequest->reference_number,
+            'notes' => 'Approved request. ' . $repaymentRequest->notes,
+        ]);
+
+        // If loan fully paid off, mark as completed
+        if ($loan->fresh()->remaining_balance <= 0.01) {
+            $loan->update(['status' => 'completed']);
+        }
+
+        return redirect()
+            ->route('loans.repayment-requests')
+            ->with('success', 'Loan repayment request approved successfully.');
+    }
+
+    /**
+     * Reject a pending loan repayment request (admin only).
+     */
+    public function rejectRepayment(Request $request, LoanRepaymentRequest $repaymentRequest)
+    {
+        if ($repaymentRequest->status !== 'pending') {
+            return redirect()->back()->with('error', 'This request is not pending.');
+        }
+
+        $request->validate([
+            'review_note' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $repaymentRequest->update([
+            'status' => 'rejected',
+            'reviewed_by' => Auth::id(),
+            'reviewed_at' => now(),
+            'review_note' => $request->input('review_note'),
+        ]);
+
+        return redirect()
+            ->route('loans.repayment-requests')
+            ->with('success', 'Loan repayment request rejected.');
     }
 }
 

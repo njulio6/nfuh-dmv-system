@@ -26,6 +26,14 @@ test('admin can view savings admin page and post transaction', function () {
     $response = $this->actingAs($user)
         ->get(route('savings.index'));
     $response->assertOk();
+    $response->assertViewHas('totalSavingsPool');
+    $response->assertViewHas('activeDepositorsCount');
+    $response->assertViewHas('totalWithdrawals');
+    $response->assertViewHas('pendingRequestsCount');
+    $response->assertSee('Total Savings Pool');
+    $response->assertSee('Active Depositors');
+    $response->assertSee('Total Withdrawals');
+    $response->assertSee('Pending Requests');
 
     // Post savings deposit
     $response = $this->actingAs($user)
@@ -126,6 +134,8 @@ test('admin can update min_savings_for_loan and is reflected in member settings'
             'beneficiary_count' => 3,
             'single_benefit_constraint' => 1,
             'min_savings_for_loan' => 750.00,
+            'loan_guarantor_min' => 1,
+            'loan_guarantor_max' => 3,
         ]);
     $response->assertRedirect(route('settings.edit'));
 

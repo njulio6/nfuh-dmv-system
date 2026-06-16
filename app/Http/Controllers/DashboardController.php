@@ -109,22 +109,15 @@ class DashboardController extends Controller
             // Find current active/open session to default in form
             $activeSession = NjangiSession::where('njangi_cycle_id', $activeCycle->id)
                 ->where('status', 'open')
+                ->with(['beneficiaries.cycleMember.member'])
                 ->first()
                 ?? NjangiSession::where('njangi_cycle_id', $activeCycle->id)
                     ->where('status', 'scheduled')
+                    ->with(['beneficiaries.cycleMember.member'])
                     ->orderBy('session_date')
                     ->first();
         }
 
-        // Submissions history for this member
-        $submissionsQuery = NjangiPaymentSubmission::where('member_id', $member->id)
-            ->with(['session', 'cycle', 'reviewer']);
-
-        if ($activeCycle) {
-            $submissionsQuery->where('njangi_cycle_id', $activeCycle->id);
-        }
-        
-        $submissions = $submissionsQuery->orderBy('id', 'desc')->paginate(10);
 
         // Fetch Njangi contributions and refund/ledger reports
         $contributionsMade = collect();
@@ -200,11 +193,31 @@ class DashboardController extends Controller
 
         $activeLoans = collect();
         $pendingGuarantees = collect();
+        $pendingSavingsRequests = collect();
+        $pendingRepayRequests = collect();
+        $pendingLoanRequests = collect();
+
         if ($member) {
-            $activeLoans = $member->loanRequests()->whereIn('status', ['active', 'defaulted'])->with('repayments')->get();
+            $activeLoans = $member->loanRequests()
+                ->whereIn('status', ['active', 'defaulted'])
+                ->with(['repayments', 'guarantors.guarantorMember'])
+                ->get();
+
             $pendingGuarantees = \App\Models\LoanGuarantor::where('guarantor_member_id', $member->id)
                 ->where('status', 'pending')
                 ->with('loanRequest.member')
+                ->get();
+
+            $pendingSavingsRequests = \App\Models\SavingsDepositRequest::where('member_id', $member->id)
+                ->where('status', 'pending')
+                ->get();
+
+            $pendingRepayRequests = \App\Models\LoanRepaymentRequest::where('member_id', $member->id)
+                ->where('status', 'pending')
+                ->get();
+
+            $pendingLoanRequests = \App\Models\LoanRequest::where('member_id', $member->id)
+                ->whereIn('status', ['pending_guarantors', 'pending_committee'])
                 ->get();
         }
 
@@ -217,13 +230,15 @@ class DashboardController extends Controller
             'benefitSession',
             'activeSession',
             'sessions',
-            'submissions',
             'memberCycles',
             'contributionsMade',
             'contributionsReceived',
             'refundSummary',
             'activeLoans',
-            'pendingGuarantees'
+            'pendingGuarantees',
+            'pendingSavingsRequests',
+            'pendingRepayRequests',
+            'pendingLoanRequests'
         ));
     }
 }

@@ -21,6 +21,8 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('/member/njangi-payments', [MemberPortalController::class, 'myPayments'])
+        ->name('member.njangi-payments');
     Route::post('/member/submissions', [MemberPortalController::class, 'storeSubmission'])
         ->name('member.submissions.store');
     Route::get('/member/njangi-report', [MemberPortalController::class, 'report'])
@@ -43,8 +45,12 @@ Route::middleware(['auth'])->group(function () {
         ->name('member.loans.guarantee.approve');
     Route::post('/member/loans/guarantee/{guarantor}/decline', [\App\Http\Controllers\LoanController::class, 'declineGuarantee'])
         ->name('member.loans.guarantee.decline');
-    Route::get('/member/loans/statement', [\App\Http\Controllers\LoanController::class, 'myStatement'])
+    Route::get('/member/loans/{loan}/statement', [\App\Http\Controllers\LoanController::class, 'myStatement'])
         ->name('member.loans.statement');
+    Route::get('/member/loans/repayment-requests', [\App\Http\Controllers\LoanController::class, 'myRepaymentRequests'])
+        ->name('member.loans.repayment-requests');
+    Route::post('/member/loans/{loan}/repay-request', [\App\Http\Controllers\LoanController::class, 'requestRepayment'])
+        ->name('member.loans.repay-request');
 });
 
 Route::middleware('auth')->group(function () {
@@ -113,7 +119,11 @@ Route::middleware(['auth', 'admin'])->group(function () {
     // Admin Loan & Repayment Routes
     Route::get('/loans', [\App\Http\Controllers\LoanController::class, 'index'])
         ->name('loans.index');
-    Route::get('/loans/member/{member}/statement', [\App\Http\Controllers\LoanController::class, 'memberStatement'])
+    Route::get('/loans/status/{status}', [\App\Http\Controllers\LoanController::class, 'statusList'])
+        ->name('loans.status-list');
+    Route::get('/loans/repayments-log', [\App\Http\Controllers\LoanController::class, 'repaymentsLog'])
+        ->name('loans.repayments-log');
+    Route::get('/loans/{loan}/statement', [\App\Http\Controllers\LoanController::class, 'memberStatement'])
         ->name('loans.statement');
     Route::post('/loans/{loan}/approve', [\App\Http\Controllers\LoanController::class, 'approve'])
         ->name('loans.approve');
@@ -123,6 +133,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
         ->name('loans.reject');
     Route::post('/loans/{loan}/repay', [\App\Http\Controllers\LoanController::class, 'repay'])
         ->name('loans.repay');
+    Route::get('/loans/repayment-requests', [\App\Http\Controllers\LoanController::class, 'adminRepaymentRequests'])
+        ->name('loans.repayment-requests');
+    Route::post('/loans/repayment-requests/{repaymentRequest}/approve', [\App\Http\Controllers\LoanController::class, 'approveRepayment'])
+        ->name('loans.repayment-requests.approve');
+    Route::post('/loans/repayment-requests/{repaymentRequest}/reject', [\App\Http\Controllers\LoanController::class, 'rejectRepayment'])
+        ->name('loans.repayment-requests.reject');
     Route::post('/loans/{loan}/sub-status', [\App\Http\Controllers\LoanController::class, 'updateSubStatus'])
         ->name('loans.update-sub-status');
     Route::post('/loans/{loan}/mark-defaulted', [\App\Http\Controllers\LoanController::class, 'markAsDefaulted'])
