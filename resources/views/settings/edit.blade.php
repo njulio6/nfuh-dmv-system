@@ -192,6 +192,63 @@
                             >
                         </label>
                     </div>
+
+                    <!-- Njangi Mid-Cycle Policies -->
+                    <div class="flex flex-col gap-3">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                            Njangi Mid-Cycle Enrollment Policies
+                        </span>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Allow Mid-Cycle Enrollment -->
+                            <label 
+                                x-data="{ checked: {{ old('allow_mid_cycle_enrollment', $settings->allow_mid_cycle_enrollment) ? 'true' : 'false' }} }"
+                                class="group relative flex items-center justify-between p-4 rounded-xl border cursor-pointer select-none transition-all duration-200"
+                                :class="checked ? 'border-zinc-950 bg-zinc-50/40 dark:border-zinc-50 dark:bg-zinc-900/40 font-medium' : 'border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/10 dark:bg-zinc-950/10 hover:bg-zinc-100/40 dark:hover:bg-zinc-900/30'"
+                            >
+                                <div class="flex flex-col gap-1 pr-4">
+                                    <span class="text-xs font-bold leading-none transition-colors" :class="checked ? 'text-zinc-950 dark:text-white' : 'text-zinc-700 dark:text-zinc-300'">
+                                        Allow Mid-Cycle Enrollment
+                                    </span>
+                                    <span class="text-[10px] text-zinc-400 dark:text-zinc-500 leading-tight">
+                                        When enabled, admins can add participants to a cycle even after sessions have been generated.
+                                    </span>
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    name="allow_mid_cycle_enrollment"
+                                    value="1"
+                                    @change="checked = $el.checked"
+                                    class="rounded border-zinc-300 dark:border-zinc-800 text-zinc-950 focus:ring-0 focus:ring-offset-0 size-5 dark:bg-zinc-950 transition-colors cursor-pointer shrink-0"
+                                    {{ old('allow_mid_cycle_enrollment', $settings->allow_mid_cycle_enrollment) ? 'checked' : '' }}
+                                >
+                            </label>
+
+                            <!-- Allow Mid-Cycle Removal -->
+                            <label 
+                                x-data="{ checked: {{ old('allow_mid_cycle_removal', $settings->allow_mid_cycle_removal) ? 'true' : 'false' }} }"
+                                class="group relative flex items-center justify-between p-4 rounded-xl border cursor-pointer select-none transition-all duration-200"
+                                :class="checked ? 'border-zinc-950 bg-zinc-50/40 dark:border-zinc-50 dark:bg-zinc-900/40 font-medium' : 'border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/10 dark:bg-zinc-950/10 hover:bg-zinc-100/40 dark:hover:bg-zinc-900/30'"
+                            >
+                                <div class="flex flex-col gap-1 pr-4">
+                                    <span class="text-xs font-bold leading-none transition-colors" :class="checked ? 'text-zinc-950 dark:text-white' : 'text-zinc-700 dark:text-zinc-300'">
+                                        Allow Mid-Cycle Removal
+                                    </span>
+                                    <span class="text-[10px] text-zinc-400 dark:text-zinc-500 leading-tight">
+                                        When enabled, admins can remove participants from a cycle even after sessions have been generated.
+                                    </span>
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    name="allow_mid_cycle_removal"
+                                    value="1"
+                                    @change="checked = $el.checked"
+                                    class="rounded border-zinc-300 dark:border-zinc-800 text-zinc-950 focus:ring-0 focus:ring-offset-0 size-5 dark:bg-zinc-950 transition-colors cursor-pointer shrink-0"
+                                    {{ old('allow_mid_cycle_removal', $settings->allow_mid_cycle_removal) ? 'checked' : '' }}
+                                >
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </x-premium-card>
         </div>

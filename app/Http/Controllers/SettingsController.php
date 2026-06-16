@@ -41,6 +41,8 @@ class SettingsController extends Controller
             'min_savings_for_loan'    => ['required', 'numeric', 'min:0'],
             'loan_guarantor_min'      => ['required', 'integer', 'min:1'],
             'loan_guarantor_max'      => ['required', 'integer', 'min:1', 'gte:loan_guarantor_min'],
+            'allow_mid_cycle_enrollment' => ['nullable', 'boolean'],
+            'allow_mid_cycle_removal'    => ['nullable', 'boolean'],
         ]);
 
         $settings->app_name = $validated['app_name'];
@@ -49,6 +51,8 @@ class SettingsController extends Controller
         $settings->min_savings_for_loan = $validated['min_savings_for_loan'];
         $settings->loan_guarantor_min = $validated['loan_guarantor_min'];
         $settings->loan_guarantor_max = $validated['loan_guarantor_max'];
+        $settings->allow_mid_cycle_enrollment = $request->has('allow_mid_cycle_enrollment');
+        $settings->allow_mid_cycle_removal = $request->has('allow_mid_cycle_removal');
 
         if ($request->hasFile('logo_light')) {
             if ($settings->logo_light_path) {

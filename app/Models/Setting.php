@@ -16,6 +16,8 @@ class Setting extends Model
         'min_savings_for_loan',
         'loan_guarantor_min',
         'loan_guarantor_max',
+        'allow_mid_cycle_enrollment',
+        'allow_mid_cycle_removal',
     ];
 
     protected $casts = [
@@ -24,5 +26,7 @@ class Setting extends Model
         'min_savings_for_loan' => 'float',
         'loan_guarantor_min' => 'integer',
         'loan_guarantor_max' => 'integer',
+        'allow_mid_cycle_enrollment' => 'boolean',
+        'allow_mid_cycle_removal' => 'boolean',
     ];
 }

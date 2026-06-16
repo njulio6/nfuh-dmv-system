@@ -79,6 +79,16 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('njangi-cycles/{njangiCycle}/generate-sessions', [NjangiCycleController::class, 'generateSessions'])
         ->name('njangi-cycles.generate-sessions');
 
+    Route::post('njangi-cycles/{njangiCycle}/members', [NjangiCycleController::class, 'addSingleMember'])
+        ->name('njangi-cycles.members.store');
+
+    Route::put('njangi-cycles/{njangiCycle}/members-bulk', [NjangiCycleController::class, 'bulkUpdateMembers'])
+        ->name('njangi-cycles.members.bulk-update');
+
+    Route::delete('njangi-cycles/{njangiCycle}/members/{njangiCycleMember}', [NjangiCycleController::class, 'removeMember'])
+        ->name('njangi-cycles.members.destroy');
+
+
     Route::post(
         'njangi-submissions/{submission}/approve',
         [NjangiPaymentSubmissionController::class, 'approve']
