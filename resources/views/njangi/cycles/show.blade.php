@@ -103,7 +103,7 @@
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
     <!-- Cycle Members list -->
     <x-premium-card title="Cycle Members">
-        <x-premium-table :headers="['Member', 'Member ID', 'Benefit Order']">
+        <x-premium-table :headers="['Member', 'Member ID', 'Benefit Order']" min-width="min-w-0">
             @forelse ($njangiCycle->cycleMembers as $index => $cycleMember)
                 <x-premium-table-row :is-even="$index % 2 === 1">
                     <td class="py-2.5 px-3 font-semibold text-zinc-900 dark:text-white">
@@ -130,7 +130,7 @@
 
     <!-- Sessions list -->
     <x-premium-card title="Sessions">
-        <x-premium-table :headers="['#', 'Date', 'Title', 'Status', ['label' => 'Action', 'align' => 'center']]">
+        <x-premium-table :headers="['#', 'Date', 'Title', 'Status', ['label' => 'Action', 'align' => 'center']]" min-width="min-w-[600px]">
             @forelse ($njangiCycle->sessions as $index => $session)
                 <x-premium-table-row :is-even="$index % 2 === 1">
                     <td class="py-2.5 px-3 font-semibold text-zinc-700 dark:text-zinc-300">{{ $session->session_number }}</td>

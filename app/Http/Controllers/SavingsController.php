@@ -69,7 +69,31 @@ class SavingsController extends Controller
             ->orderBy('id', 'desc')
             ->get();
 
-        return view('savings.index', compact('members', 'allMembers', 'pendingRequests'));
+        // Calculate Stats
+        $totalSavingsPool = SavingsTransaction::where('status', 'approved')
+            ->whereIn('type', ['deposit', 'adjustment'])
+            ->sum('amount')
+            - SavingsTransaction::where('status', 'approved')
+            ->where('type', 'withdrawal')
+            ->sum('amount');
+
+        $activeDepositorsCount = Member::where('participates_in_savings', true)->count();
+
+        $totalWithdrawals = SavingsTransaction::where('status', 'approved')
+            ->where('type', 'withdrawal')
+            ->sum('amount');
+
+        $pendingRequestsCount = SavingsDepositRequest::where('status', 'pending')->count();
+
+        return view('savings.index', compact(
+            'members',
+            'allMembers',
+            'pendingRequests',
+            'totalSavingsPool',
+            'activeDepositorsCount',
+            'totalWithdrawals',
+            'pendingRequestsCount'
+        ));
     }
 
     /**

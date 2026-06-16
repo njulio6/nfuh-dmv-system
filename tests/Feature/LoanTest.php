@@ -285,3 +285,152 @@ test('member can view their own loan applications page with search and status fi
     $responseStatus->assertDontSee('Business expansion');
 });
 
+test('admin can access loan dashboard, status lists, repayments log, and member statements', function () {
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin']);
+    $adminUser = User::factory()->create();
+    $adminUser->assignRole('admin');
+
+    $org = Organization::create(['name' => 'Test Org']);
+    $member = Member::create([
+        'organization_id' => $org->id,
+        'member_code' => 'M-TEST',
+        'first_name' => 'John',
+        'last_name' => 'Doe',
+        'email' => 'john@example.com',
+        'phone' => '12345',
+        'participates_in_savings' => true,
+    ]);
+
+    $loan = LoanRequest::create([
+        'member_id' => $member->id,
+        'organization_id' => $org->id,
+        'amount' => 1500.00,
+        'duration_months' => 12,
+        'purpose' => 'Education',
+        'status' => 'active'
+    ]);
+
+    // Add a repayment
+    LoanRepayment::create([
+        'loan_request_id' => $loan->id,
+        'amount' => 200.00,
+        'payment_date' => now()->toDateString(),
+        'payment_method' => 'zelle',
+        'reference_number' => 'REFTEST1',
+        'notes' => 'Test repay notes'
+    ]);
+
+    // 1. Dashboard
+    $response = $this->actingAs($adminUser)->get(route('loans.index'));
+    $response->assertStatus(200);
+    $response->assertSee('Active Disbursements');
+    $response->assertSee('Outstanding Principal');
+    $response->assertSee('Total Repayments Collected');
+    $response->assertSee('Defaulted Balance');
+    $response->assertViewHas('totalRepaymentsCollected', 200.00);
+    $response->assertViewHas('totalDefaultedBalance', 0.00);
+
+    // 2. Status List
+    $response = $this->actingAs($adminUser)->get(route('loans.status-list', 'active'));
+    $response->assertStatus(200);
+    $response->assertSee('John Doe');
+    $response->assertSee('$1,500.00');
+
+    // 3. Repayments Log
+    $response = $this->actingAs($adminUser)->get(route('loans.repayments-log'));
+    $response->assertStatus(200);
+    $response->assertSee('Test repay notes');
+    $response->assertSee('$200.00');
+
+    // 4. Admin Member Statement
+    $response = $this->actingAs($adminUser)->get(route('loans.statement', $loan->id));
+    $response->assertStatus(200);
+    $response->assertSee('Official Loan Statement Report');
+    $response->assertSee('John Doe');
+});
+
+test('non-admin is forbidden from accessing admin loan dashboard, status lists, repayments log, and statements', function () {
+    $nonAdminUser = User::factory()->create();
+
+    $org = Organization::create(['name' => 'Test Org']);
+    $member = Member::create([
+        'organization_id' => $org->id,
+        'member_code' => 'M-TEST',
+        'first_name' => 'John',
+        'last_name' => 'Doe',
+        'email' => 'john@example.com',
+        'phone' => '12345',
+        'participates_in_savings' => true,
+    ]);
+
+    $loan = LoanRequest::create([
+        'member_id' => $member->id,
+        'organization_id' => $org->id,
+        'amount' => 1500.00,
+        'duration_months' => 12,
+        'purpose' => 'Education',
+        'status' => 'active'
+    ]);
+
+    // Assert 403 for admin actions
+    $this->actingAs($nonAdminUser)->get(route('loans.index'))->assertStatus(403);
+    $this->actingAs($nonAdminUser)->get(route('loans.status-list', 'active'))->assertStatus(403);
+    $this->actingAs($nonAdminUser)->get(route('loans.repayments-log'))->assertStatus(403);
+    $this->actingAs($nonAdminUser)->get(route('loans.statement', $loan->id))->assertStatus(403);
+});
+
+test('member can view their own statement but not other members statements', function () {
+    $org = Organization::create(['name' => 'Test Org']);
+
+    $memberUser1 = User::create([
+        'name' => 'Member One',
+        'email' => 'member1@example.com',
+        'password' => bcrypt('password'),
+    ]);
+
+    $member1 = Member::create([
+        'organization_id' => $org->id,
+        'member_code' => 'M-1',
+        'first_name' => 'Member',
+        'last_name' => 'One',
+        'email' => 'member1@example.com',
+        'phone' => '11111',
+        'participates_in_savings' => true,
+    ]);
+
+    $memberUser2 = User::create([
+        'name' => 'Member Two',
+        'email' => 'member2@example.com',
+        'password' => bcrypt('password'),
+    ]);
+
+    $member2 = Member::create([
+        'organization_id' => $org->id,
+        'member_code' => 'M-2',
+        'first_name' => 'Member',
+        'last_name' => 'Two',
+        'email' => 'member2@example.com',
+        'phone' => '22222',
+        'participates_in_savings' => true,
+    ]);
+
+    $loan1 = LoanRequest::create([
+        'member_id' => $member1->id,
+        'organization_id' => $org->id,
+        'amount' => 1000.00,
+        'duration_months' => 12,
+        'status' => 'active'
+    ]);
+
+    // Member 1 can view their own statement
+    $response = $this->actingAs($memberUser1)->get(route('member.loans.statement', $loan1->id));
+    $response->assertStatus(200);
+    $response->assertSee('Official Loan Statement Report');
+    $response->assertSee('Member One');
+
+    // Member 2 cannot view Member 1's statement
+    $response = $this->actingAs($memberUser2)->get(route('member.loans.statement', $loan1->id));
+    $response->assertStatus(403);
+});
+
+
