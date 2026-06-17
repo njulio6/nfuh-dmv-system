@@ -1061,11 +1061,11 @@
                                     <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-400 transition-transform duration-200" :class="open ? 'rotate-90' : ''"></i>
                                 </button>
                                 <div x-show="open" class="pl-4 space-y-1 mt-1">
-                                    <a href="{{ route('member.savings') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.savings') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
+                                    <a href="{{ route('member.savings') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.savings') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
                                         <i data-lucide="piggy-bank" class="w-4 h-4 shrink-0 text-zinc-555 dark:text-zinc-400"></i>
                                         <span>My Savings</span>
                                     </a>
-                                    <a href="{{ route('member.savings.requests') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.savings.requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
+                                    <a href="{{ route('member.savings.requests') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.savings.requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
                                         <i data-lucide="inbox" class="w-4 h-4 shrink-0 text-zinc-555 dark:text-zinc-400"></i>
                                         <span>Deposit Requests</span>
                                     </a>
@@ -1083,11 +1083,11 @@
                                     <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-400 transition-transform duration-200" :class="open ? 'rotate-90' : ''"></i>
                                 </button>
                                 <div x-show="open" class="pl-4 space-y-1 mt-1">
-                                    <a href="{{ route('member.loans') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.loans') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
+                                    <a href="{{ route('member.loans') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.loans') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
                                         <i data-lucide="trending-up" class="w-4 h-4 shrink-0 text-zinc-555 dark:text-zinc-400"></i>
                                         <span>Overview</span>
                                     </a>
-                                    <a href="{{ route('member.loans.applications') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.loans.applications') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-955 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
+                                    <a href="{{ route('member.loans.applications') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.loans.applications') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/40 dark:hover:bg-zinc-800/30' }}">
                                         <i data-lucide="inbox" class="w-4 h-4 shrink-0 text-zinc-555 dark:text-zinc-400"></i>
                                         <span>My Applications</span>
                                     </a>

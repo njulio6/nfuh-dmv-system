@@ -293,7 +293,7 @@
         
         <!-- Modal Container -->
         <div 
-            class="relative w-full max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl z-10 p-6 flex flex-col gap-4 transition-transform duration-300"
+            class="relative w-full max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl z-10 p-6 flex flex-col gap-4 transition-transform duration-300 max-h-[90vh] overflow-y-auto"
             x-transition:enter="ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
@@ -437,7 +437,7 @@
         
         <!-- Modal Container -->
         <div 
-            class="relative w-full max-w-md bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl z-10 p-6 flex flex-col gap-4 transition-transform duration-300"
+            class="relative w-full max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl z-10 p-6 flex flex-col gap-4 transition-transform duration-300 max-h-[90vh] overflow-y-auto"
             x-transition:enter="ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
@@ -519,7 +519,7 @@
                                 <button 
                                     type="button"
                                     @click="editStatusColor = color.value; open = false"
-                                    class="w-full flex items-center justify-between px-3.5 py-2.5 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900/60 hover:text-zinc-955 dark:hover:text-white transition-all text-xs font-semibold text-left select-none cursor-pointer flex-row gap-2"
+                                    class="w-full flex items-center justify-between px-3.5 py-2.5 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900/60 hover:text-zinc-950 dark:hover:text-white transition-all text-xs font-semibold text-left select-none cursor-pointer flex-row gap-2"
                                     :class="editStatusColor === color.value ? 'bg-zinc-50 dark:bg-zinc-900/40 text-zinc-950 dark:text-white font-bold' : ''"
                                 >
                                     <div class="flex items-center gap-2.5">
@@ -582,7 +582,7 @@
 
         <!-- Modal Container -->
         <div 
-            class="relative w-full max-w-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-6 text-center z-10 transition-transform duration-300"
+            class="relative w-full max-w-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-6 text-center z-10 transition-transform duration-300 max-h-[90vh] overflow-y-auto"
             x-transition:enter="ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
             x-transition:enter-end="opacity-100 scale-100 translate-y-0"

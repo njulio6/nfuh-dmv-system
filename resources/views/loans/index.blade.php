@@ -11,7 +11,7 @@
             </div>
             <div>
                 <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Active Disbursements</span>
-                <span class="text-2xl font-black text-zinc-955 dark:text-white leading-none tracking-tight">
+                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
                     ${{ number_format($totalActiveAmount, 2) }}
                 </span>
             </div>
@@ -24,7 +24,7 @@
             </div>
             <div>
                 <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Outstanding Principal</span>
-                <span class="text-2xl font-black text-zinc-955 dark:text-white leading-none tracking-tight">
+                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
                     ${{ number_format($totalRemainingBalance, 2) }}
                 </span>
             </div>
@@ -37,7 +37,7 @@
             </div>
             <div>
                 <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Repayments Collected</span>
-                <span class="text-2xl font-black text-zinc-955 dark:text-white leading-none tracking-tight">
+                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
                     ${{ number_format($totalRepaymentsCollected, 2) }}
                 </span>
             </div>
@@ -50,7 +50,7 @@
             </div>
             <div>
                 <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Defaulted Balance</span>
-                <span class="text-2xl font-black text-zinc-955 dark:text-white leading-none tracking-tight">
+                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
                     ${{ number_format($totalDefaultedBalance, 2) }}
                 </span>
             </div>
@@ -76,7 +76,7 @@
                     @if($pendingCount > 0)
                         <span class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
                     @endif
-                    <span class="text-3xl font-black text-zinc-955 dark:text-white">{{ $pendingCount }}</span>
+                    <span class="text-3xl font-black text-zinc-950 dark:text-white">{{ $pendingCount }}</span>
                 </div>
             </div>
             <div class="my-1.5">
@@ -99,7 +99,7 @@
                 <div class="p-2.5 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-500 dark:text-zinc-400 border border-zinc-100 dark:border-zinc-850">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 </div>
-                <span class="text-3xl font-black text-zinc-955 dark:text-white">{{ $guarantorCount }}</span>
+                <span class="text-3xl font-black text-zinc-950 dark:text-white">{{ $guarantorCount }}</span>
             </div>
             <div class="my-1.5">
                 <span class="text-xs font-black uppercase tracking-wider text-zinc-800 dark:text-zinc-100 block">Guarantor Signatures</span>
@@ -114,6 +114,33 @@
             </a>
         </div>
  
+        <!-- Approved Requests (Pending Disbursement) -->
+        @php $approvedCount = $counts['approved'] ?? 0; @endphp
+        <div class="group bg-white dark:bg-zinc-900 border border-zinc-200/85 dark:border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-52 transition-all duration-205 hover:shadow-md select-none">
+            <div class="flex justify-between items-center">
+                <div class="p-2.5 bg-blue-50 dark:bg-blue-950/20 rounded-xl text-blue-650 dark:text-blue-400 border border-blue-100/50 dark:border-blue-800/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    @if($approvedCount > 0)
+                        <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                    @endif
+                    <span class="text-3xl font-black text-zinc-950 dark:text-white">{{ $approvedCount }}</span>
+                </div>
+            </div>
+            <div class="my-1.5">
+                <span class="text-xs font-black uppercase tracking-wider text-zinc-800 dark:text-zinc-100 block">Approved Requests</span>
+                <span class="text-[10px] text-zinc-400 dark:text-zinc-500 block mt-1 leading-normal">Approved by committee, ready for fund release/disbursement.</span>
+            </div>
+            <a 
+                href="{{ route('loans.status-list', 'approved') }}"
+                class="w-full text-center py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-white dark:text-blue-300 text-[11px] font-bold rounded-xl transition-all shadow-3xs flex items-center justify-center gap-1.5 active:scale-[0.98] select-none cursor-pointer"
+            >
+                <span>Open Queue</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+        </div>
+
         <!-- 3. Active Loans -->
         @php $activeCount = $counts['active'] ?? 0; @endphp
         <div class="group bg-white dark:bg-zinc-900 border border-zinc-200/85 dark:border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-52 transition-all duration-205 hover:shadow-md select-none">
@@ -121,7 +148,7 @@
                 <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl text-emerald-650 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-800/20">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </div>
-                <span class="text-3xl font-black text-zinc-955 dark:text-white">{{ $activeCount }}</span>
+                <span class="text-3xl font-black text-zinc-950 dark:text-white">{{ $activeCount }}</span>
             </div>
             <div class="my-1.5">
                 <span class="text-xs font-black uppercase tracking-wider text-zinc-800 dark:text-zinc-100 block">Active Disbursements</span>
@@ -143,7 +170,7 @@
                 <div class="p-2.5 bg-red-50 dark:bg-red-950/20 rounded-xl text-red-655 dark:text-red-400 border border-red-100/50 dark:border-red-800/20">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 </div>
-                <span class="text-3xl font-black text-zinc-955 dark:text-white">{{ $defaultedCount }}</span>
+                <span class="text-3xl font-black text-zinc-950 dark:text-white">{{ $defaultedCount }}</span>
             </div>
             <div class="my-1.5">
                 <span class="text-xs font-black uppercase tracking-wider text-zinc-800 dark:text-zinc-100 block">Defaulted Accounts</span>
@@ -184,10 +211,10 @@
         @php $rejectedCount = $counts['rejected'] ?? 0; @endphp
         <div class="group bg-white dark:bg-zinc-900 border border-zinc-200/85 dark:border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-52 transition-all duration-205 hover:shadow-md select-none">
             <div class="flex justify-between items-center">
-                <div class="p-2.5 bg-amber-50 dark:bg-amber-955 rounded-xl text-amber-600 dark:text-amber-400 border border-amber-100/50 dark:border-amber-850/20">
+                <div class="p-2.5 bg-amber-50 dark:bg-amber-950 rounded-xl text-amber-600 dark:text-amber-400 border border-amber-100/50 dark:border-amber-850/20">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </div>
-                <span class="text-3xl font-black text-zinc-955 dark:text-white">{{ $rejectedCount }}</span>
+                <span class="text-3xl font-black text-zinc-950 dark:text-white">{{ $rejectedCount }}</span>
             </div>
             <div class="my-1.5">
                 <span class="text-xs font-black uppercase tracking-wider text-zinc-800 dark:text-zinc-100 block">Rejected Requests</span>
@@ -206,10 +233,10 @@
         @php $repayCount = $counts['repayments'] ?? 0; @endphp
         <div class="group bg-white dark:bg-zinc-900 border border-zinc-200/85 dark:border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-52 transition-all duration-205 hover:shadow-md select-none">
             <div class="flex justify-between items-center">
-                <div class="p-2.5 bg-blue-50 dark:bg-blue-955 rounded-xl text-blue-600 dark:text-blue-400 border border-blue-100/50 dark:border-blue-800/20">
+                <div class="p-2.5 bg-blue-50 dark:bg-blue-950 rounded-xl text-blue-600 dark:text-blue-400 border border-blue-100/50 dark:border-blue-800/20">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
                 </div>
-                <span class="text-3xl font-black text-zinc-955 dark:text-white">{{ $repayCount }}</span>
+                <span class="text-3xl font-black text-zinc-950 dark:text-white">{{ $repayCount }}</span>
             </div>
             <div class="my-1.5">
                 <span class="text-xs font-black uppercase tracking-wider text-zinc-800 dark:text-zinc-100 block">Repayments Log</span>
@@ -235,7 +262,7 @@
                     @if($repayReqCount > 0)
                         <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
                     @endif
-                    <span class="text-3xl font-black text-zinc-955 dark:text-white">{{ $repayReqCount }}</span>
+                    <span class="text-3xl font-black text-zinc-950 dark:text-white">{{ $repayReqCount }}</span>
                 </div>
             </div>
             <div class="my-1.5">

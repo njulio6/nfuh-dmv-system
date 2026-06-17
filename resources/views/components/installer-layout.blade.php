@@ -86,7 +86,7 @@
             </button>
         </div>
 
-        <div class="w-full max-w-2xl bg-white dark:bg-zinc-900 border border-zinc-200/85 dark:border-zinc-800/85 rounded-2xl shadow-xl dark:shadow-zinc-950/40 p-6 md:p-8 flex flex-col gap-6 relative overflow-hidden transition-all duration-300">
+        <div class="w-full max-w-2xl bg-white dark:bg-zinc-900 border border-zinc-200/85 dark:border-zinc-800/85 rounded-2xl shadow-xl dark:shadow-zinc-950/40 p-6 md:p-8 flex flex-col gap-6 relative overflow-hidden transition-all duration-300 max-h-[90vh] overflow-y-auto">
             <!-- Branding Header -->
             <div class="flex flex-col items-center text-center">
                 <span class="text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Installation Setup Wizard</span>
