@@ -700,7 +700,7 @@
                     <x-premium-button type="button" variant="secondary" @click="showRejectModal = false" class="py-2.5 w-full sm:w-1/2">
                         Cancel
                     </x-premium-button>
-                    <x-premium-button type="submit" variant="primary" class="py-2.5 w-full sm:w-1/2 bg-red-650 hover:bg-red-600 border-red-650 hover:border-red-600 dark:bg-red-550 dark:hover:bg-red-500 text-white">
+                    <x-premium-button type="submit" variant="primary" class="py-2.5 w-full sm:w-1/2 bg-red-600 hover:bg-red-500 border-red-600 hover:border-red-500 dark:bg-red-500 dark:hover:bg-red-400 text-white">
                         Reject Deposit
                     </x-premium-button>
                 </div>

@@ -721,7 +721,7 @@
                     <x-premium-button type="button" variant="secondary" @click="showRejectModal = false" class="py-2.5 w-full sm:w-1/2">
                         Cancel
                     </x-premium-button>
-                    <x-premium-button type="submit" variant="danger" class="py-2.5 w-full sm:w-1/2 bg-red-600 hover:bg-red-550 dark:bg-red-500 dark:hover:bg-red-450 text-white dark:text-zinc-950">
+                    <x-premium-button type="submit" variant="danger" class="py-2.5 w-full sm:w-1/2 bg-red-600 hover:bg-red-500 border-red-600 hover:border-red-500 dark:bg-red-500 dark:hover:bg-red-400 text-white">
                         Confirm Rejection
                     </x-premium-button>
                 </div>

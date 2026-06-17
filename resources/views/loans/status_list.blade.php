@@ -854,7 +854,7 @@
             <form :action="statusActionUrl" method="POST" class="flex gap-3 mt-2">
                 @csrf
                 <button type="button" class="flex-1 py-2 text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 select-none" @click="showDefaultModal = false">Cancel</button>
-                <button type="submit" class="flex-1 py-2 text-xs font-bold bg-red-650 hover:bg-red-600 text-white rounded-lg select-none">Yes, Default</button>
+                <button type="submit" class="flex-1 py-2 text-xs font-bold bg-red-600 hover:bg-red-500 text-white rounded-lg select-none">Yes, Default</button>
             </form>
         </div>
     </div>
@@ -875,7 +875,7 @@
             <form :action="statusActionUrl" method="POST" class="flex gap-3 mt-2">
                 @csrf
                 <button type="button" class="flex-1 py-2 text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 select-none" @click="showRestoreModal = false">Cancel</button>
-                <button type="submit" class="flex-1 py-2 text-xs font-bold bg-emerald-650 hover:bg-emerald-600 text-white rounded-lg select-none">Yes, Restore</button>
+                <button type="submit" class="flex-1 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg select-none">Yes, Restore</button>
             </form>
         </div>
     </div>
