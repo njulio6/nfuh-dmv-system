@@ -9,6 +9,7 @@ use App\Models\LoanRepayment;
 use App\Models\Setting;
 use App\Models\LoanSubStatus;
 use App\Models\LoanRepaymentRequest;
+use App\Support\MemberResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -240,7 +241,7 @@ class LoanController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
@@ -282,7 +283,7 @@ class LoanController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
@@ -356,7 +357,7 @@ class LoanController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
@@ -416,7 +417,7 @@ class LoanController extends Controller
     public function approveGuarantee(Request $request, LoanGuarantor $guarantor)
     {
         $user = Auth::user();
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
 
         if (!$member || $guarantor->guarantor_member_id !== $member->id) {
             abort(403, 'Unauthorized guarantor response.');
@@ -450,7 +451,7 @@ class LoanController extends Controller
     public function declineGuarantee(Request $request, LoanGuarantor $guarantor)
     {
         $user = Auth::user();
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
 
         if (!$member || $guarantor->guarantor_member_id !== $member->id) {
             abort(403, 'Unauthorized guarantor response.');
@@ -496,7 +497,7 @@ class LoanController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
@@ -638,7 +639,7 @@ class LoanController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
@@ -697,7 +698,7 @@ class LoanController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }

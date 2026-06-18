@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Member;
 use App\Models\SavingsTransaction;
 use App\Models\SavingsDepositRequest;
+use App\Support\MemberResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -198,7 +199,7 @@ class SavingsController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
@@ -229,7 +230,7 @@ class SavingsController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
@@ -307,7 +308,7 @@ class SavingsController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }

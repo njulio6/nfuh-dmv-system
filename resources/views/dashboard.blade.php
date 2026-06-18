@@ -102,6 +102,17 @@
                 <i data-lucide="refresh-cw" class="w-[15px] h-[15px]"></i>
             </button>
             
+            @if(Auth::user() && Auth::user()->hasRole('admin'))
+                <a
+                    href="{{ route('admin.tools') }}"
+                    class="px-4 py-2 border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all flex items-center justify-center cursor-pointer active:scale-95 disabled:opacity-50"
+                    title="System Tools"
+                >
+                    <i data-lucide="terminal" class="w-[15px] h-[15px] mr-2"></i>
+                    <span class="text-sm font-medium">System Tools</span>
+                </a>
+            @endif
+
             <button 
                 onclick="window.print()"
                 class="px-4 py-2 bg-zinc-950 text-white dark:bg-zinc-50 dark:text-zinc-950 rounded-lg text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95"

@@ -9,6 +9,7 @@ use App\Models\NjangiSession;
 use App\Models\NjangiSessionBeneficiary;
 use App\Models\NjangiPaymentSubmission;
 use App\Models\NjangiDisbursement;
+use App\Support\MemberResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -21,8 +22,8 @@ class DashboardController extends Controller
             return redirect()->route('login');
         }
 
-        // Find member matching the user's email
-        $member = Member::where('email', $user->email)->first();
+        // Find member linked to this user (by user_id, falling back to email)
+        $member = MemberResolver::fromUser($user);
 
         // Admin check: Explicitly check for Spatie admin role OR linked member admin roles
         $isAdmin = $user->hasRole('admin');

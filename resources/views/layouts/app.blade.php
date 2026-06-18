@@ -321,7 +321,7 @@
     <!-- Dynamic helper PHP properties -->
     @php
         $authUser = Auth::user();
-        $member = $authUser ? \App\Models\Member::where('email', $authUser->email)->first() : null;
+        $member = $authUser ? \App\Support\MemberResolver::fromUser($authUser) : null;
         $roleName = $member ? $member->roles()->first()?->name : 'Warrior';
         $titleName = ($member && $member->rank) ? $member->rank->name : 'Warrior';
         $userInitials = $authUser 

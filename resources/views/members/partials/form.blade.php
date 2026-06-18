@@ -19,6 +19,31 @@
         </div>
     @endif
 
+    {{-- Edit mode only: read-only linked account status bar --}}
+    @if(isset($member))
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl px-4 py-3 flex items-center justify-between gap-4 shadow-none">
+            <div class="flex items-center gap-3">
+                <div class="p-1.5 rounded-lg {{ $member->user_id ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-amber-100 dark:bg-amber-900/40' }} shrink-0">
+                    @if($member->user_id && $member->user)
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-600 dark:text-emerald-400"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    @else
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-amber-600 dark:text-amber-400"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    @endif
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Portal Login Account</p>
+                    @if($member->user_id && $member->user)
+                        <p class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $member->user->email }}</p>
+                    @else
+                        <p class="text-sm font-semibold text-amber-700 dark:text-amber-400">No login account linked</p>
+                    @endif
+                </div>
+            </div>
+            @if($member->user_id)
+                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40 px-2.5 py-1 rounded-lg shrink-0">Linked ✓</span>
+            @endif
+        </div>
+    @endif
     <!-- Card 1: Personal Information -->
     <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-5 shadow-none">
         <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
@@ -52,14 +77,19 @@
                 </div>
             </div>
 
-            <!-- Email -->
+
+            {{-- Email \u2014 on CREATE: sets users.email. On EDIT: updates users.email. Never stored on members table. --}}
             <div class="flex flex-col">
-                <label for="email" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Email Address</label>
+                <label for="email" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    Email Address <span class="text-red-500">*</span>
+                    <span class="text-[10px] font-normal text-zinc-400 normal-case tracking-normal ml-1">(login email)</span>
+                </label>
                 <div class="relative">
                     <input type="email" name="email" id="email"
-                        value="{{ old('email', $member->email ?? '') }}" 
+                        value="{{ old('email', isset($member) ? $member->user?->email : '') }}"
                         placeholder="e.g. john@example.com"
                         class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all"
+                        required
                     >
                 </div>
             </div>
@@ -76,6 +106,36 @@
                     >
                 </div>
             </div>
+
+
+            {{-- Password fields — required on CREATE, optional on EDIT (blank = keep current) --}}
+            <div class="flex flex-col">
+                <label for="password" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    Password
+                    @if(!isset($member))<span class="text-red-500">*</span>@else<span class="text-[10px] font-normal text-zinc-400 normal-case tracking-normal ml-1">(leave blank to keep current)</span>@endif
+                </label>
+                <div class="relative">
+                    <input type="password" name="password" id="password"
+                        placeholder="{{ isset($member) ? 'Leave blank to keep current' : 'Min. 8 characters' }}"
+                        class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all"
+                        {{ !isset($member) ? 'required' : '' }}
+                    >
+                </div>
+            </div>
+            <div class="flex flex-col">
+                <label for="password_confirmation" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    Confirm Password
+                    @if(!isset($member))<span class="text-red-500">*</span>@endif
+                </label>
+                <div class="relative">
+                    <input type="password" name="password_confirmation" id="password_confirmation"
+                        placeholder="Repeat password"
+                        class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all"
+                        {{ !isset($member) ? 'required' : '' }}
+                    >
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -439,40 +499,6 @@
         </div>
     </div>
 
-    <!-- Card 7: Account Password -->
-    <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-5 shadow-none">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
-            Account Password
-        </h3>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Password -->
-            <div class="flex flex-col">
-                <label for="password" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-                    Password {{ isset($member) ? '(Leave blank to keep current)' : '(Optional)' }}
-                </label>
-                <div class="relative">
-                    <input type="password" name="password" id="password"
-                        placeholder="••••••••"
-                        class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all"
-                    >
-                </div>
-            </div>
-
-            <!-- Password Confirmation -->
-            <div class="flex flex-col">
-                <label for="password_confirmation" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-                    Confirm Password
-                </label>
-                <div class="relative">
-                    <input type="password" name="password_confirmation" id="password_confirmation"
-                        placeholder="••••••••"
-                        class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all"
-                    >
-                </div>
-            </div>
-        </div>
-    </div>
 
 </div>
 
