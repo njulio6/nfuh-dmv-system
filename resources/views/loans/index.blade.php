@@ -63,9 +63,31 @@
     </div>
 
     <!-- Status Cards Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         
-        <!-- 1. Committee Review -->
+        <!-- 1. Guarantor Signatures -->
+        @php $guarantorCount = $counts['pending_guarantors'] ?? 0; @endphp
+        <div class="group bg-white dark:bg-zinc-900 border border-zinc-200/85 dark:border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-52 transition-all duration-205 hover:shadow-md select-none">
+            <div class="flex justify-between items-center">
+                <div class="p-2.5 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-500 dark:text-zinc-400 border border-zinc-100 dark:border-zinc-850">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <span class="text-3xl font-black text-zinc-950 dark:text-white">{{ $guarantorCount }}</span>
+            </div>
+            <div class="my-1.5">
+                <span class="text-xs font-black uppercase tracking-wider text-zinc-800 dark:text-zinc-100 block">Guarantor Signatures</span>
+                <span class="text-[10px] text-zinc-400 dark:text-zinc-500 block mt-1 leading-normal">Pending guarantor approvals before review.</span>
+            </div>
+            <a 
+                href="{{ route('loans.status-list', 'pending_guarantors') }}"
+                class="w-full text-center py-2 bg-zinc-700 hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700/80 text-white text-[11px] font-bold rounded-xl transition-all shadow-3xs flex items-center justify-center gap-1.5 active:scale-[0.98] select-none cursor-pointer"
+            >
+                <span>Open Queue</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+        </div>
+ 
+        <!-- 2. Committee Review -->
         @php $pendingCount = $counts['pending_committee'] ?? 0; @endphp
         <div class="group bg-white dark:bg-zinc-900 border border-zinc-200/85 dark:border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-52 transition-all duration-205 hover:shadow-md select-none">
             <div class="flex justify-between items-center">
@@ -86,28 +108,6 @@
             <a 
                 href="{{ route('loans.status-list', 'pending_committee') }}"
                 class="w-full text-center py-2 bg-purple-600 hover:bg-purple-700 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 text-white dark:text-purple-300 text-[11px] font-bold rounded-xl transition-all shadow-3xs flex items-center justify-center gap-1.5 active:scale-[0.98] select-none cursor-pointer"
-            >
-                <span>Open Queue</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </a>
-        </div>
- 
-        <!-- 2. Guarantor Signatures -->
-        @php $guarantorCount = $counts['pending_guarantors'] ?? 0; @endphp
-        <div class="group bg-white dark:bg-zinc-900 border border-zinc-200/85 dark:border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-52 transition-all duration-205 hover:shadow-md select-none">
-            <div class="flex justify-between items-center">
-                <div class="p-2.5 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-500 dark:text-zinc-400 border border-zinc-100 dark:border-zinc-850">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                </div>
-                <span class="text-3xl font-black text-zinc-950 dark:text-white">{{ $guarantorCount }}</span>
-            </div>
-            <div class="my-1.5">
-                <span class="text-xs font-black uppercase tracking-wider text-zinc-800 dark:text-zinc-100 block">Guarantor Signatures</span>
-                <span class="text-[10px] text-zinc-400 dark:text-zinc-500 block mt-1 leading-normal">Pending guarantor approvals before review.</span>
-            </div>
-            <a 
-                href="{{ route('loans.status-list', 'pending_guarantors') }}"
-                class="w-full text-center py-2 bg-zinc-700 hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700/80 text-white text-[11px] font-bold rounded-xl transition-all shadow-3xs flex items-center justify-center gap-1.5 active:scale-[0.98] select-none cursor-pointer"
             >
                 <span>Open Queue</span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -229,29 +229,7 @@
             </a>
         </div>
  
-        <!-- 7. Repayments Transactions Log -->
-        @php $repayCount = $counts['repayments'] ?? 0; @endphp
-        <div class="group bg-white dark:bg-zinc-900 border border-zinc-200/85 dark:border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-52 transition-all duration-205 hover:shadow-md select-none">
-            <div class="flex justify-between items-center">
-                <div class="p-2.5 bg-blue-50 dark:bg-blue-950 rounded-xl text-blue-600 dark:text-blue-400 border border-blue-100/50 dark:border-blue-800/20">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
-                </div>
-                <span class="text-3xl font-black text-zinc-950 dark:text-white">{{ $repayCount }}</span>
-            </div>
-            <div class="my-1.5">
-                <span class="text-xs font-black uppercase tracking-wider text-zinc-800 dark:text-zinc-100 block">Repayments Log</span>
-                <span class="text-[10px] text-zinc-400 dark:text-zinc-500 block mt-1 leading-normal">Audit trail of all recorded loan repayments.</span>
-            </div>
-            <a 
-                href="{{ route('loans.repayments-log') }}"
-                class="w-full text-center py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-white dark:text-blue-300 text-[11px] font-bold rounded-xl transition-all shadow-3xs flex items-center justify-center gap-1.5 active:scale-[0.98] select-none cursor-pointer"
-            >
-                <span>Open Log</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </a>
-        </div>
- 
-        <!-- 8. Repayment Requests -->
+        <!-- 7. Repayment Requests -->
         @php $repayReqCount = \App\Models\LoanRepaymentRequest::where('status', 'pending')->count(); @endphp
         <div class="group bg-white dark:bg-zinc-900 border border-zinc-200/85 dark:border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-52 transition-all duration-205 hover:shadow-md select-none">
             <div class="flex justify-between items-center">
@@ -274,6 +252,28 @@
                 class="w-full text-center py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-white dark:text-indigo-300 text-[11px] font-bold rounded-xl transition-all shadow-3xs flex items-center justify-center gap-1.5 active:scale-[0.98] select-none cursor-pointer"
             >
                 <span>Open Requests</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+        </div>
+ 
+        <!-- 8. Repayments Transactions Log -->
+        @php $repayCount = $counts['repayments'] ?? 0; @endphp
+        <div class="group bg-white dark:bg-zinc-900 border border-zinc-200/85 dark:border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-52 transition-all duration-205 hover:shadow-md select-none">
+            <div class="flex justify-between items-center">
+                <div class="p-2.5 bg-blue-50 dark:bg-blue-950 rounded-xl text-blue-600 dark:text-blue-400 border border-blue-100/50 dark:border-blue-800/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+                </div>
+                <span class="text-3xl font-black text-zinc-950 dark:text-white">{{ $repayCount }}</span>
+            </div>
+            <div class="my-1.5">
+                <span class="text-xs font-black uppercase tracking-wider text-zinc-800 dark:text-zinc-100 block">Repayments Log</span>
+                <span class="text-[10px] text-zinc-400 dark:text-zinc-500 block mt-1 leading-normal">Audit trail of all recorded loan repayments.</span>
+            </div>
+            <a 
+                href="{{ route('loans.repayments-log') }}"
+                class="w-full text-center py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-white dark:text-blue-300 text-[11px] font-bold rounded-xl transition-all shadow-3xs flex items-center justify-center gap-1.5 active:scale-[0.98] select-none cursor-pointer"
+            >
+                <span>Open Log</span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
         </div>
