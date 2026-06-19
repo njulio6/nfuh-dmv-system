@@ -21,10 +21,36 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('/member/njangi-payments', [MemberPortalController::class, 'myPayments'])
+        ->name('member.njangi-payments');
     Route::post('/member/submissions', [MemberPortalController::class, 'storeSubmission'])
         ->name('member.submissions.store');
     Route::get('/member/njangi-report', [MemberPortalController::class, 'report'])
         ->name('member.njangi-report');
+    Route::get('/member/savings', [\App\Http\Controllers\SavingsController::class, 'mySavings'])
+        ->name('member.savings');
+    Route::get('/member/savings/requests', [\App\Http\Controllers\SavingsController::class, 'mySavingsRequests'])
+        ->name('member.savings.requests');
+    Route::post('/member/savings/request', [\App\Http\Controllers\SavingsController::class, 'requestDeposit'])
+        ->name('member.savings.request');
+
+    // Member Loan Routes
+    Route::get('/member/loans', [\App\Http\Controllers\LoanController::class, 'myLoans'])
+        ->name('member.loans');
+    Route::get('/member/loans/applications', [\App\Http\Controllers\LoanController::class, 'myApplications'])
+        ->name('member.loans.applications');
+    Route::post('/member/loans/request', [\App\Http\Controllers\LoanController::class, 'requestLoan'])
+        ->name('member.loans.request');
+    Route::post('/member/loans/guarantee/{guarantor}/approve', [\App\Http\Controllers\LoanController::class, 'approveGuarantee'])
+        ->name('member.loans.guarantee.approve');
+    Route::post('/member/loans/guarantee/{guarantor}/decline', [\App\Http\Controllers\LoanController::class, 'declineGuarantee'])
+        ->name('member.loans.guarantee.decline');
+    Route::get('/member/loans/{loan}/statement', [\App\Http\Controllers\LoanController::class, 'myStatement'])
+        ->name('member.loans.statement');
+    Route::get('/member/loans/repayment-requests', [\App\Http\Controllers\LoanController::class, 'myRepaymentRequests'])
+        ->name('member.loans.repayment-requests');
+    Route::post('/member/loans/{loan}/repay-request', [\App\Http\Controllers\LoanController::class, 'requestRepayment'])
+        ->name('member.loans.repay-request');
 });
 
 Route::middleware('auth')->group(function () {
@@ -53,6 +79,16 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('njangi-cycles/{njangiCycle}/generate-sessions', [NjangiCycleController::class, 'generateSessions'])
         ->name('njangi-cycles.generate-sessions');
 
+    Route::post('njangi-cycles/{njangiCycle}/members', [NjangiCycleController::class, 'addSingleMember'])
+        ->name('njangi-cycles.members.store');
+
+    Route::put('njangi-cycles/{njangiCycle}/members-bulk', [NjangiCycleController::class, 'bulkUpdateMembers'])
+        ->name('njangi-cycles.members.bulk-update');
+
+    Route::delete('njangi-cycles/{njangiCycle}/members/{njangiCycleMember}', [NjangiCycleController::class, 'removeMember'])
+        ->name('njangi-cycles.members.destroy');
+
+
     Route::post(
         'njangi-submissions/{submission}/approve',
         [NjangiPaymentSubmissionController::class, 'approve']
@@ -72,10 +108,80 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/njangi-sessions/{njangiSession}/beneficiaries', [\App\Http\Controllers\NjangiSessionBeneficiaryController::class, 'update'])
         ->name('njangi-sessions.beneficiaries.update');
 
+    Route::get('/savings', [\App\Http\Controllers\SavingsController::class, 'index'])
+        ->name('savings.index');
+    Route::get('/savings/transactions', [\App\Http\Controllers\SavingsController::class, 'transactions'])
+        ->name('savings.transactions');
+    Route::get('/savings/requests', [\App\Http\Controllers\SavingsController::class, 'adminRequests'])
+        ->name('savings.requests');
+    Route::post('/savings', [\App\Http\Controllers\SavingsController::class, 'store'])
+        ->name('savings.store');
+    Route::post('/savings/requests/{depositRequest}/approve', [\App\Http\Controllers\SavingsController::class, 'approve'])
+        ->name('savings.approve');
+    Route::post('/savings/requests/{depositRequest}/reject', [\App\Http\Controllers\SavingsController::class, 'reject'])
+        ->name('savings.reject');
+
     Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'edit'])
         ->name('settings.edit');
     Route::post('/settings', [\App\Http\Controllers\SettingsController::class, 'update'])
         ->name('settings.update');
+
+    // Admin Loan & Repayment Routes
+    Route::get('/loans', [\App\Http\Controllers\LoanController::class, 'index'])
+        ->name('loans.index');
+    Route::get('/loans/status/{status}', [\App\Http\Controllers\LoanController::class, 'statusList'])
+        ->name('loans.status-list');
+    Route::get('/loans/repayments-log', [\App\Http\Controllers\LoanController::class, 'repaymentsLog'])
+        ->name('loans.repayments-log');
+    Route::get('/loans/{loan}/statement', [\App\Http\Controllers\LoanController::class, 'memberStatement'])
+        ->name('loans.statement');
+    Route::post('/loans/{loan}/approve', [\App\Http\Controllers\LoanController::class, 'approve'])
+        ->name('loans.approve');
+    Route::post('/loans/{loan}/disburse', [\App\Http\Controllers\LoanController::class, 'disburse'])
+        ->name('loans.disburse');
+    Route::post('/loans/{loan}/reject', [\App\Http\Controllers\LoanController::class, 'reject'])
+        ->name('loans.reject');
+    Route::post('/loans/{loan}/repay', [\App\Http\Controllers\LoanController::class, 'repay'])
+        ->name('loans.repay');
+    Route::get('/loans/repayment-requests', [\App\Http\Controllers\LoanController::class, 'adminRepaymentRequests'])
+        ->name('loans.repayment-requests');
+    Route::post('/loans/repayment-requests/{repaymentRequest}/approve', [\App\Http\Controllers\LoanController::class, 'approveRepayment'])
+        ->name('loans.repayment-requests.approve');
+    Route::post('/loans/repayment-requests/{repaymentRequest}/reject', [\App\Http\Controllers\LoanController::class, 'rejectRepayment'])
+        ->name('loans.repayment-requests.reject');
+    Route::post('/loans/{loan}/sub-status', [\App\Http\Controllers\LoanController::class, 'updateSubStatus'])
+        ->name('loans.update-sub-status');
+    Route::post('/loans/{loan}/mark-defaulted', [\App\Http\Controllers\LoanController::class, 'markAsDefaulted'])
+        ->name('loans.mark-defaulted');
+    Route::post('/loans/{loan}/mark-active', [\App\Http\Controllers\LoanController::class, 'markAsActive'])
+        ->name('loans.mark-active');
+
+    // Admin Custom Loan Sub-Status routes
+    Route::get('/loans/sub-statuses', [\App\Http\Controllers\LoanController::class, 'subStatusesIndex'])
+        ->name('loans.sub-statuses');
+    Route::post('/settings/loan-sub-statuses', [\App\Http\Controllers\LoanController::class, 'storeSubStatus'])
+        ->name('admin.settings.store-sub-status');
+    Route::patch('/settings/loan-sub-statuses/{subStatus}', [\App\Http\Controllers\LoanController::class, 'updateSubStatusDefinition'])
+        ->name('admin.settings.update-sub-status');
+    Route::delete('/settings/loan-sub-statuses/{subStatus}', [\App\Http\Controllers\LoanController::class, 'destroySubStatus'])
+        ->name('admin.settings.destroy-sub-status');
+
+    // Reports and CSV Exports
+    Route::get('/reports/export/loans', [\App\Http\Controllers\ReportsController::class, 'exportLoansCsv'])
+        ->name('reports.export.loans');
+    Route::get('/reports/export/savings', [\App\Http\Controllers\ReportsController::class, 'exportSavingsCsv'])
+        ->name('reports.export.savings');
+
+    // System Tools routes
+    Route::get('/admin/tools', [\App\Http\Controllers\SystemToolsController::class, 'index'])
+        ->name('admin.tools');
+    Route::post('/admin/tools/migrate', [\App\Http\Controllers\SystemToolsController::class, 'runMigrations'])
+        ->name('admin.tools.migrate');
+    Route::post('/admin/tools/clear-cache', [\App\Http\Controllers\SystemToolsController::class, 'clearCache'])
+        ->name('admin.tools.clear-cache');
+    Route::post('/admin/tools/storage-link', [\App\Http\Controllers\SystemToolsController::class, 'storageLink'])
+        ->name('admin.tools.storage-link');
+
 });
 
 // Web-Based Visual Setup Wizard (Installer)

@@ -9,6 +9,7 @@ use App\Models\NjangiSession;
 use App\Models\NjangiSessionBeneficiary;
 use App\Models\NjangiPaymentSubmission;
 use App\Models\NjangiDisbursement;
+use App\Support\MemberResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -21,8 +22,8 @@ class DashboardController extends Controller
             return redirect()->route('login');
         }
 
-        // Find member matching the user's email
-        $member = Member::where('email', $user->email)->first();
+        // Find member linked to this user (by user_id, falling back to email)
+        $member = MemberResolver::fromUser($user);
 
         // Admin check: Explicitly check for Spatie admin role OR linked member admin roles
         $isAdmin = $user->hasRole('admin');
@@ -109,22 +110,15 @@ class DashboardController extends Controller
             // Find current active/open session to default in form
             $activeSession = NjangiSession::where('njangi_cycle_id', $activeCycle->id)
                 ->where('status', 'open')
+                ->with(['beneficiaries.cycleMember.member'])
                 ->first()
                 ?? NjangiSession::where('njangi_cycle_id', $activeCycle->id)
                     ->where('status', 'scheduled')
+                    ->with(['beneficiaries.cycleMember.member'])
                     ->orderBy('session_date')
                     ->first();
         }
 
-        // Submissions history for this member
-        $submissionsQuery = NjangiPaymentSubmission::where('member_id', $member->id)
-            ->with(['session', 'cycle', 'reviewer']);
-
-        if ($activeCycle) {
-            $submissionsQuery->where('njangi_cycle_id', $activeCycle->id);
-        }
-        
-        $submissions = $submissionsQuery->orderBy('id', 'desc')->paginate(10);
 
         // Fetch Njangi contributions and refund/ledger reports
         $contributionsMade = collect();
@@ -150,6 +144,7 @@ class DashboardController extends Controller
             })
             ->with(['cycleMember.member', 'session'])
             ->get();
+
 
             $refundSummary = $cycleBeneficiaries->groupBy('njangi_cycle_member_id')->map(function ($beneficiarySessions) use ($member, $activeCycle) {
                 $first = $beneficiarySessions->first();
@@ -197,6 +192,36 @@ class DashboardController extends Controller
             ->values();
         }
 
+        $activeLoans = collect();
+        $pendingGuarantees = collect();
+        $pendingSavingsRequests = collect();
+        $pendingRepayRequests = collect();
+        $pendingLoanRequests = collect();
+
+        if ($member) {
+            $activeLoans = $member->loanRequests()
+                ->whereIn('status', ['active', 'defaulted'])
+                ->with(['repayments', 'guarantors.guarantorMember'])
+                ->get();
+
+            $pendingGuarantees = \App\Models\LoanGuarantor::where('guarantor_member_id', $member->id)
+                ->where('status', 'pending')
+                ->with('loanRequest.member')
+                ->get();
+
+            $pendingSavingsRequests = \App\Models\SavingsDepositRequest::where('member_id', $member->id)
+                ->where('status', 'pending')
+                ->get();
+
+            $pendingRepayRequests = \App\Models\LoanRepaymentRequest::where('member_id', $member->id)
+                ->where('status', 'pending')
+                ->get();
+
+            $pendingLoanRequests = \App\Models\LoanRequest::where('member_id', $member->id)
+                ->whereIn('status', ['pending_guarantors', 'pending_committee'])
+                ->get();
+        }
+
         return view('dashboard.member', compact(
             'member',
             'activeCycle',
@@ -206,11 +231,15 @@ class DashboardController extends Controller
             'benefitSession',
             'activeSession',
             'sessions',
-            'submissions',
             'memberCycles',
             'contributionsMade',
             'contributionsReceived',
-            'refundSummary'
+            'refundSummary',
+            'activeLoans',
+            'pendingGuarantees',
+            'pendingSavingsRequests',
+            'pendingRepayRequests',
+            'pendingLoanRequests'
         ));
     }
 }

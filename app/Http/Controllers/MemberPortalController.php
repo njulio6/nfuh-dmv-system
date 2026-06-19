@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Member;
 use App\Models\NjangiSession;
 use App\Models\NjangiPaymentSubmission;
+use App\Support\MemberResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -18,7 +19,7 @@ class MemberPortalController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             return redirect()->back()->with('error', 'No member profile found associated with this user account.');
         }
@@ -59,7 +60,174 @@ class MemberPortalController extends Controller
             'member_note' => $validated['member_note'],
         ]);
 
-        return redirect()->route('dashboard')->with('success', 'Your payment submission has been uploaded successfully and is pending review by the treasurer.');
+        return redirect()->route('member.njangi-payments')->with('success', 'Your payment submission has been uploaded successfully and is pending review by the treasurer.');
+    }
+
+    public function myPayments(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $member = MemberResolver::fromUser($user);
+        if (!$member) {
+            abort(403, 'Unauthorized action. User profile is not linked to a member record.');
+        }
+
+        // Fetch all active cycles that the member is actually enrolled in.
+        $memberCycles = \App\Models\NjangiCycle::where('status', 'active')
+            ->whereHas('cycleMembers', function ($q) use ($member) {
+                $q->where('member_id', $member->id);
+            })->get();
+
+        $activeCycle = null;
+        if ($memberCycles->isNotEmpty()) {
+            $selectedCycleId = $request->input('cycle_id');
+            if ($selectedCycleId) {
+                $activeCycle = $memberCycles->firstWhere('id', $selectedCycleId);
+            }
+            if (!$activeCycle) {
+                $activeCycle = $memberCycles->first();
+            }
+        }
+
+        if (!$activeCycle) {
+            $activeCycle = \App\Models\NjangiCycle::where('status', 'active')->first();
+        }
+
+        if (!$activeCycle) {
+            $activeCycle = \App\Models\NjangiCycle::orderBy('id', 'desc')->first();
+        }
+
+        $cycleMember = null;
+        $activeSession = null;
+        $sessions = collect();
+
+        if ($activeCycle && $member) {
+            $cycleMember = \App\Models\NjangiCycleMember::where('njangi_cycle_id', $activeCycle->id)
+                ->where('member_id', $member->id)
+                ->first();
+
+            // Open/scheduled sessions for dropdown
+            $sessions = NjangiSession::where('njangi_cycle_id', $activeCycle->id)
+                ->whereIn('status', ['open', 'scheduled'])
+                ->orderBy('session_date')
+                ->get();
+
+            // Current active session
+            $activeSession = NjangiSession::where('njangi_cycle_id', $activeCycle->id)
+                ->where('status', 'open')
+                ->first()
+                ?? NjangiSession::where('njangi_cycle_id', $activeCycle->id)
+                    ->where('status', 'scheduled')
+                    ->orderBy('session_date')
+                    ->first();
+        }
+
+        // Query member's submissions
+        $query = NjangiPaymentSubmission::where('member_id', $member->id)
+            ->with(['session', 'cycle', 'reviewer']);
+
+        if ($activeCycle) {
+            $query->where('njangi_cycle_id', $activeCycle->id);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('amount', 'like', "%{$search}%")
+                  ->orWhere('member_note', 'like', "%{$search}%")
+                  ->orWhereHas('session', function ($sq) use ($search) {
+                      $sq->where('title', 'like', "%{$search}%")
+                        ->orWhere('session_number', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [5, 10, 20, 30, 50])) {
+            $perPage = 10;
+        }
+
+        $submissions = $query->orderBy('id', 'desc')->paginate($perPage);
+
+        // Format sessionsData for dropdown select options in JavaScript
+        $sessionsData = [];
+        foreach ($sessions as $s) {
+            $bNames = [];
+            foreach ($s->beneficiaries as $b) {
+                $bNames[] = $b->cycleMember->member->first_name . ' ' . $b->cycleMember->member->last_name;
+            }
+            $sessionsData[$s->id] = [
+                'id' => $s->id,
+                'title' => $s->title ?: "Session #{$s->session_number}",
+                'date' => $s->session_date->format('Y-m-d'),
+                'beneficiaries' => $bNames,
+            ];
+        }
+
+        $totalPaid = 0;
+        $totalPending = 0;
+        $pendingCount = 0;
+        $approvedCount = 0;
+        $hasBenefited = false;
+        $benefitOrder = null;
+
+        if ($activeCycle && $member) {
+            $totalPaid = NjangiPaymentSubmission::where('member_id', $member->id)
+                ->where('njangi_cycle_id', $activeCycle->id)
+                ->where('status', 'approved')
+                ->sum('amount');
+
+            $totalPending = NjangiPaymentSubmission::where('member_id', $member->id)
+                ->where('njangi_cycle_id', $activeCycle->id)
+                ->where('status', 'pending')
+                ->sum('amount');
+
+            $pendingCount = NjangiPaymentSubmission::where('member_id', $member->id)
+                ->where('njangi_cycle_id', $activeCycle->id)
+                ->where('status', 'pending')
+                ->count();
+
+            $approvedCount = NjangiPaymentSubmission::where('member_id', $member->id)
+                ->where('njangi_cycle_id', $activeCycle->id)
+                ->where('status', 'approved')
+                ->count();
+
+            if ($cycleMember) {
+                $benefitOrder = $cycleMember->benefit_order;
+
+                $hasBenefited = \App\Models\NjangiDisbursement::where('njangi_cycle_member_id', $cycleMember->id)
+                    ->where('status', 'paid')
+                    ->exists()
+                    || \App\Models\NjangiSessionBeneficiary::where('njangi_cycle_member_id', $cycleMember->id)
+                        ->whereHas('session', function ($q) {
+                            $q->where('status', 'closed');
+                        })->exists();
+            }
+        }
+
+        return view('njangi.member_payments', compact(
+            'member',
+            'activeCycle',
+            'cycleMember',
+            'activeSession',
+            'sessions',
+            'sessionsData',
+            'submissions',
+            'memberCycles',
+            'totalPaid',
+            'totalPending',
+            'pendingCount',
+            'approvedCount',
+            'hasBenefited',
+            'benefitOrder'
+        ));
     }
 
     public function report(Request $request)
@@ -69,7 +237,7 @@ class MemberPortalController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->with('rank')->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             return redirect()->route('dashboard')->with('error', 'No member profile found associated with this user account.');
         }

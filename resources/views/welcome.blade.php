@@ -77,7 +77,7 @@
         <!-- Navigation Header -->
         <header class="w-full max-w-7xl mx-auto px-6 lg:px-8 py-5 flex items-center justify-between z-10">
             <!-- Logo & Brand Name -->
-            <a href="/" class="flex items-center select-none group">
+            <a href="/" class="flex items-center group">
                 <span class="text-lg font-bold tracking-tight text-zinc-950 dark:text-white">{{ !empty($appSettings->app_name) ? $appSettings->app_name : 'NFUH DMV' }}</span>
             </a>
 
@@ -98,15 +98,15 @@
                 @if (Route::has('login'))
                     <nav class="flex items-center gap-2">
                         @auth
-                            <a href="{{ url('/dashboard') }}" class="inline-flex items-center justify-center rounded-xl text-xs font-bold px-4 py-2 bg-zinc-950 text-white hover:bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-100 shadow-sm transition-all select-none">
+                            <a href="{{ url('/dashboard') }}" class="inline-flex items-center justify-center rounded-xl text-xs font-bold px-4 py-2 bg-zinc-950 text-white hover:bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-100 shadow-sm transition-all">
                                 Dashboard
                             </a>
                         @else
-                            <a href="{{ route('login') }}" class="inline-flex items-center justify-center rounded-xl text-xs font-semibold px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all select-none">
+                            <a href="{{ route('login') }}" class="inline-flex items-center justify-center rounded-xl text-xs font-semibold px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">
                                 Log in
                             </a>
                             @if (Route::has('register'))
-                                <a href="{{ route('register') }}" class="inline-flex items-center justify-center rounded-xl text-xs font-bold px-4 py-2 bg-zinc-950 text-white hover:bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-100 shadow-sm transition-all select-none">
+                                <a href="{{ route('register') }}" class="inline-flex items-center justify-center rounded-xl text-xs font-bold px-4 py-2 bg-zinc-950 text-white hover:bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-100 shadow-sm transition-all">
                                     Register
                                 </a>
                             @endif
@@ -122,7 +122,7 @@
             <!-- Hero Container -->
             <div class="text-center max-w-3xl mx-auto flex flex-col items-center gap-6">
                 <!-- Premium Badge -->
-                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-zinc-950/5 dark:bg-zinc-50/5 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 select-none">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-zinc-950/5 dark:bg-zinc-50/5 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
                     <span class="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     Community Co-op Workspace
                 </div>

@@ -14,9 +14,14 @@ class SettingsController extends Controller
             'app_name' => 'NFUH DMV',
             'beneficiary_count' => 4,
             'single_benefit_constraint' => true,
+            'min_savings_for_loan' => 500.00,
+            'loan_guarantor_min' => 1,
+            'loan_guarantor_max' => 3,
         ]);
 
-        return view('settings.edit', compact('settings'));
+        $subStatuses = \App\Models\LoanSubStatus::orderBy('name')->get();
+
+        return view('settings.edit', compact('settings', 'subStatuses'));
     }
 
     public function update(Request $request)
@@ -27,17 +32,27 @@ class SettingsController extends Controller
         }
 
         $validated = $request->validate([
-            'app_name' => ['required', 'string', 'max:255'],
-            'logo_light' => ['nullable', 'image', 'mimes:png,jpg,jpeg,gif,webp', 'max:2048'],
-            'logo_dark' => ['nullable', 'image', 'mimes:png,jpg,jpeg,gif,webp', 'max:2048'],
-            'favicon' => ['nullable', 'file', 'mimes:ico,png,jpg,jpeg,gif,webp', 'max:1024'],
-            'beneficiary_count' => ['required', 'integer', 'min:1'],
+            'app_name'                 => ['required', 'string', 'max:255'],
+            'logo_light'              => ['nullable', 'image', 'mimes:png,jpg,jpeg,gif,webp', 'max:2048'],
+            'logo_dark'               => ['nullable', 'image', 'mimes:png,jpg,jpeg,gif,webp', 'max:2048'],
+            'favicon'                 => ['nullable', 'file', 'mimes:ico,png,jpg,jpeg,gif,webp', 'max:1024'],
+            'beneficiary_count'       => ['required', 'integer', 'min:1'],
             'single_benefit_constraint' => ['nullable', 'boolean'],
+            'min_savings_for_loan'    => ['required', 'numeric', 'min:0'],
+            'loan_guarantor_min'      => ['required', 'integer', 'min:1'],
+            'loan_guarantor_max'      => ['required', 'integer', 'min:1', 'gte:loan_guarantor_min'],
+            'allow_mid_cycle_enrollment' => ['nullable', 'boolean'],
+            'allow_mid_cycle_removal'    => ['nullable', 'boolean'],
         ]);
 
         $settings->app_name = $validated['app_name'];
         $settings->beneficiary_count = $validated['beneficiary_count'];
         $settings->single_benefit_constraint = $request->has('single_benefit_constraint');
+        $settings->min_savings_for_loan = $validated['min_savings_for_loan'];
+        $settings->loan_guarantor_min = $validated['loan_guarantor_min'];
+        $settings->loan_guarantor_max = $validated['loan_guarantor_max'];
+        $settings->allow_mid_cycle_enrollment = $request->has('allow_mid_cycle_enrollment');
+        $settings->allow_mid_cycle_removal = $request->has('allow_mid_cycle_removal');
 
         if ($request->hasFile('logo_light')) {
             if ($settings->logo_light_path) {

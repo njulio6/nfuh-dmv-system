@@ -13,10 +13,20 @@ class Setting extends Model
         'favicon_path',
         'beneficiary_count',
         'single_benefit_constraint',
+        'min_savings_for_loan',
+        'loan_guarantor_min',
+        'loan_guarantor_max',
+        'allow_mid_cycle_enrollment',
+        'allow_mid_cycle_removal',
     ];
 
     protected $casts = [
         'beneficiary_count' => 'integer',
         'single_benefit_constraint' => 'boolean',
+        'min_savings_for_loan' => 'float',
+        'loan_guarantor_min' => 'integer',
+        'loan_guarantor_max' => 'integer',
+        'allow_mid_cycle_enrollment' => 'boolean',
+        'allow_mid_cycle_removal' => 'boolean',
     ];
 }

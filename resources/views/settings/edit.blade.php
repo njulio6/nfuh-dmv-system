@@ -10,7 +10,7 @@
 
     <!-- Validation Errors Alert Block -->
     @if ($errors->any())
-        <div class="p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/60 rounded-xl text-red-800 dark:text-red-400 text-xs font-semibold flex flex-col gap-1.5 select-none">
+        <div class="p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/60 rounded-xl text-red-800 dark:text-red-400 text-xs font-semibold flex flex-col gap-1.5">
             <div class="flex items-center gap-2">
                 <i data-lucide="alert-triangle" class="w-4 h-4 text-red-650 shrink-0"></i>
                 <span class="font-bold">Please correct the following errors:</span>
@@ -41,7 +41,7 @@
 
                     <!-- Light Logo File Upload -->
                     <div class="flex flex-col w-full">
-                        <label for="logo_light" class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">
+                        <label for="logo_light" class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                             Logo (Light Theme)
                         </label>
                         <div class="flex items-center gap-4">
@@ -63,7 +63,7 @@
 
                     <!-- Dark Logo File Upload -->
                     <div class="flex flex-col w-full">
-                        <label for="logo_dark" class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">
+                        <label for="logo_dark" class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                             Logo (Dark Theme)
                         </label>
                         <div class="flex items-center gap-4">
@@ -85,7 +85,7 @@
 
                     <!-- Favicon File Upload -->
                     <div class="flex flex-col w-full">
-                        <label for="favicon" class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">
+                        <label for="favicon" class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                             Favicon
                         </label>
                         <div class="flex items-center gap-4">
@@ -107,8 +107,8 @@
                 </div>
             </x-premium-card>
 
-            <!-- Right Column: Njangi Cycle Constraints -->
-            <x-premium-card title="Njangi Cycles Validation Constraints">
+            <!-- Right Column: System Rules & Constraints -->
+            <x-premium-card title="System Rules & Constraints">
                 <div class="flex flex-col gap-6">
                     <!-- Beneficiary Count -->
                     <x-premium-input 
@@ -122,9 +122,50 @@
                     />
                     <span class="text-[10px] text-zinc-400 dark:text-zinc-500 -mt-4">Defines the minimum number of members that must be marked as beneficiaries for each session.</span>
 
+                    <!-- Minimum Savings for Loan Eligibility -->
+                    <x-premium-input 
+                        type="number"
+                        step="0.01"
+                        label="Minimum Savings for Loan Eligibility ($)" 
+                        name="min_savings_for_loan" 
+                        value="{{ old('min_savings_for_loan', $settings->min_savings_for_loan ?? 500.00) }}" 
+                        placeholder="e.g. 500.00"
+                        min="0"
+                        required 
+                    />
+                    <span class="text-[10px] text-zinc-400 dark:text-zinc-500 -mt-4">Defines the minimum savings balance required for members to become eligible to request a loan.</span>
+
+                    <!-- Loan Guarantor Limits -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-1">
+                            <x-premium-input 
+                                type="number"
+                                label="Min Guarantors Required" 
+                                name="loan_guarantor_min" 
+                                value="{{ old('loan_guarantor_min', $settings->loan_guarantor_min ?? 1) }}" 
+                                placeholder="e.g. 1"
+                                min="1"
+                                required 
+                            />
+                            <span class="text-[10px] text-zinc-400 dark:text-zinc-500">Minimum number of guarantors a member must designate when applying for a loan.</span>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <x-premium-input 
+                                type="number"
+                                label="Max Guarantors Allowed" 
+                                name="loan_guarantor_max" 
+                                value="{{ old('loan_guarantor_max', $settings->loan_guarantor_max ?? 3) }}" 
+                                placeholder="e.g. 3"
+                                min="1"
+                                required 
+                            />
+                            <span class="text-[10px] text-zinc-400 dark:text-zinc-500">Maximum number of guarantors allowed per loan application. Must be ≥ minimum.</span>
+                        </div>
+                    </div>
+
                     <!-- Single Benefit Constraint -->
                     <div class="flex flex-col gap-1.5">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 select-none">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
                             Benefit Restrictions
                         </span>
                         
@@ -151,6 +192,63 @@
                             >
                         </label>
                     </div>
+
+                    <!-- Njangi Mid-Cycle Policies -->
+                    <div class="flex flex-col gap-3">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                            Njangi Mid-Cycle Enrollment Policies
+                        </span>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Allow Mid-Cycle Enrollment -->
+                            <label 
+                                x-data="{ checked: {{ old('allow_mid_cycle_enrollment', $settings->allow_mid_cycle_enrollment) ? 'true' : 'false' }} }"
+                                class="group relative flex items-center justify-between p-4 rounded-xl border cursor-pointer select-none transition-all duration-200"
+                                :class="checked ? 'border-zinc-950 bg-zinc-50/40 dark:border-zinc-50 dark:bg-zinc-900/40 font-medium' : 'border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/10 dark:bg-zinc-950/10 hover:bg-zinc-100/40 dark:hover:bg-zinc-900/30'"
+                            >
+                                <div class="flex flex-col gap-1 pr-4">
+                                    <span class="text-xs font-bold leading-none transition-colors" :class="checked ? 'text-zinc-950 dark:text-white' : 'text-zinc-700 dark:text-zinc-300'">
+                                        Allow Mid-Cycle Enrollment
+                                    </span>
+                                    <span class="text-[10px] text-zinc-400 dark:text-zinc-500 leading-tight">
+                                        When enabled, admins can add participants to a cycle even after sessions have been generated.
+                                    </span>
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    name="allow_mid_cycle_enrollment"
+                                    value="1"
+                                    @change="checked = $el.checked"
+                                    class="rounded border-zinc-300 dark:border-zinc-800 text-zinc-950 focus:ring-0 focus:ring-offset-0 size-5 dark:bg-zinc-950 transition-colors cursor-pointer shrink-0"
+                                    {{ old('allow_mid_cycle_enrollment', $settings->allow_mid_cycle_enrollment) ? 'checked' : '' }}
+                                >
+                            </label>
+
+                            <!-- Allow Mid-Cycle Removal -->
+                            <label 
+                                x-data="{ checked: {{ old('allow_mid_cycle_removal', $settings->allow_mid_cycle_removal) ? 'true' : 'false' }} }"
+                                class="group relative flex items-center justify-between p-4 rounded-xl border cursor-pointer select-none transition-all duration-200"
+                                :class="checked ? 'border-zinc-950 bg-zinc-50/40 dark:border-zinc-50 dark:bg-zinc-900/40 font-medium' : 'border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/10 dark:bg-zinc-950/10 hover:bg-zinc-100/40 dark:hover:bg-zinc-900/30'"
+                            >
+                                <div class="flex flex-col gap-1 pr-4">
+                                    <span class="text-xs font-bold leading-none transition-colors" :class="checked ? 'text-zinc-950 dark:text-white' : 'text-zinc-700 dark:text-zinc-300'">
+                                        Allow Mid-Cycle Removal
+                                    </span>
+                                    <span class="text-[10px] text-zinc-400 dark:text-zinc-500 leading-tight">
+                                        When enabled, admins can remove participants from a cycle even after sessions have been generated.
+                                    </span>
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    name="allow_mid_cycle_removal"
+                                    value="1"
+                                    @change="checked = $el.checked"
+                                    class="rounded border-zinc-300 dark:border-zinc-800 text-zinc-950 focus:ring-0 focus:ring-offset-0 size-5 dark:bg-zinc-950 transition-colors cursor-pointer shrink-0"
+                                    {{ old('allow_mid_cycle_removal', $settings->allow_mid_cycle_removal) ? 'checked' : '' }}
+                                >
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </x-premium-card>
         </div>
@@ -165,5 +263,6 @@
             </x-premium-button>
         </div>
     </form>
+
 </div>
 @endsection
