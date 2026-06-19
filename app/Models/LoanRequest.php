@@ -19,6 +19,8 @@ class LoanRequest extends Model
         'disbursed_at',
         'repayment_due_date',
         'admin_notes',
+        'interest_rate',
+        'interest_type',
     ];
 
     protected $casts = [
@@ -26,6 +28,8 @@ class LoanRequest extends Model
         'duration_months' => 'integer',
         'disbursed_at' => 'datetime',
         'repayment_due_date' => 'date',
+        'interest_rate' => 'float',
+        'interest_type' => 'string',
     ];
 
     public function member(): BelongsTo
@@ -53,9 +57,20 @@ class LoanRequest extends Model
         return $this->hasMany(LoanRepayment::class);
     }
 
+    public function getTotalRepayableAttribute(): float
+    {
+        $interest = (float) $this->amount * ($this->interest_rate / 100);
+        
+        if ($this->interest_type === 'duration_based') {
+            $interest = $interest * ($this->duration_months / 12);
+        }
+        
+        return (float) ($this->amount + $interest);
+    }
+
     public function getRemainingBalanceAttribute(): float
     {
         $paid = (float) $this->repayments()->sum('amount');
-        return (float) max(0, $this->amount - $paid);
+        return (float) max(0, $this->total_repayable - $paid);
     }
 }

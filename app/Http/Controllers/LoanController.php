@@ -9,6 +9,7 @@ use App\Models\LoanRepayment;
 use App\Models\Setting;
 use App\Models\LoanSubStatus;
 use App\Models\LoanRepaymentRequest;
+use App\Support\MemberResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,6 +24,7 @@ class LoanController extends Controller
         $counts = [
             'pending_guarantors' => LoanRequest::where('status', 'pending_guarantors')->count(),
             'pending_committee'  => LoanRequest::where('status', 'pending_committee')->count(),
+            'approved'           => LoanRequest::where('status', 'approved')->count(),
             'active'             => LoanRequest::where('status', 'active')->count(),
             'defaulted'          => LoanRequest::where('status', 'defaulted')->count(),
             'completed'          => LoanRequest::where('status', 'completed')->count(),
@@ -132,10 +134,25 @@ class LoanController extends Controller
             return redirect()->back()->with('error', 'Loan is not in pending committee review status.');
         }
 
-        $loan->update([
-            'status' => 'approved',
-            'admin_notes' => $request->input('notes'),
+        $validated = $request->validate([
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'duration_months' => ['nullable', 'integer', 'min:1'],
+            'interest_rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'interest_type' => ['required', 'string', 'in:flat,duration_based'],
         ]);
+
+        $updateData = [
+            'status' => 'approved',
+            'admin_notes' => $validated['notes'] ?? null,
+            'interest_rate' => (float) $validated['interest_rate'],
+            'interest_type' => $validated['interest_type'],
+        ];
+
+        if (!empty($validated['duration_months'])) {
+            $updateData['duration_months'] = (int) $validated['duration_months'];
+        }
+
+        $loan->update($updateData);
 
         return redirect()->route('loans.index')->with('success', 'Loan request approved. Ready for disbursement.');
     }
@@ -224,7 +241,7 @@ class LoanController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
@@ -266,7 +283,7 @@ class LoanController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
@@ -294,6 +311,15 @@ class LoanController extends Controller
 
         $loans = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
+        // Fetch statistics across ALL of the member's loan requests
+        $allLoans = $member->loanRequests()->with('repayments')->get();
+        $activePrincipal      = (float) $allLoans->sum('amount');
+        $activeTotalRepayable = (float) $allLoans->sum('total_repayable');
+        $outstandingBalance   = (float) $allLoans->sum('remaining_balance');
+        $totalRepaid          = (float) $allLoans->sum(function ($loan) {
+            return $loan->repayments->sum('amount');
+        });
+
         // Other members to select as guarantors
         $otherMembers = Member::where('id', '!=', $member->id)
             ->where('status', 'Active')
@@ -305,7 +331,18 @@ class LoanController extends Controller
         $minGuarantors = $appSettings?->loan_guarantor_min ?? 1;
         $maxGuarantors = $appSettings?->loan_guarantor_max ?? 3;
 
-        return view('loans.member_applications', compact('member', 'loans', 'otherMembers', 'minSavings', 'minGuarantors', 'maxGuarantors'));
+        return view('loans.member_applications', compact(
+            'member', 
+            'loans', 
+            'otherMembers', 
+            'minSavings', 
+            'minGuarantors', 
+            'maxGuarantors',
+            'activePrincipal',
+            'activeTotalRepayable',
+            'outstandingBalance',
+            'totalRepaid'
+        ));
     }
 
 
@@ -320,7 +357,7 @@ class LoanController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
@@ -380,7 +417,7 @@ class LoanController extends Controller
     public function approveGuarantee(Request $request, LoanGuarantor $guarantor)
     {
         $user = Auth::user();
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
 
         if (!$member || $guarantor->guarantor_member_id !== $member->id) {
             abort(403, 'Unauthorized guarantor response.');
@@ -414,7 +451,7 @@ class LoanController extends Controller
     public function declineGuarantee(Request $request, LoanGuarantor $guarantor)
     {
         $user = Auth::user();
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
 
         if (!$member || $guarantor->guarantor_member_id !== $member->id) {
             abort(403, 'Unauthorized guarantor response.');
@@ -460,7 +497,7 @@ class LoanController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
@@ -602,7 +639,7 @@ class LoanController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
@@ -661,7 +698,7 @@ class LoanController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }

@@ -184,7 +184,10 @@ test('admin can approve and disburse loan, and record repayment lifecycle', func
     ]);
 
     // Admin approves
-    $response = $this->actingAs($adminUser)->post(route('loans.approve', $loan->id));
+    $response = $this->actingAs($adminUser)->post(route('loans.approve', $loan->id), [
+        'interest_rate' => 0.00,
+        'interest_type' => 'flat',
+    ]);
     $response->assertRedirect(route('loans.index'));
     expect($loan->fresh()->status)->toEqual('approved');
 
@@ -220,6 +223,53 @@ test('admin can approve and disburse loan, and record repayment lifecycle', func
     ]);
     expect((float)$loan->fresh()->remaining_balance)->toEqual(0.00);
     expect($loan->fresh()->status)->toEqual('completed');
+});
+
+test('admin can approve loan and override repayment term duration_months', function () {
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin']);
+    $adminUser = User::factory()->create();
+    $adminUser->assignRole('admin');
+
+    $org = Organization::create(['name' => 'Test Org']);
+    $borrower = Member::create([
+        'organization_id' => $org->id, 
+        'member_code' => 'B1', 
+        'first_name' => 'B', 
+        'last_name' => 'R', 
+        'email' => 'b@example.com', 
+        'phone' => '1', 
+        'participates_in_savings' => true
+    ]);
+
+    $loan = LoanRequest::create([
+        'member_id' => $borrower->id,
+        'organization_id' => $org->id,
+        'amount' => 1000.00,
+        'duration_months' => 12,
+        'status' => 'pending_committee'
+    ]);
+
+    // Admin approves and overrides duration to 6 months
+    $response = $this->actingAs($adminUser)->post(route('loans.approve', $loan->id), [
+        'notes' => 'Term reduced per request.',
+        'duration_months' => 6,
+        'interest_rate' => 0.00,
+        'interest_type' => 'flat',
+    ]);
+    $response->assertRedirect(route('loans.index'));
+    
+    $freshLoan = $loan->fresh();
+    expect($freshLoan->status)->toEqual('approved');
+    expect($freshLoan->duration_months)->toEqual(6);
+    expect($freshLoan->admin_notes)->toEqual('Term reduced per request.');
+
+    // Admin disburses
+    $response = $this->actingAs($adminUser)->post(route('loans.disburse', $loan->id));
+    $response->assertRedirect(route('loans.index'));
+
+    $disbursedLoan = $loan->fresh();
+    expect($disbursedLoan->status)->toEqual('active');
+    expect($disbursedLoan->repayment_due_date->toDateString())->toEqual(now()->addMonths(6)->toDateString());
 });
 
 test('member can view their own loan applications page with search and status filters', function () {
@@ -431,6 +481,111 @@ test('member can view their own statement but not other members statements', fun
     // Member 2 cannot view Member 1's statement
     $response = $this->actingAs($memberUser2)->get(route('member.loans.statement', $loan1->id));
     $response->assertStatus(403);
+});
+
+test('admin can approve loan with flat interest rate and calculations are correct', function () {
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin']);
+    $adminUser = User::factory()->create();
+    $adminUser->assignRole('admin');
+
+    $org = Organization::create(['name' => 'Test Org']);
+    $borrower = Member::create([
+        'organization_id' => $org->id, 
+        'member_code' => 'B-INT-FLAT', 
+        'first_name' => 'Flat', 
+        'last_name' => 'Interest', 
+        'email' => 'flat@example.com', 
+        'phone' => '999', 
+        'participates_in_savings' => true
+    ]);
+
+    $loan = LoanRequest::create([
+        'member_id' => $borrower->id,
+        'organization_id' => $org->id,
+        'amount' => 1000.00,
+        'duration_months' => 12,
+        'status' => 'pending_committee'
+    ]);
+
+    // Approve with 10% Flat interest rate
+    $response = $this->actingAs($adminUser)->post(route('loans.approve', $loan->id), [
+        'interest_rate' => 10.00,
+        'interest_type' => 'flat',
+        'duration_months' => 12,
+    ]);
+    $response->assertRedirect(route('loans.index'));
+
+    $freshLoan = $loan->fresh();
+    expect($freshLoan->interest_rate)->toEqual(10.00);
+    expect($freshLoan->interest_type)->toEqual('flat');
+    expect((float) $freshLoan->total_repayable)->toEqual(1100.00);
+    expect((float) $freshLoan->remaining_balance)->toEqual(1100.00);
+
+    // Disburse and pay $400
+    $this->actingAs($adminUser)->post(route('loans.disburse', $loan->id));
+    $this->actingAs($adminUser)->post(route('loans.repay', $loan->id), [
+        'amount' => 400.00,
+        'payment_date' => now()->toDateString(),
+        'payment_method' => 'zelle',
+        'reference_number' => 'Z123',
+        'notes' => 'Repay flat'
+    ]);
+
+    expect((float) $loan->fresh()->remaining_balance)->toEqual(700.00);
+});
+
+test('admin can approve loan with duration based interest rate and calculations are correct', function () {
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin']);
+    $adminUser = User::factory()->create();
+    $adminUser->assignRole('admin');
+
+    $org = Organization::create(['name' => 'Test Org']);
+    $borrower = Member::create([
+        'organization_id' => $org->id, 
+        'member_code' => 'B-INT-DUR', 
+        'first_name' => 'Dur', 
+        'last_name' => 'Interest', 
+        'email' => 'dur@example.com', 
+        'phone' => '888', 
+        'participates_in_savings' => true
+    ]);
+
+    // 6 Months term, $1,000 principal
+    $loan = LoanRequest::create([
+        'member_id' => $borrower->id,
+        'organization_id' => $org->id,
+        'amount' => 1000.00,
+        'duration_months' => 6,
+        'status' => 'pending_committee'
+    ]);
+
+    // Approve with 10% Duration-based interest rate
+    $response = $this->actingAs($adminUser)->post(route('loans.approve', $loan->id), [
+        'interest_rate' => 10.00,
+        'interest_type' => 'duration_based',
+        'duration_months' => 6,
+    ]);
+    $response->assertRedirect(route('loans.index'));
+
+    $freshLoan = $loan->fresh();
+    expect($freshLoan->interest_rate)->toEqual(10.00);
+    expect($freshLoan->interest_type)->toEqual('duration_based');
+    // Math: 1000 * (10 / 100) * (6 / 12) = 50.00
+    // Total repayable: 1000 + 50 = 1050
+    expect((float) $freshLoan->total_repayable)->toEqual(1050.00);
+    expect((float) $freshLoan->remaining_balance)->toEqual(1050.00);
+
+    // Disburse and pay $350
+    $this->actingAs($adminUser)->post(route('loans.disburse', $loan->id));
+    $this->actingAs($adminUser)->post(route('loans.repay', $loan->id), [
+        'amount' => 350.00,
+        'payment_date' => now()->toDateString(),
+        'payment_method' => 'cash',
+        'reference_number' => 'C123',
+        'notes' => 'Repay duration based'
+    ]);
+
+    expect((float) $loan->fresh()->remaining_balance)->toEqual(700.00);
 });
 
 

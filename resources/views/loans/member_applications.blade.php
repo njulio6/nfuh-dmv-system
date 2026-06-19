@@ -40,8 +40,67 @@
         <input type="hidden" name="page" value="{{ $loans->currentPage() }}" x-ref="pageInput">
     </form>
 
-    <!-- ─── Top Control Bar ─── -->
+    {{-- ─── Loan Statistics Cards ─── --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+
+        {{-- Total Principal --}}
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex items-center gap-5">
+            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-900 dark:text-zinc-50 border border-zinc-100 dark:border-zinc-850">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Principal</span>
+                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+                    ${{ number_format($activePrincipal, 2) }}
+                </span>
+            </div>
+        </div>
+
+        {{-- Total Repayable --}}
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex items-center gap-5">
+            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-900 dark:text-zinc-50 border border-zinc-100 dark:border-zinc-850">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Repayable</span>
+                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+                    ${{ number_format($activeTotalRepayable, 2) }}
+                </span>
+            </div>
+        </div>
+
+        {{-- Total Repaid --}}
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex items-center gap-5">
+            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-900 dark:text-zinc-50 border border-zinc-100 dark:border-zinc-850">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            </div>
+            <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Repaid</span>
+                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+                    ${{ number_format($totalRepaid, 2) }}
+                </span>
+            </div>
+        </div>
+
+        {{-- Outstanding Balance --}}
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex items-center gap-5">
+            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-900 dark:text-zinc-50 border border-zinc-100 dark:border-zinc-850">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Outstanding Balance</span>
+                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+                    ${{ number_format($outstandingBalance, 2) }}
+                </span>
+            </div>
+        </div>
+
+    </div>
+
+
+    {{-- ─── Top Control Bar ─── --}}
     <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white dark:bg-zinc-900/40 p-4 md:p-5 rounded-[10px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-xs mb-6">
+
         
         <!-- Left: Search Box -->
         <div class="flex items-center gap-3 flex-1 min-w-[240px] w-full sm:max-w-xs md:max-w-sm">
@@ -107,12 +166,13 @@
         </div>
     </div>
 
-    <!-- ─── Data Table Card ─── -->
     <div class="bg-white dark:bg-zinc-900 rounded-[10px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-2xs overflow-x-auto relative mb-6">
         <x-premium-table :headers="[
             ['label' => 'SI', 'width' => 'min-w-[40px]', 'align' => 'center'],
             ['label' => 'Application Date', 'width' => 'min-w-[130px]'],
-            ['label' => 'Amount Requested', 'width' => 'min-w-[130px]'],
+            ['label' => 'Principal ($)', 'width' => 'min-w-[110px]'],
+            ['label' => 'Interest', 'width' => 'min-w-[110px]'],
+            ['label' => 'Total ($)', 'width' => 'min-w-[110px]'],
             ['label' => 'Term', 'width' => 'min-w-[90px]'],
             ['label' => 'Purpose', 'width' => 'min-w-[100px]'],
             ['label' => 'Outstanding Balance', 'width' => 'min-w-[140px]'],
@@ -136,9 +196,30 @@
                         {{ $loan->created_at->format('Y-m-d') }}
                     </td>
 
-                    <!-- Amount -->
-                    <td class="py-3 px-3 text-zinc-900 dark:text-white font-extrabold select-text">
+                    <!-- Principal -->
+                    <td class="py-3 px-3 text-zinc-900 dark:text-white font-bold select-text">
                         ${{ number_format($loan->amount, 2) }}
+                    </td>
+
+                    <!-- Interest -->
+                    <td class="py-3 px-3">
+                        <div class="flex flex-col text-xs">
+                            @if($loan->interest_rate > 0)
+                                <span class="font-bold text-zinc-900 dark:text-white font-mono">{{ number_format($loan->interest_rate, 2) }}%</span>
+                                <span class="text-[10px] font-semibold text-zinc-450 dark:text-zinc-500 mt-0.5 capitalize">{{ $loan->interest_type === 'flat' ? 'Flat' : 'Duration Based' }}</span>
+                            @else
+                                <span class="text-zinc-400 dark:text-zinc-605 font-medium italic">No Interest</span>
+                            @endif
+                        </div>
+                    </td>
+
+                    <!-- Total Repayable -->
+                    <td class="py-3 px-3 text-zinc-955 dark:text-white font-extrabold select-text">
+                        @if(in_array($loan->status, ['approved', 'active', 'defaulted', 'completed']))
+                            ${{ number_format($loan->total_repayable, 2) }}
+                        @else
+                            ${{ number_format($loan->amount, 2) }}
+                        @endif
                     </td>
 
                     <!-- Term -->
@@ -147,13 +228,17 @@
                     </td>
 
                     <!-- Purpose -->
-                    <td class="py-3 px-3 text-zinc-800 dark:text-zinc-250 font-semibold max-w-[180px] truncate select-text" title="{{ $loan->purpose }}">
+                    <td class="py-3 px-3 text-zinc-800 dark:text-zinc-255 font-semibold max-w-[180px] truncate select-text" title="{{ $loan->purpose }}">
                         {{ $loan->purpose ?: '-' }}
                     </td>
 
                     <!-- Outstanding -->
                     <td class="py-3 px-3 text-zinc-900 dark:text-white font-extrabold">
-                        ${{ number_format($loan->remaining_balance, 2) }}
+                        @if(in_array($loan->status, ['active', 'defaulted', 'completed']))
+                            ${{ number_format($loan->remaining_balance, 2) }}
+                        @else
+                            -
+                        @endif
                     </td>
 
                     <!-- Statement Link -->
@@ -398,7 +483,7 @@
         
         <!-- Modal Container -->
         <div 
-            class="relative w-full max-w-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-6 text-left z-10 transition-transform duration-300"
+            class="relative w-full max-w-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-6 text-left z-10 transition-transform duration-300 max-h-[90vh] overflow-y-auto"
             x-transition:enter="ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
@@ -474,7 +559,7 @@
 
         <!-- Modal Content Container -->
         <div 
-            class="relative w-full max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl z-10 p-6 flex flex-col gap-4 transition-transform duration-300"
+            class="relative w-full max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl z-10 p-6 flex flex-col gap-4 transition-transform duration-300 max-h-[90vh] overflow-y-auto"
             x-transition:enter="ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
             x-transition:enter-end="opacity-100 scale-100 translate-y-0"

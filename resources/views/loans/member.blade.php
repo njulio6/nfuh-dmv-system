@@ -108,7 +108,7 @@
                                 <button 
                                     type="button" 
                                     @click="openResponseModal('{{ route('member.loans.guarantee.decline', $req->id) }}', 'decline', {{ json_encode($req->load('loanRequest.member')) }})"
-                                    class="w-full lg:w-auto px-5 py-2.5 border border-red-200 dark:border-red-955/60 bg-red-50 hover:bg-red-100 dark:bg-red-950/10 text-red-655 dark:text-red-400 text-xs font-bold rounded-xl transition-all cursor-pointer text-center active:scale-[0.97]"
+                                    class="w-full lg:w-auto px-5 py-2.5 border border-red-200 dark:border-red-950/60 bg-red-50 hover:bg-red-100 dark:bg-red-950/10 text-red-655 dark:text-red-400 text-xs font-bold rounded-xl transition-all cursor-pointer text-center active:scale-[0.97]"
                                 >
                                     Decline
                                 </button>
@@ -144,7 +144,7 @@
             x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
-            class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-md relative z-50 p-6 flex flex-col gap-4"
+            class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-md relative z-50 p-6 flex flex-col gap-4 max-h-[90vh] overflow-y-auto"
         >
             <div class="flex justify-between items-center pb-4 border-b border-zinc-100 dark:border-zinc-800/80 mb-1">
                 <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider">Guarantor Status</h3>
@@ -217,7 +217,7 @@
             x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
-            class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-md relative z-50 p-6 flex flex-col gap-4"
+            class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-md relative z-50 p-6 flex flex-col gap-4 max-h-[90vh] overflow-y-auto"
         >
             <div class="flex justify-between items-center pb-4 border-b border-zinc-100 dark:border-zinc-800/80 mb-1">
                 <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider" x-text="responseType === 'approve' ? 'Approve Loan Guarantee' : 'Decline Loan Guarantee'"></h3>

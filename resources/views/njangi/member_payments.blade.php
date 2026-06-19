@@ -30,7 +30,7 @@
 
     @if(!$activeCycle || !$cycleMember)
         <!-- Enrollment Warning Card -->
-        <div class="bg-amber-50 dark:bg-amber-955/20 border border-amber-200 dark:border-amber-900 rounded-2xl p-4 flex items-start gap-3.5 animate-fadeIn">
+        <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-2xl p-4 flex items-start gap-3.5 animate-fadeIn">
             <div class="p-2.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
@@ -149,7 +149,7 @@
                         x-transition:enter="transition ease-out duration-120"
                         x-transition:enter-start="opacity-0 transform scale-95 -translate-y-2"
                         x-transition:enter-end="opacity-100 transform scale-100 translate-y-0"
-                        class="absolute right-0 z-50 mt-2 bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl w-60 overflow-hidden py-1"
+                        class="absolute right-0 z-50 mt-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl w-60 overflow-hidden py-1"
                     >
                         <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 border-b border-zinc-100 dark:border-zinc-800/60 mb-1">
                             Switch Njangi Cycle
@@ -182,7 +182,7 @@
             <!-- Reload / Clear Button -->
             <a 
                 href="{{ route('member.njangi-payments') }}" 
-                class="p-2.5 border border-zinc-200 dark:border-zinc-800 rounded-[10px] text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-955/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-all active:scale-[0.96]"
+                class="p-2.5 border border-zinc-200 dark:border-zinc-800 rounded-[10px] text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-950/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-all active:scale-[0.96]"
                 title="Reload & Clear Filters"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
@@ -192,7 +192,7 @@
             <button 
                 type="button"
                 @click="showFilterModal = true"
-                class="p-2.5 border rounded-[10px] cursor-pointer transition-all active:scale-[0.96] relative {{ request('status') ? 'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400' : 'text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-955/40 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800' }}"
+                class="p-2.5 border rounded-[10px] cursor-pointer transition-all active:scale-[0.96] relative {{ request('status') ? 'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400' : 'text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-950/40 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800' }}"
                 title="Filters"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
@@ -262,16 +262,16 @@
                     <td class="py-2.5 px-3">
                         <div class="flex justify-center">
                             @if($sub->status === 'pending')
-                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 dark:bg-amber-955/20 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40">
                                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                                     Pending
                                 </span>
                             @elseif($sub->status === 'approved')
-                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-750 dark:bg-emerald-955/20 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-750 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
                                     Approved
                                 </span>
                             @elseif($sub->status === 'rejected')
-                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-red-50 text-red-750 dark:bg-red-955/20 dark:text-red-400 border border-red-200/60 dark:border-red-800/40">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-red-50 text-red-750 dark:bg-red-950/20 dark:text-red-400 border border-red-200/60 dark:border-red-800/40">
                                     Rejected
                                 </span>
                             @endif
@@ -353,7 +353,7 @@
                 type="button"
                 @click="$refs.pageInput.value = 1; $refs.form.submit()"
                 @if($submissions->onFirstPage()) disabled @endif
-                class="px-2 py-1.5 bg-zinc-955 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-955 text-[11px] font-bold rounded-[10px] shadow-xs transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed active:scale-[0.97]"
+                class="px-2 py-1.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-[11px] font-bold rounded-[10px] shadow-xs transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed active:scale-[0.97]"
             >
                 First
             </button>
@@ -397,7 +397,7 @@
                     @click="$refs.pageInput.value = {{ $submissions->currentPage() + 1 }}; $refs.form.submit()"
                 @endif
                 @if(!$submissions->hasMorePages()) disabled @endif
-                class="p-1.5 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-955 text-zinc-700 dark:text-zinc-300 rounded-[10px] flex items-center justify-center transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed active:scale-[0.97]"
+                class="p-1.5 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 rounded-[10px] flex items-center justify-center transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed active:scale-[0.97]"
                 title="Next Page"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
@@ -408,7 +408,7 @@
                 type="button"
                 @click="$refs.pageInput.value = {{ $submissions->lastPage() }}; $refs.form.submit()"
                 @if($submissions->currentPage() == $submissions->lastPage()) disabled @endif
-                class="px-2 py-1.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-955 text-[11px] font-bold rounded-[10px] shadow-xs transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed active:scale-[0.97]"
+                class="px-2 py-1.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-[11px] font-bold rounded-[10px] shadow-xs transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed active:scale-[0.97]"
             >
                 Last
             </button>
@@ -435,7 +435,7 @@
         
         <!-- Modal Container -->
         <div 
-            class="relative w-full max-w-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-6 text-left z-10 transition-transform duration-300"
+            class="relative w-full max-w-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-6 text-left z-10 transition-transform duration-300 max-h-[90vh] overflow-y-auto"
             x-transition:enter="ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
@@ -505,7 +505,7 @@
                 x-transition:leave="transition ease-in duration-150"
                 x-transition:leave-start="opacity-100 scale-100"
                 x-transition:leave-end="opacity-0 scale-95"
-                class="bg-white dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-md relative z-50 overflow-hidden flex flex-col"
+                class="bg-white dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-md relative z-50 overflow-hidden flex flex-col max-h-[90vh] overflow-y-auto"
             >
                 <div class="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between">
                     <h3 class="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Submit Njangi Play</h3>
@@ -552,7 +552,7 @@
                                 x-transition:enter="transition ease-out duration-120"
                                 x-transition:enter-start="opacity-0 transform scale-98 -translate-y-2"
                                 x-transition:enter-end="opacity-100 transform scale-100 translate-y-0"
-                                class="absolute left-0 right-0 z-40 mt-2 bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl max-h-60 overflow-y-auto py-1.5 scrollbar-thin"
+                                class="absolute left-0 right-0 z-40 mt-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl max-h-60 overflow-y-auto py-1.5 scrollbar-thin"
                             >
                                 <template x-for="sId in Object.keys(sessions)">
                                     <div 
@@ -601,13 +601,13 @@
                         <div class="flex items-center gap-3">
                             <label class="flex-1">
                                 <input type="radio" name="is_attending" value="1" class="hidden peer" required checked>
-                                <div class="w-full text-center py-2.5 px-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/40 dark:bg-zinc-955/20 peer-checked:border-zinc-950 dark:peer-checked:border-zinc-50 peer-checked:bg-zinc-950 peer-checked:text-white dark:peer-checked:bg-zinc-50 dark:peer-checked:text-zinc-955 text-xs font-bold transition-all cursor-pointer">
+                                <div class="w-full text-center py-2.5 px-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/40 dark:bg-zinc-950/20 peer-checked:border-zinc-950 dark:peer-checked:border-zinc-50 peer-checked:bg-zinc-950 peer-checked:text-white dark:peer-checked:bg-zinc-50 dark:peer-checked:text-zinc-950 text-xs font-bold transition-all cursor-pointer">
                                     Yes, Attending
                                 </div>
                             </label>
                             <label class="flex-1">
                                 <input type="radio" name="is_attending" value="0" class="hidden peer">
-                                <div class="w-full text-center py-2.5 px-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/40 dark:bg-zinc-955/20 peer-checked:border-zinc-950 dark:peer-checked:border-zinc-50 peer-checked:bg-zinc-950 peer-checked:text-white dark:peer-checked:bg-zinc-50 dark:peer-checked:text-zinc-955 text-xs font-bold transition-all cursor-pointer">
+                                <div class="w-full text-center py-2.5 px-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/40 dark:bg-zinc-950/20 peer-checked:border-zinc-950 dark:peer-checked:border-zinc-50 peer-checked:bg-zinc-950 peer-checked:text-white dark:peer-checked:bg-zinc-50 dark:peer-checked:text-zinc-950 text-xs font-bold transition-all cursor-pointer">
                                     No, Playing Only
                                 </div>
                             </label>
@@ -619,7 +619,7 @@
                         <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 block">
                             Proof of Payment Receipt <span class="text-red-500">*</span>
                         </label>
-                        <div class="relative border border-dashed border-zinc-350 dark:border-zinc-800 rounded-xl p-4 bg-zinc-50/40 dark:bg-zinc-955/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer group">
+                        <div class="relative border border-dashed border-zinc-350 dark:border-zinc-800 rounded-xl p-4 bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer group">
                             <input 
                                 type="file" 
                                 name="screenshot" 
@@ -652,7 +652,7 @@
                             id="member_note" 
                             rows="2"
                             placeholder="Add optional reference details or notes..."
-                            class="w-full bg-zinc-50/40 dark:bg-zinc-955/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all"
+                            class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all"
                         ></textarea>
                     </div>
 
@@ -688,7 +688,7 @@
             x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
-            class="bg-white dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-2xl relative z-50 overflow-hidden flex flex-col"
+            class="bg-white dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-2xl relative z-50 overflow-hidden flex flex-col max-h-[90vh] overflow-y-auto"
         >
             <div class="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between">
                 <h3 class="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Proof of Payment Receipt</h3>

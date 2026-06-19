@@ -121,7 +121,7 @@
 
     @if(!$activeCycle || !$cycleMember)
         <!-- Enrollment Warning Card -->
-        <div class="mb-6 bg-amber-50 dark:bg-amber-955/20 border border-amber-200 dark:border-amber-900 rounded-2xl p-4 flex items-start gap-3.5 animate-fadeIn">
+        <div class="mb-6 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-2xl p-4 flex items-start gap-3.5 animate-fadeIn">
             <div class="p-2.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
@@ -299,13 +299,13 @@
                             <div class="flex justify-between items-start text-xs gap-3">
                                 <div class="flex flex-col min-w-0">
                                     <span class="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-black tracking-wider">Session Name</span>
-                                    <span class="text-xl font-black text-zinc-955 dark:text-white mt-1 leading-none tracking-tight truncate" title="{{ $activeSession->title ?: 'Session #' . $activeSession->session_number }}">
+                                    <span class="text-xl font-black text-zinc-950 dark:text-white mt-1 leading-none tracking-tight truncate" title="{{ $activeSession->title ?: 'Session #' . $activeSession->session_number }}">
                                         {{ $activeSession->title ?: "Session #{$activeSession->session_number}" }}
                                     </span>
                                 </div>
                                 <div class="shrink-0 text-right">
                                     <span class="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-black tracking-wider block mb-1">Status</span>
-                                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-purple-50 text-purple-750 dark:bg-purple-955/20 dark:text-purple-400 border border-purple-200/50 dark:border-purple-800/40">
+                                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-purple-50 text-purple-750 dark:bg-purple-950/20 dark:text-purple-400 border border-purple-200/50 dark:border-purple-800/40">
                                         {{ ucfirst($activeSession->status) }}
                                     </span>
                                 </div>
@@ -359,13 +359,13 @@
                             <div class="mt-2 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex flex-col sm:flex-row items-center gap-3">
                                 <a
                                     href="{{ route('member.njangi-payments') }}"
-                                    class="w-full text-center py-2 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-955 text-xs font-bold rounded-xl transition-all shadow-xs"
+                                    class="w-full text-center py-2 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-bold rounded-xl transition-all shadow-xs"
                                 >
                                     Submit Njangi Play
                                 </a>
                                 <a
                                     href="{{ route('member.njangi-report') }}"
-                                    class="w-full text-center py-2 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-955/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold rounded-xl transition-all"
+                                    class="w-full text-center py-2 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-950/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold rounded-xl transition-all"
                                 >
                                     View Njangi Report
                                 </a>
@@ -474,26 +474,51 @@
                         <x-premium-card title="Active Loan Progress">
                             <div class="flex flex-col gap-4 py-2">
                                 <!-- Top details -->
-                                <div class="flex justify-between items-center text-xs">
-                                    <div class="flex flex-col">
-                                        <span class="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-black tracking-wider">Remaining Balance</span>
-                                        <span class="text-2xl font-black text-zinc-955 dark:text-white mt-1 leading-none tracking-tight">
-                                            ${{ number_format($loan->remaining_balance, 2) }}
-                                        </span>
+                                <div class="flex flex-col gap-3">
+                                    <div class="flex justify-between items-end border-b border-zinc-100 dark:border-zinc-800/80 pb-2.5">
+                                        <div class="flex flex-col">
+                                            <span class="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-black tracking-wider">Remaining Balance</span>
+                                            <span class="text-2xl font-black text-zinc-950 dark:text-white mt-1 leading-none tracking-tight">
+                                                ${{ number_format($loan->remaining_balance, 2) }}
+                                            </span>
+                                        </div>
+                                        @if($loan->interest_rate > 0)
+                                            <div class="text-right">
+                                                <span class="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-black tracking-wider block">Total Repayable</span>
+                                                <span class="text-base font-bold text-zinc-900 dark:text-white mt-1 block">
+                                                    ${{ number_format($loan->total_repayable, 2) }}
+                                                </span>
+                                            </div>
+                                        @endif
                                     </div>
-                                    <div class="text-right">
-                                        <span class="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-black tracking-wider block">Total Borrowed</span>
-                                        <span class="text-sm font-bold text-zinc-850 dark:text-zinc-200 mt-1 block">
-                                            ${{ number_format($loan->amount, 2) }}
-                                        </span>
+                                    
+                                    <div class="grid grid-cols-2 gap-4 text-xs">
+                                        <div>
+                                            <span class="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-black tracking-wider block">Principal</span>
+                                            <span class="font-bold text-zinc-800 dark:text-zinc-200 mt-0.5 block">${{ number_format($loan->amount, 2) }}</span>
+                                        </div>
+                                        @if($loan->interest_rate > 0)
+                                            <div>
+                                                <span class="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-black tracking-wider block">Interest Rate</span>
+                                                <span class="font-semibold text-zinc-800 dark:text-zinc-200 mt-0.5 block">
+                                                    {{ number_format($loan->interest_rate, 2) }}% 
+                                                    <span class="text-[9px] text-zinc-405">({{ $loan->interest_type === 'flat' ? 'Flat' : 'Duration' }})</span>
+                                                </span>
+                                            </div>
+                                        @else
+                                            <div>
+                                                <span class="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-black tracking-wider block">Interest Rate</span>
+                                                <span class="font-bold text-zinc-400 mt-0.5 block">No Interest</span>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
 
                                 <!-- Progress Bar -->
                                 <div>
                                     @php
-                                        $repaidAmount = $loan->amount - $loan->remaining_balance;
-                                        $percentage = $loan->amount > 0 ? min(105, max(0, ($repaidAmount / $loan->amount) * 100)) : 0;
+                                        $repaidAmount = $loan->total_repayable - $loan->remaining_balance;
+                                        $percentage = $loan->total_repayable > 0 ? min(100, max(0, ($repaidAmount / $loan->total_repayable) * 100)) : 0;
                                     @endphp
                                     <div class="flex justify-between items-center text-[10px] font-bold text-zinc-400 uppercase mb-1">
                                         <span>Repayment Progress</span>

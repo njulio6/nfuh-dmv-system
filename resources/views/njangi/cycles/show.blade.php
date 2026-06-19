@@ -123,7 +123,7 @@
 
                     <!-- Add Participant Modal -->
                     <div x-show="addMemberOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/50 backdrop-blur-sm">
-                        <div @click.away="addMemberOpen = false" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-swift-up-premium text-left">
+                        <div @click.away="addMemberOpen = false" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-swift-up-premium text-left max-h-[90vh] overflow-y-auto">
                             <div class="flex items-center justify-between border-b border-zinc-150 dark:border-zinc-800 pb-3 mb-4">
                                 <h4 class="text-sm font-bold text-zinc-900 dark:text-white">Add Individual Participant</h4>
                                 <button type="button" @click="addMemberOpen = false" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
@@ -276,7 +276,7 @@
                                 <button 
                                     type="button" 
                                     @click="open = !open"
-                                    class="h-8 px-3 py-1 flex items-center justify-between gap-1.5 border border-zinc-200 dark:border-zinc-800 rounded-lg font-bold text-xs bg-zinc-50 dark:bg-zinc-955/50 text-zinc-800 dark:text-zinc-200 hover:border-zinc-350 dark:hover:border-zinc-700 transition-all cursor-pointer w-28"
+                                    class="h-8 px-3 py-1 flex items-center justify-between gap-1.5 border border-zinc-200 dark:border-zinc-800 rounded-lg font-bold text-xs bg-zinc-50 dark:bg-zinc-950/50 text-zinc-800 dark:text-zinc-200 hover:border-zinc-350 dark:hover:border-zinc-700 transition-all cursor-pointer w-28"
                                 >
                                     <span x-text="status.charAt(0).toUpperCase() + status.slice(1)"></span>
                                     <svg class="h-3 w-3 text-zinc-455 transition-transform duration-200" :class="open && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">

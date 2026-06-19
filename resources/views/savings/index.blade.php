@@ -19,7 +19,7 @@
             </div>
             <div>
                 <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Savings Pool</span>
-                <span class="text-2xl font-black text-zinc-955 dark:text-white leading-none tracking-tight">
+                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
                     ${{ number_format($totalSavingsPool, 2) }}
                 </span>
             </div>
@@ -32,7 +32,7 @@
             </div>
             <div>
                 <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Active Depositors</span>
-                <span class="text-2xl font-black text-zinc-955 dark:text-white leading-none tracking-tight">
+                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
                     {{ $activeDepositorsCount }}
                 </span>
             </div>
@@ -45,7 +45,7 @@
             </div>
             <div>
                 <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Withdrawals</span>
-                <span class="text-2xl font-black text-zinc-955 dark:text-white leading-none tracking-tight">
+                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
                     ${{ number_format($totalWithdrawals, 2) }}
                 </span>
             </div>
@@ -63,7 +63,7 @@
                         <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                     @endif
                 </div>
-                <span class="text-2xl font-black text-zinc-955 dark:text-white leading-none tracking-tight">
+                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
                     {{ $pendingRequestsCount }}
                 </span>
             </div>
@@ -307,7 +307,7 @@
         
         <!-- Modal Container -->
         <div 
-            class="relative w-full max-w-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-7 text-left z-10 transition-transform duration-300"
+            class="relative w-full max-w-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-7 text-left z-10 transition-transform duration-300 max-h-[90vh] overflow-y-auto"
             x-transition:enter="ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
@@ -510,7 +510,7 @@
             x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
-            class="bg-white dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-md relative z-50 animate-fadeIn"
+            class="bg-white dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-md relative z-50 animate-fadeIn max-h-[90vh] overflow-y-auto"
         >
             <div class="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between">
                 <h3 class="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Post Savings Transaction</h3>

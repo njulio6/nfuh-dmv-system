@@ -10,11 +10,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Member extends Model
 {
     protected $fillable = [
+        'user_id',
         'organization_id',
         'member_code',
         'first_name',
         'last_name',
-        'email',
+        // email is NOT here — it lives exclusively on users.email
         'phone',
         'rank_id',
         'status',
@@ -39,6 +40,11 @@ class Member extends Model
         'name',
     ];
 
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function organization(): BelongsTo
     {

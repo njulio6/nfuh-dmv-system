@@ -13,17 +13,60 @@
         reviewType: 'approve',
         reviewBorrower: '',
         reviewAmount: '',
+        reviewDurationMonths: '',
+        reviewInterestRate: 0.00,
+        reviewInterestType: 'flat',
         reviewNotes: '',
         showDefaultModal: false,
         showRestoreModal: false,
         statusActionUrl: '',
         statusBorrower: '',
         statusAmount: '',
-        openReviewModal(actionUrl, type, borrower, amount) {
+        showDisburseModal: false,
+        disburseActionUrl: '',
+        disburseBorrower: '',
+        disburseAmount: '',
+        getInterestAmount() {
+            const principal = parseFloat(this.reviewAmount) || 0;
+            const rate = parseFloat(this.reviewInterestRate) || 0;
+            const months = parseInt(this.reviewDurationMonths) || 1;
+            
+            let interest = principal * (rate / 100);
+            if (this.reviewInterestType === 'duration_based') {
+                interest = interest * (months / 12);
+            }
+            return interest;
+        },
+        getTotalRepayable() {
+            const principal = parseFloat(this.reviewAmount) || 0;
+            return principal + this.getInterestAmount();
+        },
+        getFormulaText() {
+            const principal = parseFloat(this.reviewAmount) || 0;
+            const rate = parseFloat(this.reviewInterestRate) || 0;
+            const months = parseInt(this.reviewDurationMonths) || 12;
+            
+            const pStr = '$' + principal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const rStr = rate.toFixed(2) + '%';
+            
+            if (this.reviewInterestType === 'duration_based') {
+                const interestAmt = this.getInterestAmount();
+                const intStr = '$' + interestAmt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                return `Formula: Principal (${pStr}) × Rate (${rStr}) × Duration (${months}/12 Months) = ${intStr} Interest`;
+            } else {
+                const interestAmt = this.getInterestAmount();
+                const intStr = '$' + interestAmt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                return `Formula: Principal (${pStr}) × Flat Rate (${rStr}) = ${intStr} Interest`;
+            }
+        },
+        openReviewModal(actionUrl, type, borrower, amount, durationMonths = '') {
             this.reviewActionUrl = actionUrl;
             this.reviewType = type;
             this.reviewBorrower = borrower;
             this.reviewAmount = amount;
+            this.reviewDurationMonths = durationMonths;
+            this.reviewInterestRate = 0.00;
+            this.reviewInterestType = 'flat';
             this.reviewNotes = '';
             this.showReviewModal = true;
         },
@@ -36,6 +79,12 @@
             } else {
                 this.showRestoreModal = true;
             }
+        },
+        openDisburseModal(actionUrl, borrower, amount) {
+            this.disburseActionUrl = actionUrl;
+            this.disburseBorrower = borrower;
+            this.disburseAmount = amount;
+            this.showDisburseModal = true;
         }
     }"
     class="w-full"
@@ -71,14 +120,14 @@
         <div class="flex items-center gap-2">
             <a 
                 href="{{ route('loans.status-list', $status) }}" 
-                class="p-2.5 border border-zinc-200 dark:border-zinc-800 rounded-[10px] text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-955/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-all active:scale-[0.96] select-none"
+                class="p-2.5 border border-zinc-200 dark:border-zinc-800 rounded-[10px] text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-950/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-all active:scale-[0.96] select-none"
                 title="Clear Search"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
             </a>
             <a 
                 href="{{ route('loans.index') }}" 
-                class="px-3.5 py-2.5 border border-zinc-200 dark:border-zinc-800 rounded-[10px] text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-955/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-all active:scale-[0.96] select-none text-xs font-bold inline-flex items-center gap-1.5"
+                class="px-3.5 py-2.5 border border-zinc-200 dark:border-zinc-800 rounded-[10px] text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-950/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-all active:scale-[0.96] select-none text-xs font-bold inline-flex items-center gap-1.5"
                 title="Back to Loan Dashboard"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
@@ -91,8 +140,10 @@
     <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 shadow-3xs overflow-x-auto mb-6">
         @php
             $headers = [
-                ['label' => 'Borrower', 'width' => 'min-w-[140px]'],
-                ['label' => 'Amount ($)', 'width' => 'min-w-[110px]'],
+                ['label' => 'Borrower', 'width' => 'min-w-[130px]'],
+                ['label' => 'Principal ($)', 'width' => 'min-w-[110px]'],
+                ['label' => 'Interest', 'width' => 'min-w-[110px]'],
+                ['label' => 'Total ($)', 'width' => 'min-w-[110px]'],
                 ['label' => 'Duration', 'width' => 'min-w-[90px]'],
             ];
 
@@ -101,6 +152,7 @@
             } elseif ($status === 'pending_committee') {
                 $headers[] = ['label' => 'Purpose', 'width' => 'min-w-[180px]'];
             } elseif ($status === 'active' || $status === 'defaulted' || $status === 'completed') {
+                $headers[] = ['label' => 'Owed ($)', 'width' => 'min-w-[110px]'];
                 $headers[] = ['label' => 'Repay Progress', 'width' => 'min-w-[140px]'];
                 $headers[] = ['label' => 'Tag/Sub-status', 'width' => 'min-w-[130px]'];
                 $headers[] = ['label' => 'Statement', 'width' => 'min-w-[90px]'];
@@ -124,14 +176,26 @@
                         </div>
                     </td>
 
-                    <!-- Loan Amount -->
+                    <!-- Principal -->
                     <td class="py-3.5 px-3">
-                        <div class="flex flex-col">
-                            <span class="font-extrabold text-zinc-950 dark:text-white text-sm">${{ number_format($loan->amount, 2) }}</span>
-                            @if(in_array($status, ['active', 'defaulted', 'completed']))
-                                <span class="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">Owed: ${{ number_format($loan->remaining_balance, 2) }}</span>
+                        <span class="font-extrabold text-zinc-950 dark:text-white text-sm">${{ number_format($loan->amount, 2) }}</span>
+                    </td>
+
+                    <!-- Interest -->
+                    <td class="py-3.5 px-3">
+                        <div class="flex flex-col text-xs">
+                            @if($loan->interest_rate > 0)
+                                <span class="font-bold text-zinc-900 dark:text-zinc-100 font-mono">{{ number_format($loan->interest_rate, 2) }}%</span>
+                                <span class="text-[10px] font-semibold text-zinc-400 dark:text-zinc-550 mt-0.5 capitalize">{{ $loan->interest_type === 'flat' ? 'Flat' : 'Duration Based' }}</span>
+                            @else
+                                <span class="text-zinc-400 dark:text-zinc-600 font-medium italic">No Interest</span>
                             @endif
                         </div>
+                    </td>
+
+                    <!-- Total Repayable -->
+                    <td class="py-3.5 px-3">
+                        <span class="font-extrabold text-zinc-950 dark:text-white text-sm">${{ number_format($loan->total_repayable, 2) }}</span>
                     </td>
 
                     <!-- Duration / Terms -->
@@ -161,11 +225,16 @@
                             "{{ $loan->purpose ?: 'No purpose specified' }}"
                         </td>
                     @elseif(in_array($status, ['active', 'defaulted', 'completed']))
+                        <!-- Owed -->
+                        <td class="py-3.5 px-3">
+                            <span class="font-black text-zinc-950 dark:text-white text-sm">${{ number_format($loan->remaining_balance, 2) }}</span>
+                        </td>
+
                         <!-- Repayment Progress -->
                         <td class="py-3.5 px-3">
                             @php
-                                $repaidAmount = $loan->amount - $loan->remaining_balance;
-                                $percentage = $loan->amount > 0 ? min(100, max(0, ($repaidAmount / $loan->amount) * 100)) : 0;
+                                $repaidAmount = $loan->total_repayable - $loan->remaining_balance;
+                                $percentage = $loan->total_repayable > 0 ? min(100, max(0, ($repaidAmount / $loan->total_repayable) * 100)) : 0;
                             @endphp
                             <div class="flex items-center gap-2 w-32">
                                 <div class="w-full bg-zinc-105 dark:bg-zinc-950 rounded-full h-1 overflow-hidden border border-zinc-200/20 dark:border-zinc-800/40">
@@ -182,11 +251,11 @@
                                     @if($loan->subStatus)
                                         @php
                                             $subStatusColorClass = match($loan->subStatus->color) {
-                                                'red' => 'bg-red-50 text-red-700 dark:bg-red-955/20 dark:text-red-400 border-red-200/60 dark:border-red-800/40 hover:bg-red-100/40 dark:hover:bg-red-955/30',
-                                                'amber' => 'bg-amber-50 text-amber-700 dark:bg-amber-955/20 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/40 hover:bg-amber-100/40 dark:hover:bg-amber-955/30',
-                                                'emerald' => 'bg-emerald-50 text-emerald-700 dark:bg-emerald-955/20 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40 hover:bg-emerald-100/40 dark:hover:bg-emerald-955/30',
-                                                'blue' => 'bg-blue-50 text-blue-700 dark:bg-blue-955/20 dark:text-blue-400 border-blue-200/60 dark:border-blue-800/40 hover:bg-blue-100/40 dark:hover:bg-blue-955/30',
-                                                'indigo' => 'bg-indigo-50 text-indigo-700 dark:bg-indigo-955/20 dark:text-indigo-400 border-indigo-200/60 dark:border-indigo-800/40 hover:bg-indigo-100/40 dark:hover:bg-indigo-955/30',
+                                                'red' => 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400 border-red-200/60 dark:border-red-800/40 hover:bg-red-100/40 dark:hover:bg-red-950/30',
+                                                'amber' => 'bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/40 hover:bg-amber-100/40 dark:hover:bg-amber-950/30',
+                                                'emerald' => 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40 hover:bg-emerald-100/40 dark:hover:bg-emerald-950/30',
+                                                'blue' => 'bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 border-blue-200/60 dark:border-blue-800/40 hover:bg-blue-100/40 dark:hover:bg-blue-950/30',
+                                                'indigo' => 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-400 border-indigo-200/60 dark:border-indigo-800/40 hover:bg-indigo-100/40 dark:hover:bg-indigo-950/30',
                                                 default => 'bg-zinc-50 text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400 border-zinc-200/60 dark:border-zinc-700/60 hover:bg-zinc-100/40 dark:hover:bg-zinc-900/40',
                                             };
                                         @endphp
@@ -237,11 +306,11 @@
                                             <button
                                                 type="button"
                                                 @click="document.getElementById('sub_status_id_{{ $loan->id }}').value = ''; document.getElementById('subStatusForm{{ $loan->id }}').submit()"
-                                                class="w-full text-left px-2.5 py-2 text-[10px] font-bold uppercase rounded-lg transition-colors flex items-center justify-between cursor-pointer border border-transparent {{ !$loan->sub_status_id ? 'bg-zinc-50 dark:bg-zinc-900 text-zinc-955 dark:text-white' : 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900/60 hover:text-zinc-900 dark:hover:text-zinc-250' }}"
+                                                class="w-full text-left px-2.5 py-2 text-[10px] font-bold uppercase rounded-lg transition-colors flex items-center justify-between cursor-pointer border border-transparent {{ !$loan->sub_status_id ? 'bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white' : 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900/60 hover:text-zinc-900 dark:hover:text-zinc-250' }}"
                                             >
                                                 <span>No Tag</span>
                                                 @if(!$loan->sub_status_id)
-                                                    <span class="text-zinc-955 dark:text-white">✓</span>
+                                                    <span class="text-zinc-950 dark:text-white">✓</span>
                                                 @endif
                                             </button>
                                             
@@ -251,7 +320,7 @@
                                                         'red' => 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400 border-red-200/60 dark:border-red-800/40',
                                                         'amber' => 'bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/40',
                                                         'emerald' => 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40',
-                                                        'blue' => 'bg-blue-50 text-blue-700 dark:bg-blue-955/20 dark:text-blue-400 border-blue-200/60 dark:border-blue-800/40',
+                                                        'blue' => 'bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 border-blue-200/60 dark:border-blue-800/40',
                                                         'indigo' => 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-400 border-indigo-200/60 dark:border-indigo-800/40',
                                                         default => 'bg-zinc-50 text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400 border-zinc-200/60 dark:border-zinc-700/60',
                                                     };
@@ -259,11 +328,11 @@
                                                 <button
                                                     type="button"
                                                     @click="document.getElementById('sub_status_id_{{ $loan->id }}').value = '{{ $ss->id }}'; document.getElementById('subStatusForm{{ $loan->id }}').submit()"
-                                                    class="w-full text-left px-2.5 py-1.5 text-[10px] font-bold uppercase rounded-lg transition-colors flex items-center justify-between cursor-pointer border border-transparent {{ $loan->sub_status_id == $ss->id ? 'bg-zinc-50 dark:bg-zinc-900 text-zinc-955 dark:text-white' : 'text-zinc-550 hover:bg-zinc-50 dark:hover:bg-zinc-900/60 hover:text-zinc-900 dark:hover:text-zinc-250' }}"
+                                                    class="w-full text-left px-2.5 py-1.5 text-[10px] font-bold uppercase rounded-lg transition-colors flex items-center justify-between cursor-pointer border border-transparent {{ $loan->sub_status_id == $ss->id ? 'bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white' : 'text-zinc-550 hover:bg-zinc-50 dark:hover:bg-zinc-900/60 hover:text-zinc-900 dark:hover:text-zinc-250' }}"
                                                 >
                                                     <span class="inline-block px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider border {{ $optionBadgeColor }}">{{ $ss->name }}</span>
                                                     @if($loan->sub_status_id == $ss->id)
-                                                        <span class="text-zinc-955 dark:text-white">✓</span>
+                                                        <span class="text-zinc-950 dark:text-white">✓</span>
                                                     @endif
                                                 </button>
                                             @endforeach
@@ -303,8 +372,8 @@
                                      <!-- Approve request -->
                                      <button 
                                          type="button" 
-                                         @click="openReviewModal('{{ route('loans.approve', $loan->id) }}', 'approve', '{{ addslashes($loan->member->name) }}', '{{ $loan->amount }}')"
-                                         class="px-2.5 py-1.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-955 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all flex items-center justify-center select-none active:scale-[0.96]"
+                                         @click="openReviewModal('{{ route('loans.approve', $loan->id) }}', 'approve', '{{ addslashes($loan->member->name) }}', '{{ $loan->amount }}', '{{ $loan->duration_months }}')"
+                                         class="px-2.5 py-1.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all flex items-center justify-center select-none active:scale-[0.96]"
                                      >
                                          Approve
                                      </button>
@@ -313,19 +382,20 @@
                                      <button 
                                          type="button" 
                                          @click="openReviewModal('{{ route('loans.reject', $loan->id) }}', 'reject', '{{ addslashes($loan->member->name) }}', '{{ $loan->amount }}')"
-                                         class="px-2.5 py-1.5 border border-red-200 dark:border-red-950/60 bg-red-50 hover:bg-red-100 dark:bg-red-955/10 text-red-650 dark:text-red-400 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all flex items-center justify-center select-none active:scale-[0.96]"
+                                         class="px-2.5 py-1.5 border border-red-200 dark:border-red-950/60 bg-red-50 hover:bg-red-100 dark:bg-red-950/10 text-red-650 dark:text-red-400 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all flex items-center justify-center select-none active:scale-[0.96]"
                                      >
                                          Reject
                                      </button>
                                 @elseif($status === 'approved')
-                                    <!-- Disburse Funds -->
-                                    <form method="POST" action="{{ route('loans.disburse', $loan->id) }}">
-                                        @csrf
-                                        <button type="submit" class="px-3 py-1.5 bg-zinc-955 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all flex items-center justify-center gap-1 select-none active:scale-[0.96]">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
-                                            Disburse
-                                        </button>
-                                    </form>
+                                     <!-- Disburse Funds -->
+                                     <button 
+                                         type="button" 
+                                         @click="openDisburseModal('{{ route('loans.disburse', $loan->id) }}', '{{ addslashes($loan->member->name) }}', '{{ $loan->amount }}')"
+                                         class="px-3 py-1.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all flex items-center justify-center gap-1 select-none active:scale-[0.96]"
+                                     >
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                                         Disburse
+                                     </button>
                                 @elseif($status === 'active')
                                     <!-- Post manual repayment -->
                                     <button 
@@ -431,7 +501,7 @@
                     @click="$refs.pageInput.value = {{ $loans->currentPage() - 1 }}; $refs.form.submit()"
                 @endif
                 @if($loans->onFirstPage()) disabled @endif
-                class="p-1.5 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-955 text-zinc-700 dark:text-zinc-300 rounded-[10px] flex items-center justify-center transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed active:scale-[0.97]"
+                class="p-1.5 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 rounded-[10px] flex items-center justify-center transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed active:scale-[0.97]"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
             </button>
@@ -460,7 +530,7 @@
                     @click="$refs.pageInput.value = {{ $loans->currentPage() + 1 }}; $refs.form.submit()"
                 @endif
                 @if(!$loans->hasMorePages()) disabled @endif
-                class="p-1.5 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-955 text-zinc-700 dark:text-zinc-300 rounded-[10px] flex items-center justify-center transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed active:scale-[0.97]"
+                class="p-1.5 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 rounded-[10px] flex items-center justify-center transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed active:scale-[0.97]"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
             </button>
@@ -469,7 +539,7 @@
                 type="button"
                 @click="$refs.pageInput.value = {{ $loans->lastPage() }}; $refs.form.submit()"
                 @if(!$loans->hasMorePages()) disabled @endif
-                class="px-2 py-1.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-955 text-[11px] font-bold rounded-[10px] shadow-xs transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed active:scale-[0.97]"
+                class="px-2 py-1.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-[11px] font-bold rounded-[10px] shadow-xs transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed active:scale-[0.97]"
             >
                 Last
             </button>
@@ -503,10 +573,10 @@
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
             x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-md w-full p-6 relative z-10"
+            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-md w-full p-6 relative z-10 max-h-[90vh] overflow-y-auto"
         >
             <div class="flex justify-between items-center pb-4 border-b border-zinc-100 dark:border-zinc-800 mb-5">
-                <h3 class="text-sm font-black text-zinc-955 dark:text-white uppercase tracking-wider">Log Manual Repayment</h3>
+                <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider">Log Manual Repayment</h3>
                 <button @click="showRepayModal = false" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
@@ -519,7 +589,7 @@
                 </div>
                 <div class="flex justify-between">
                     <span class="text-zinc-400">Outstanding Balance:</span>
-                    <span class="font-bold text-zinc-955 dark:text-white" x-text="'$' + parseFloat(loanRemaining).toFixed(2)"></span>
+                    <span class="font-bold text-zinc-950 dark:text-white" x-text="'$' + parseFloat(loanRemaining).toFixed(2)"></span>
                 </div>
             </div>
 
@@ -558,7 +628,7 @@
                             return this.methods.find(m => m.value === this.selectedMethod)?.label || '';
                         }
                     }"
-                    class="flex flex-col w-full relative"
+                    class="flex flex-col w-full relative z-20"
                     @click.outside="isOpen = false"
                 >
                     <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
@@ -629,12 +699,12 @@
         <div @click="showReviewModal = false" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"></div>
 
         <div 
-            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-md w-full p-6 relative z-10"
+            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-md w-full p-6 relative z-10 max-h-[90vh] overflow-y-auto"
             x-show="showReviewModal"
             x-transition
         >
             <div class="flex justify-between items-center pb-4 border-b border-zinc-100 dark:border-zinc-800 mb-4">
-                <h3 class="text-sm font-black text-zinc-955 dark:text-white uppercase tracking-wider" x-text="reviewType === 'approve' ? 'Approve Loan Request' : 'Reject Loan Request'"></h3>
+                <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider" x-text="reviewType === 'approve' ? 'Approve Loan Request' : 'Reject Loan Request'"></h3>
                 <button @click="showReviewModal = false" class="text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-200">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
@@ -647,12 +717,100 @@
                 </div>
                 <div class="flex justify-between">
                     <span class="text-zinc-400">Requested Amount:</span>
-                    <span class="font-bold text-zinc-955 dark:text-white" x-text="'$' + parseFloat(reviewAmount).toFixed(2)"></span>
+                    <span class="font-bold text-zinc-950 dark:text-white" x-text="'$' + parseFloat(reviewAmount).toFixed(2)"></span>
                 </div>
             </div>
 
             <form :action="reviewActionUrl" method="POST" class="flex flex-col gap-4">
                 @csrf
+                <div x-show="reviewType === 'approve'" class="flex flex-col gap-4">
+                    <x-premium-input 
+                        label="Repayment Term (Months)" 
+                        name="duration_months" 
+                        type="number" 
+                        min="1" 
+                        step="1" 
+                        x-model="reviewDurationMonths"
+                        ::required="reviewType === 'approve'"
+                        placeholder="e.g. 12" 
+                    />
+
+                    <div 
+                        x-data="{ isOpen: false }"
+                        class="flex flex-col w-full relative z-20"
+                        @click.outside="isOpen = false"
+                    >
+                        <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+                            Interest Type <span class="text-red-500">*</span>
+                        </label>
+                        <input type="hidden" name="interest_type" :value="reviewInterestType">
+                        
+                        <div class="relative w-full">
+                            <button 
+                                type="button" 
+                                @click="isOpen = !isOpen"
+                                class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 text-zinc-800 dark:text-white px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none transition-colors text-left flex items-center justify-between shadow-2xs select-none cursor-pointer"
+                            >
+                                <span x-text="reviewInterestType === 'flat' ? 'Flat Percentage' : 'Duration-Based (Annualized)'"></span>
+                                <svg class="h-4 w-4 text-zinc-400 dark:text-zinc-550 transition-transform duration-250 opacity-60" :class="isOpen && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            <div 
+                                x-show="isOpen"
+                                x-cloak
+                                class="absolute z-[100] left-0 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col mt-1 top-full"
+                                style="display: none;"
+                            >
+                                <div class="flex flex-col py-1">
+                                    <button type="button" @click="reviewInterestType = 'flat'; isOpen = false" class="w-full text-left px-4 py-2.5 text-xs font-semibold text-zinc-750 dark:text-zinc-350 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors border-none bg-transparent cursor-pointer">Flat Percentage</button>
+                                    <button type="button" @click="reviewInterestType = 'duration_based'; isOpen = false" class="w-full text-left px-4 py-2.5 text-xs font-semibold text-zinc-750 dark:text-zinc-355 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors border-none bg-transparent cursor-pointer">Duration-Based (Annualized)</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <x-premium-input 
+                        label="Interest Rate (%)" 
+                        name="interest_rate" 
+                        type="number" 
+                        min="0" 
+                        max="100"
+                        step="0.01" 
+                        x-model="reviewInterestRate"
+                        ::required="reviewType === 'approve'"
+                        placeholder="e.g. 10.00" 
+                    />
+
+                    <!-- Dynamic Breakdown Box -->
+                    <div class="bg-zinc-50 dark:bg-zinc-950/40 p-4 rounded-xl border border-zinc-200/40 dark:border-zinc-800/40 flex flex-col gap-2.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                        <h4 class="text-[10px] font-black uppercase tracking-wider text-zinc-400 dark:text-zinc-550 mb-0.5">Calculated Interest Breakdown</h4>
+                        <div class="flex justify-between">
+                            <span class="text-zinc-400">Principal Amount:</span>
+                            <span class="font-bold text-zinc-950 dark:text-white" x-text="'$' + parseFloat(reviewAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-zinc-400">Interest Rate:</span>
+                            <span class="font-bold text-zinc-800 dark:text-zinc-200" x-text="parseFloat(reviewInterestRate || 0).toFixed(2) + '% (' + (reviewInterestType === 'flat' ? 'Flat' : 'Duration-Based') + ')'"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-zinc-400">Interest Amount:</span>
+                            <span class="font-bold text-zinc-800 dark:text-zinc-250" x-text="'$' + getInterestAmount().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
+                        </div>
+                        <div class="h-[1px] bg-zinc-200/50 dark:bg-zinc-800/50 my-1"></div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-zinc-450 dark:text-zinc-400 font-bold">Total Repayable:</span>
+                            <span class="font-extrabold text-zinc-950 dark:text-white" x-text="'$' + getTotalRepayable().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
+                        </div>
+                        <div class="mt-2 px-3 py-2 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700/60 rounded-lg">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-0.5">Calculation Formula</p>
+                            <p class="text-xs font-semibold text-zinc-700 dark:text-zinc-300 break-words leading-relaxed font-mono" x-text="getFormulaText()"></p>
+                        </div>
+
+                    </div>
+                </div>
+
                 <x-premium-textarea 
                     label="Decision Notes / Rejection Reason" 
                     name="notes" 
@@ -683,12 +841,12 @@
     <!-- Mark Defaulted Modal -->
     <div x-show="showDefaultModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;">
         <div @click="showDefaultModal = false" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"></div>
-        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-sm w-full p-6 relative z-10 text-center flex flex-col gap-4" x-show="showDefaultModal" x-transition>
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-sm w-full p-6 relative z-10 text-center flex flex-col gap-4 max-h-[90vh] overflow-y-auto" x-show="showDefaultModal" x-transition>
             <div class="mx-auto size-12 rounded-full bg-red-100 dark:bg-red-950/20 text-red-600 dark:text-red-400 flex items-center justify-center border border-red-200/50">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
             <div>
-                <h3 class="text-sm font-black text-zinc-955 dark:text-white uppercase tracking-wider mb-1">Mark as Defaulted?</h3>
+                <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider mb-1">Mark as Defaulted?</h3>
                 <p class="text-xs text-zinc-400 dark:text-zinc-500 leading-normal">
                     Are you sure you want to mark the active loan of <span class="font-bold text-zinc-800 dark:text-zinc-200" x-text="statusBorrower"></span> ($<span x-text="parseFloat(statusAmount).toFixed(2)"></span>) as <strong class="text-red-600 dark:text-red-400">Defaulted</strong>?
                 </p>
@@ -696,7 +854,7 @@
             <form :action="statusActionUrl" method="POST" class="flex gap-3 mt-2">
                 @csrf
                 <button type="button" class="flex-1 py-2 text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 select-none" @click="showDefaultModal = false">Cancel</button>
-                <button type="submit" class="flex-1 py-2 text-xs font-bold bg-red-650 hover:bg-red-600 text-white rounded-lg select-none">Yes, Default</button>
+                <button type="submit" class="flex-1 py-2 text-xs font-bold bg-red-600 hover:bg-red-500 text-white rounded-lg select-none">Yes, Default</button>
             </form>
         </div>
     </div>
@@ -704,12 +862,12 @@
     <!-- Restore Active Modal -->
     <div x-show="showRestoreModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;">
         <div @click="showRestoreModal = false" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"></div>
-        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-sm w-full p-6 relative z-10 text-center flex flex-col gap-4" x-show="showRestoreModal" x-transition>
-            <div class="mx-auto size-12 rounded-full bg-emerald-100 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/50">
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-sm w-full p-6 relative z-10 text-center flex flex-col gap-4 max-h-[90vh] overflow-y-auto" x-show="showRestoreModal" x-transition>
+            <div class="mx-auto size-12 rounded-full bg-emerald-100 dark:bg-emerald-950/20 text-emerald-650 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/50">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <div>
-                <h3 class="text-sm font-black text-zinc-955 dark:text-white uppercase tracking-wider mb-1">Restore Active Status?</h3>
+                <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider mb-1">Restore Active Status?</h3>
                 <p class="text-xs text-zinc-400 dark:text-zinc-500 leading-normal">
                     Are you sure you want to restore the defaulted loan of <span class="font-bold text-zinc-800 dark:text-zinc-200" x-text="statusBorrower"></span> ($<span x-text="parseFloat(statusAmount).toFixed(2)"></span>) back to <strong class="text-emerald-650 dark:text-emerald-400">Active</strong>?
                 </p>
@@ -717,7 +875,31 @@
             <form :action="statusActionUrl" method="POST" class="flex gap-3 mt-2">
                 @csrf
                 <button type="button" class="flex-1 py-2 text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 select-none" @click="showRestoreModal = false">Cancel</button>
-                <button type="submit" class="flex-1 py-2 text-xs font-bold bg-emerald-650 hover:bg-emerald-600 text-white rounded-lg select-none">Yes, Restore</button>
+                <button type="submit" class="flex-1 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg select-none">Yes, Restore</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Disburse Confirmation Modal -->
+    <div x-show="showDisburseModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;">
+        <div @click="showDisburseModal = false" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"></div>
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-sm w-full p-6 relative z-10 text-center flex flex-col gap-4 max-h-[90vh] overflow-y-auto" x-show="showDisburseModal" x-transition>
+            <div class="mx-auto size-12 rounded-full bg-emerald-100 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/50">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 25" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div>
+                <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider mb-1">Disburse Loan Funds?</h3>
+                <p class="text-xs text-zinc-400 dark:text-zinc-500 leading-normal">
+                    Are you sure you want to release and disburse the loan funds to <span class="font-bold text-zinc-800 dark:text-zinc-200" x-text="disburseBorrower"></span> ($<span x-text="parseFloat(disburseAmount).toFixed(2)"></span>)?
+                </p>
+                <p class="text-[10px] text-zinc-450 dark:text-zinc-550 mt-1 leading-normal">
+                    This will transition the loan request to Active status and compute the repayment due date.
+                </p>
+            </div>
+            <form :action="disburseActionUrl" method="POST" class="flex gap-3 mt-2">
+                @csrf
+                <button type="button" class="flex-1 py-2 text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 select-none" @click="showDisburseModal = false">Cancel</button>
+                <button type="submit" class="flex-1 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg select-none">Yes, Disburse</button>
             </form>
         </div>
     </div>

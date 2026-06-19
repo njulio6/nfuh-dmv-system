@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Member;
 use App\Models\NjangiSession;
 use App\Models\NjangiPaymentSubmission;
+use App\Support\MemberResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -18,7 +19,7 @@ class MemberPortalController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             return redirect()->back()->with('error', 'No member profile found associated with this user account.');
         }
@@ -69,7 +70,7 @@ class MemberPortalController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->with('rank')->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
@@ -236,7 +237,7 @@ class MemberPortalController extends Controller
             return redirect()->route('login');
         }
 
-        $member = Member::where('email', $user->email)->with('rank')->first();
+        $member = MemberResolver::fromUser($user);
         if (!$member) {
             return redirect()->route('dashboard')->with('error', 'No member profile found associated with this user account.');
         }

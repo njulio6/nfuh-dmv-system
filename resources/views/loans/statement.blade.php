@@ -208,7 +208,7 @@
                 </div>
                 <div class="grid grid-cols-5 gap-y-2 text-zinc-800 text-print-dark">
                     <span class="col-span-2 text-zinc-400 font-semibold text-print-muted whitespace-nowrap">Outstanding Loan:</span>
-                    <span class="col-span-3 font-extrabold text-zinc-900">${{ number_format($member->outstanding_loan_balance, 2) }}</span>
+                    <span class="col-span-3 font-extrabold text-zinc-900">${{ number_format(collect($loans)->sum('remaining_balance'), 2) }}</span>
 
                     <span class="col-span-2 text-zinc-400 font-semibold text-print-muted whitespace-nowrap">Join Date:</span>
                     <span class="col-span-3 font-bold">{{ $member->join_date ? $member->join_date->format('M d, Y') : '-' }}</span>
@@ -248,28 +248,37 @@
                         </div>
 
                         <!-- Financial breakdown numbers -->
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 text-xs">
                             <div class="print-summary-box bg-white p-3 rounded-xl border border-zinc-200">
-                                <span class="text-zinc-400 block mb-0.5 text-print-muted">Total Amount:</span>
+                                <span class="text-zinc-400 block mb-0.5 text-print-muted">Principal Amount:</span>
                                 <span class="font-extrabold text-zinc-900 text-print-dark">${{ number_format($loan->amount, 2) }}</span>
                             </div>
                             <div class="print-summary-box bg-white p-3 rounded-xl border border-zinc-200">
-                                <span class="text-zinc-400 block mb-0.5 text-print-muted">Paid Off:</span>
-                                <span class="font-extrabold text-zinc-800 text-print-dark">${{ number_format($loan->amount - $loan->remaining_balance, 2) }}</span>
-                            </div>
-                            <div class="print-summary-box bg-white p-3 rounded-xl border border-zinc-200">
-                                <span class="text-zinc-400 block mb-0.5 text-print-muted">Outstanding Balance:</span>
-                                <span class="font-black text-zinc-900 text-print-dark">${{ number_format($loan->remaining_balance, 2) }}</span>
-                            </div>
-                            <div class="print-summary-box bg-white p-3 rounded-xl border border-zinc-200">
-                                <span class="text-zinc-400 block mb-0.5 text-print-muted">Progress:</span>
-                                <span class="font-bold text-zinc-800 text-print-dark">
-                                    @if($loan->amount > 0)
-                                        {{ number_format((($loan->amount - $loan->remaining_balance) / $loan->amount) * 100, 0) }}%
+                                <span class="text-zinc-400 block mb-0.5 text-print-muted">Interest:</span>
+                                <span class="font-extrabold text-zinc-900 text-print-dark">
+                                    @if($loan->interest_rate > 0)
+                                        {{ number_format($loan->interest_rate, 2) }}% <span class="text-[9px] font-normal">({{ $loan->interest_type === 'flat' ? 'Flat' : 'Duration' }})</span>
                                     @else
-                                        0%
+                                        No Interest
                                     @endif
                                 </span>
+                            </div>
+                            <div class="print-summary-box bg-white p-3 rounded-xl border border-zinc-200">
+                                <span class="text-zinc-400 block mb-0.5 text-print-muted">Total Repayable:</span>
+                                <span class="font-extrabold text-zinc-900 text-print-dark">${{ number_format($loan->total_repayable, 2) }}</span>
+                            </div>
+                            <div class="print-summary-box bg-white p-3 rounded-xl border border-zinc-200">
+                                <span class="text-zinc-400 block mb-0.5 text-print-muted">Paid Off:</span>
+                                @php
+                                    $repaidAmount = $loan->total_repayable - $loan->remaining_balance;
+                                    $progressPercent = $loan->total_repayable > 0 ? (($repaidAmount / $loan->total_repayable) * 100) : 0;
+                                @endphp
+                                <span class="font-extrabold text-zinc-800 text-print-dark">${{ number_format($repaidAmount, 2) }}</span>
+                                <span class="text-[9px] text-zinc-500 font-bold block mt-0.5">({{ number_format($progressPercent, 0) }}% Paid)</span>
+                            </div>
+                            <div class="print-summary-box bg-white p-3 rounded-xl border border-zinc-200">
+                                <span class="text-zinc-400 block mb-0.5 text-print-muted">Outstanding:</span>
+                                <span class="font-black text-zinc-900 text-print-dark">${{ number_format($loan->remaining_balance, 2) }}</span>
                             </div>
                         </div>
                     </div>
