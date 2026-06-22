@@ -362,7 +362,7 @@
                     'pending_guarantors' => 'Guarantor Signatures Queue',
                     'pending_committee' => 'Committee Review Queue',
                     'approved' => 'Approved Loans Queue',
-                    'active' => 'Active Disbursements Ledger',
+                    'active' => 'Active Loan Ledger',
                     'completed' => 'Completed Loans Ledger',
                     'rejected' => 'Rejected Loans Archive',
                     'defaulted' => 'Defaulted Accounts List',

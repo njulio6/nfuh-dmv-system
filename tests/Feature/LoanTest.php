@@ -373,7 +373,7 @@ test('admin can access loan dashboard, status lists, repayments log, and member 
     // 1. Dashboard
     $response = $this->actingAs($adminUser)->get(route('loans.index'));
     $response->assertStatus(200);
-    $response->assertSee('Active Disbursements');
+    $response->assertSee('Active Loans');
     $response->assertSee('Outstanding Principal');
     $response->assertSee('Total Repayments Collected');
     $response->assertSee('Defaulted Balance');

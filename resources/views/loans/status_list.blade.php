@@ -14,7 +14,7 @@
         reviewBorrower: '',
         reviewAmount: '',
         reviewDurationMonths: '',
-        reviewInterestRate: 0.00,
+        reviewInterestRate: {{ number_format($appSettings->default_loan_interest ?? 1.00, 2) }},
         reviewInterestType: 'flat',
         reviewNotes: '',
         showDefaultModal: false,
@@ -65,7 +65,7 @@
             this.reviewBorrower = borrower;
             this.reviewAmount = amount;
             this.reviewDurationMonths = durationMonths;
-            this.reviewInterestRate = 0.00;
+            this.reviewInterestRate = {{ number_format($appSettings->default_loan_interest ?? 1.00, 2) }};
             this.reviewInterestType = 'flat';
             this.reviewNotes = '';
             this.showReviewModal = true;

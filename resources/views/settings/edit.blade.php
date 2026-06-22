@@ -135,6 +135,20 @@
                     />
                     <span class="text-[10px] text-zinc-400 dark:text-zinc-500 -mt-4">Defines the minimum savings balance required for members to become eligible to request a loan.</span>
 
+                    <!-- Default Loan Interest Rate -->
+                    <x-premium-input 
+                        type="number"
+                        step="0.01"
+                        label="Default Loan Interest Rate (%)" 
+                        name="default_loan_interest" 
+                        value="{{ old('default_loan_interest', $settings->default_loan_interest ?? 1.00) }}" 
+                        placeholder="e.g. 1.00"
+                        min="0"
+                        max="100"
+                        required 
+                    />
+                    <span class="text-[10px] text-zinc-400 dark:text-zinc-500 -mt-4">Defines the default interest rate automatically filled when approving loan requests.</span>
+
                     <!-- Loan Guarantor Limits -->
                     <div class="grid grid-cols-2 gap-4">
                         <div class="flex flex-col gap-1">

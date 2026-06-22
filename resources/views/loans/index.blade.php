@@ -4,13 +4,13 @@
 <div class="w-full">
     <!-- Macro KPIs Row -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <!-- Active Disbursements -->
+        <!-- Active Loans -->
         <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex items-center gap-5">
             <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-900 dark:text-zinc-50 border border-zinc-100 dark:border-zinc-850">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </div>
             <div>
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Active Disbursements</span>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Active Loans</span>
                 <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
                     ${{ number_format($totalActiveAmount, 2) }}
                 </span>
@@ -151,7 +151,7 @@
                 <span class="text-3xl font-black text-zinc-950 dark:text-white">{{ $activeCount }}</span>
             </div>
             <div class="my-1.5">
-                <span class="text-xs font-black uppercase tracking-wider text-zinc-800 dark:text-zinc-100 block">Active Disbursements</span>
+                <span class="text-xs font-black uppercase tracking-wider text-zinc-800 dark:text-zinc-100 block">Active Loans</span>
                 <span class="text-[10px] text-zinc-400 dark:text-zinc-500 block mt-1 leading-normal">Active loans currently in repayment stage.</span>
             </div>
             <a 

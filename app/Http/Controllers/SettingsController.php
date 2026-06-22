@@ -17,6 +17,7 @@ class SettingsController extends Controller
             'min_savings_for_loan' => 500.00,
             'loan_guarantor_min' => 1,
             'loan_guarantor_max' => 3,
+            'default_loan_interest' => 1.00,
         ]);
 
         $subStatuses = \App\Models\LoanSubStatus::orderBy('name')->get();
@@ -41,6 +42,7 @@ class SettingsController extends Controller
             'min_savings_for_loan'    => ['required', 'numeric', 'min:0'],
             'loan_guarantor_min'      => ['required', 'integer', 'min:1'],
             'loan_guarantor_max'      => ['required', 'integer', 'min:1', 'gte:loan_guarantor_min'],
+            'default_loan_interest'    => ['required', 'numeric', 'min:0', 'max:100'],
             'allow_mid_cycle_enrollment' => ['nullable', 'boolean'],
             'allow_mid_cycle_removal'    => ['nullable', 'boolean'],
         ]);
@@ -51,6 +53,7 @@ class SettingsController extends Controller
         $settings->min_savings_for_loan = $validated['min_savings_for_loan'];
         $settings->loan_guarantor_min = $validated['loan_guarantor_min'];
         $settings->loan_guarantor_max = $validated['loan_guarantor_max'];
+        $settings->default_loan_interest = $validated['default_loan_interest'];
         $settings->allow_mid_cycle_enrollment = $request->has('allow_mid_cycle_enrollment');
         $settings->allow_mid_cycle_removal = $request->has('allow_mid_cycle_removal');
 

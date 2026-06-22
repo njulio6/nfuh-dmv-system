@@ -16,6 +16,7 @@ class Setting extends Model
         'min_savings_for_loan',
         'loan_guarantor_min',
         'loan_guarantor_max',
+        'default_loan_interest',
         'allow_mid_cycle_enrollment',
         'allow_mid_cycle_removal',
     ];
@@ -26,6 +27,7 @@ class Setting extends Model
         'min_savings_for_loan' => 'float',
         'loan_guarantor_min' => 'integer',
         'loan_guarantor_max' => 'integer',
+        'default_loan_interest' => 'float',
         'allow_mid_cycle_enrollment' => 'boolean',
         'allow_mid_cycle_removal' => 'boolean',
     ];
