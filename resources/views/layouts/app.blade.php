@@ -343,6 +343,7 @@
         $pageTitle = 'Dashboard';
         if ($routeName) {
             if (str_starts_with($routeName, 'members')) $pageTitle = 'Members';
+            elseif (str_starts_with($routeName, 'titles')) $pageTitle = 'Traditional Titles';
             elseif (str_starts_with($routeName, 'njangi-cycles')) $pageTitle = 'Cycles';
             elseif (str_starts_with($routeName, 'njangi-submissions')) $pageTitle = 'Audit Submissions';
             elseif (str_starts_with($routeName, 'njangi-contributions')) $pageTitle = 'Ledger';
@@ -452,6 +453,17 @@
                             >
                                 <i data-lucide="users" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('members.*') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
                                 <span x-show="!sidebarCollapsed" class="truncate">Members</span>
+                            </a>
+
+                            <a 
+                                href="{{ route('titles.index') }}" 
+                                class="group flex items-center gap-2 overflow-hidden rounded-[10px] text-sm outline-none transition-all duration-200 relative select-none cursor-pointer {{ Route::is('titles.*') ? 'bg-zinc-100 dark:bg-zinc-800 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}"
+                                :class="sidebarCollapsed ? 'size-8 p-2 justify-center' : 'h-7 px-2 w-full'"
+                                title="Traditional Titles"
+                                x-show="!searchQuery || 'traditional titles'.includes(searchQuery.toLowerCase())"
+                            >
+                                <i data-lucide="award" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('titles.*') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                <span x-show="!sidebarCollapsed" class="truncate">Traditional Titles</span>
                             </a>
                         </div>
                     </div>
@@ -926,6 +938,10 @@
                                 <i data-lucide="users" class="w-[18px] h-[18px] shrink-0"></i>
                                 <span>Members</span>
                             </a>
+                            <a href="{{ route('titles.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('titles.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="award" class="w-[18px] h-[18px] shrink-0"></i>
+                                <span>Traditional Titles</span>
+                            </a>
                         </div>
 
                         {{-- Admin: Njangi flat section (no collapsible, same as desktop) --}}
@@ -1192,11 +1208,12 @@
 
                 @yield('content')
 
-                <!-- Footer -->
-                <footer class="mt-auto pt-6 pb-2 text-left text-xs text-zinc-400 dark:text-zinc-500 border-t border-zinc-200/50 dark:border-zinc-800/50 select-none">
-                    &copy; {{ now()->year }} {{ !empty($appSettings->app_name) ? $appSettings->app_name : config('app.name', 'NFUH DMV System') }}. All rights reserved.
-                </footer>
             </main>
+
+            <!-- Footer -->
+            <footer class="flex-shrink-0 px-4 md:px-6 py-3.5 bg-white dark:bg-zinc-900 text-left text-xs text-zinc-400 dark:text-zinc-500 border-t border-zinc-200/50 dark:border-zinc-800/50 select-none">
+                &copy; {{ now()->year }} {{ !empty($appSettings->app_name) ? $appSettings->app_name : config('app.name', 'NFUH DMV System') }}. All rights reserved.
+            </footer>
 
         </div>
 
