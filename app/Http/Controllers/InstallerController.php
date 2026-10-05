@@ -129,6 +129,13 @@ class InstallerController extends Controller
                 'DB_PASSWORD' => $password,
             ];
 
+            // Generate APP_KEY if empty or not present in the .env content
+            if (!preg_match('/^APP_KEY=base64:[A-Za-z0-9+\/]+=*$/m', $envContent)) {
+                $newKey = 'base64:' . base64_encode(random_bytes(32));
+                $replacements['APP_KEY'] = $newKey;
+                Config::set('app.key', $newKey);
+            }
+
             foreach ($replacements as $key => $val) {
                 $pattern = "/^{$key}=.*/m";
                 if (preg_match($pattern, $envContent)) {
@@ -206,6 +213,13 @@ class InstallerController extends Controller
         // Write the installation lock file
         try {
             file_put_contents(storage_path('installed'), 'Installation Complete: ' . now());
+            
+            // Generate public storage symlink automatically
+            try {
+                Artisan::call('storage:link');
+            } catch (\Exception $e) {
+                // Ignore if link already exists or lacks permissions
+            }
         } catch (\Exception $e) {
             return redirect()->route('install.admin')->with('error', 'Failed to write installation lock file: ' . $e->getMessage());
         }

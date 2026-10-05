@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\MemberResolver;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,7 +24,7 @@ class EnsureUserIsAdmin
         $isAdmin = $user->hasRole('admin');
         
         if (!$isAdmin) {
-            $member = \App\Models\Member::where('email', $user->email)->first();
+            $member = MemberResolver::fromUser($user);
             if ($member) {
                 $adminRoles = ['Secretary', 'Treasurer', 'Financial Secretary', 'Loan Officer', 'Lead Nformi'];
                 $isAdmin = $member->roles()->whereIn('name', $adminRoles)->exists();

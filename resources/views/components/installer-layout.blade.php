@@ -51,19 +51,7 @@
         </script>
 
         <!-- Block to prevent dark mode flash -->
-        <script>
-            (function() {
-                try {
-                    var theme = localStorage.getItem('theme');
-                    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    if (theme === 'dark' || (!theme && prefersDark)) {
-                        document.documentElement.classList.add('dark');
-                    } else {
-                        document.documentElement.classList.remove('dark');
-                    }
-                } catch (e) {}
-            })();
-        </script>
+        @include('partials.theme-script')
         
         <style>
             [x-cloak] { display: none !important; }
@@ -71,7 +59,7 @@
     </head>
     <body class="font-sans antialiased bg-zinc-50 dark:bg-darkBg text-zinc-900 dark:text-zinc-100 min-h-screen flex items-center justify-center p-4 relative transition-colors duration-200"
           x-data="{ 
-              darkMode: localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+              darkMode: localStorage.getItem('theme') === 'dark',
               toggleTheme() {
                   this.darkMode = !this.darkMode;
                   if (this.darkMode) {
@@ -98,7 +86,7 @@
             </button>
         </div>
 
-        <div class="w-full max-w-2xl bg-white dark:bg-zinc-900 border border-zinc-200/85 dark:border-zinc-800/85 rounded-2xl shadow-xl dark:shadow-zinc-950/40 p-6 md:p-8 flex flex-col gap-6 relative overflow-hidden transition-all duration-300">
+        <div class="w-full max-w-2xl bg-white dark:bg-zinc-900 border border-zinc-200/85 dark:border-zinc-800/85 rounded-2xl shadow-xl dark:shadow-zinc-950/40 p-6 md:p-8 flex flex-col gap-6 relative overflow-hidden transition-all duration-300 max-h-[90vh] overflow-y-auto">
             <!-- Branding Header -->
             <div class="flex flex-col items-center text-center">
                 <span class="text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Installation Setup Wizard</span>
@@ -120,7 +108,7 @@
                 $currentIndex = array_search($currentRouteName, $keys);
                 if ($currentIndex === false) $currentIndex = 0;
             @endphp
-            <div class="w-full flex items-center justify-between relative px-2 mb-2 select-none">
+            <div class="w-full flex items-center justify-between relative px-2 mb-2">
                 <!-- Line background -->
                 <div class="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-0.5 bg-zinc-100 dark:bg-zinc-800 -z-10"></div>
                 <!-- Line active progress -->

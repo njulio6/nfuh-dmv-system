@@ -54,6 +54,7 @@
             ->get();
     @endphp
 
+<div x-data="{ receiptModalOpen: false, receiptUrl: '' }" class="flex flex-col gap-6 w-full">
     <!-- Welcome Greeting Row (Exact same as TCG Agency Admin) -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex flex-col gap-1">
@@ -101,6 +102,17 @@
                 <i data-lucide="refresh-cw" class="w-[15px] h-[15px]"></i>
             </button>
             
+            @if(Auth::user() && Auth::user()->hasRole('admin'))
+                <a
+                    href="{{ route('admin.tools') }}"
+                    class="px-4 py-2 border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all flex items-center justify-center cursor-pointer active:scale-95 disabled:opacity-50"
+                    title="System Tools"
+                >
+                    <i data-lucide="terminal" class="w-[15px] h-[15px] mr-2"></i>
+                    <span class="text-sm font-medium">System Tools</span>
+                </a>
+            @endif
+
             <button 
                 onclick="window.print()"
                 class="px-4 py-2 bg-zinc-950 text-white dark:bg-zinc-50 dark:text-zinc-950 rounded-lg text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95"
@@ -197,7 +209,7 @@
                     <p class="text-xs text-zinc-500 dark:text-zinc-400">Contributions & payment submissions per month</p>
                 </div>
                 
-                <div class="flex items-center gap-4 flex-shrink-0 select-none">
+                <div class="flex items-center gap-4 flex-shrink-0">
                     <!-- Legend -->
                     <div class="flex items-center gap-3">
                         <div class="flex items-center gap-1.5">
@@ -216,52 +228,54 @@
                 </div>
             </div>
 
-            <div class="relative w-full flex-1 min-h-[220px]">
-                <!-- Y-axis labels -->
-                <div class="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-[11px] text-zinc-400 dark:text-zinc-500 pointer-events-none select-none z-10 w-8 text-right pr-1.5">
-                    @foreach ($yLabels as $label)
-                        <span>{{ $label }}</span>
-                    @endforeach
-                </div>
+            <div class="w-full overflow-x-auto pb-1">
+                <div class="relative w-full min-w-[400px] flex-1 min-h-[270px]">
+                    <!-- Y-axis labels -->
+                    <div class="absolute left-0 top-12 bottom-6 flex flex-col justify-between text-[11px] text-zinc-400 dark:text-zinc-500 pointer-events-none select-none z-10 w-8 text-right pr-1.5">
+                        @foreach ($yLabels as $label)
+                            <span>{{ $label }}</span>
+                        @endforeach
+                    </div>
 
-                <!-- Guide lines -->
-                <div class="absolute left-8 right-0 top-0 bottom-6 flex flex-col justify-between pointer-events-none">
-                    @for ($i = 0; $i < 4; $i++)
-                        <div class="w-full border-t border-dashed border-zinc-200/50 dark:border-zinc-800/40 h-0"></div>
-                    @endfor
-                    <div class="w-full border-t border-zinc-200 dark:border-zinc-800 h-0"></div>
-                </div>
+                    <!-- Guide lines -->
+                    <div class="absolute left-8 right-0 top-12 bottom-6 flex flex-col justify-between pointer-events-none">
+                        @for ($i = 0; $i < 4; $i++)
+                            <div class="w-full border-t border-dashed border-zinc-200/50 dark:border-zinc-800/40 h-0"></div>
+                        @endfor
+                        <div class="w-full border-t border-zinc-200 dark:border-zinc-800 h-0"></div>
+                    </div>
 
-                <!-- Bars (Exactly gap-0.5 spacing as TCG Agency) -->
-                <div class="absolute left-8 right-0 top-0 bottom-6 flex items-end justify-between gap-0.5">
-                    @foreach ($chartData as $data)
-                        @php
-                            $contribPct = $yAxisMax > 0 ? ($data['contributions'] / $yAxisMax) * 100 : 0;
-                            $subPct = $yAxisMax > 0 ? ($data['submissions'] / $yAxisMax) * 100 : 0;
-                        @endphp
-                        <div class="flex-1 flex items-end justify-center gap-0.5 group relative h-full">
-                            <!-- Tooltip on hover -->
-                            <div class="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 z-30 pointer-events-none bg-zinc-900 text-zinc-100 text-[11px] font-medium p-2 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap border border-zinc-800">
-                                <div class="font-bold text-[11px] mb-0.5 text-white">{{ $data['month'] }} {{ $selectedYear }}</div>
-                                <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm bg-zinc-100 border border-transparent"></div> Contributions: <b>{{ $data['contributions'] }}</b></div>
-                                <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm bg-zinc-400"></div> Submissions: <b>{{ $data['submissions'] }}</b></div>
+                    <!-- Bars (Exactly gap-0.5 spacing as TCG Agency) -->
+                    <div class="absolute left-8 right-0 top-12 bottom-6 flex items-end justify-between gap-0.5">
+                        @foreach ($chartData as $data)
+                            @php
+                                $contribPct = $yAxisMax > 0 ? ($data['contributions'] / $yAxisMax) * 100 : 0;
+                                $subPct = $yAxisMax > 0 ? ($data['submissions'] / $yAxisMax) * 100 : 0;
+                            @endphp
+                            <div class="flex-1 flex items-end justify-center gap-0.5 group relative h-full">
+                                <!-- Tooltip on hover -->
+                                <div class="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 z-30 pointer-events-none bg-zinc-900 text-zinc-100 text-[11px] font-medium p-2 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap border border-zinc-800">
+                                    <div class="font-bold text-[11px] mb-0.5 text-white">{{ $data['month'] }} {{ $selectedYear }}</div>
+                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm bg-zinc-100 border border-transparent"></div> Contributions: <b>{{ $data['contributions'] }}</b></div>
+                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm bg-zinc-300 dark:bg-zinc-600"></div> Submissions: <b>{{ $data['submissions'] }}</b></div>
+                                </div>
+
+                                <!-- Contribution Bar -->
+                                <div class="w-[35%] max-w-[18px] min-w-[6px] shrink-0 bg-zinc-900 dark:bg-zinc-100 rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-70" style="height: {{ $contribPct }}%; min-height: {{ $data['contributions'] > 0 ? '3px' : '0' }};"></div>
+                                <!-- Submission Bar -->
+                                <div class="w-[35%] max-w-[18px] min-w-[6px] shrink-0 bg-zinc-300 dark:bg-zinc-600 rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-70" style="height: {{ $subPct }}%; min-height: {{ $data['submissions'] > 0 ? '3px' : '0' }};"></div>
                             </div>
+                        @endforeach
+                    </div>
 
-                            <!-- Contribution Bar -->
-                            <div class="w-[11px] bg-zinc-900 dark:bg-zinc-100 rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-70" style="height: {{ $contribPct }}%; min-height: {{ $data['contributions'] > 0 ? '3px' : '0' }};"></div>
-                            <!-- Submission Bar -->
-                            <div class="w-[11px] bg-zinc-300 dark:bg-zinc-600 rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-70" style="height: {{ $subPct }}%; min-height: {{ $data['submissions'] > 0 ? '3px' : '0' }};"></div>
-                        </div>
-                    @endforeach
-                </div>
-
-                <!-- Month labels -->
-                <div class="absolute left-8 right-0 bottom-0 h-5 flex justify-between">
-                    @foreach ($chartData as $data)
-                        <div class="flex-1 text-center">
-                            <span class="text-[11px] text-zinc-550 dark:text-zinc-400 select-none font-medium">{{ $data['month'] }}</span>
-                        </div>
-                    @endforeach
+                    <!-- Month labels -->
+                    <div class="absolute left-8 right-0 bottom-0 h-5 flex justify-between">
+                        @foreach ($chartData as $data)
+                            <div class="flex-1 text-center">
+                                <span class="text-[11px] text-zinc-550 dark:text-zinc-400 font-medium">{{ $data['month'] }}</span>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
             </div>
         </div>
@@ -325,10 +339,19 @@
                                         </span>
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-2 flex-shrink-0 ml-3">
+                                <div class="flex items-center gap-1 flex-shrink-0 ml-3">
+                                    @if ($sub->screenshot_path)
+                                        <button 
+                                            @click="receiptUrl = '{{ asset('storage/' . $sub->screenshot_path) }}'; receiptModalOpen = true"
+                                            class="p-1 text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 rounded cursor-pointer transition-colors flex items-center justify-center select-none focus:outline-none"
+                                            title="View Receipt"
+                                        >
+                                            <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    @endif
                                     <a 
                                         href="{{ route('njangi-submissions.index') }}"
-                                        class="p-1 text-zinc-900 hover:bg-zinc-100 dark:text-white dark:hover:bg-zinc-800 rounded cursor-pointer transition-colors"
+                                        class="p-1 text-zinc-900 hover:bg-zinc-100 dark:text-white dark:hover:bg-zinc-800 rounded cursor-pointer transition-colors flex items-center justify-center"
                                         title="View Submissions"
                                     >
                                         <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
@@ -389,6 +412,55 @@
             </div>
         </div>
 
+    </div>
+</div>
+
+    <!-- Receipt Modal -->
+    <div 
+        x-show="receiptModalOpen" 
+        x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 font-sans"
+    >
+        <!-- Backdrop -->
+        <div 
+            x-show="receiptModalOpen"
+            x-transition:enter="transition-opacity ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition-opacity ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            @click="receiptModalOpen = false"
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
+        ></div>
+
+        <!-- Modal Content -->
+        <div 
+            x-show="receiptModalOpen"
+            x-transition:enter="transition ease-out duration-300 transform"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-200 transform"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95"
+            class="relative max-w-2xl w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl p-4 flex flex-col gap-4 max-h-[90vh]"
+        >
+            <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-2">
+                <h3 class="font-bold text-zinc-900 dark:text-white text-sm">Receipt Image Preview</h3>
+                <button 
+                    @click="receiptModalOpen = false"
+                    class="p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 cursor-pointer flex items-center justify-center"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="flex-grow overflow-auto flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-800 p-2 min-h-[300px]">
+                <img :src="receiptUrl" alt="Receipt Upload" class="max-w-full max-h-[60vh] object-contain rounded-lg shadow-sm">
+            </div>
+        </div>
     </div>
 
 <!-- Auto-instantiation of Lucide Icons -->

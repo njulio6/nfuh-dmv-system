@@ -19,7 +19,7 @@
 </style>
 
     <!-- Header Row -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <x-premium-header 
             title="My Njangi Ledger & Refund Report" 
             subtitle="View expected contributions, dynamic standings, and contribution history."
@@ -29,7 +29,7 @@
         />
 
         @if(isset($memberCycles) && $memberCycles->count() > 1)
-            <div class="flex items-center gap-2 flex-shrink-0 self-start sm:self-center select-none animate-fadeIn"
+            <div class="flex items-center gap-2 flex-shrink-0 self-start sm:self-center animate-fadeIn"
                  x-data="{ 
                      dropdownOpen: false, 
                      activeCycleId: '{{ $activeCycle->id ?? '' }}', 
@@ -65,7 +65,7 @@
                         x-transition:leave="transition ease-in duration-80"
                         x-transition:leave-start="opacity-100 transform scale-100 translate-y-0"
                         x-transition:leave-end="opacity-0 transform scale-95 -translate-y-2"
-                        class="absolute right-0 z-50 mt-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl w-64 overflow-hidden py-1.5 select-none"
+                        class="absolute right-0 z-50 mt-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl w-64 overflow-hidden py-1.5"
                         style="display: none;"
                     >
                         <div class="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 border-b border-zinc-100 dark:border-zinc-800 mb-1">
@@ -96,7 +96,7 @@
     @if(!$activeCycle || !$cycleMember)
         <!-- Enrollment Warning Card -->
         <x-premium-card class="-mt-1">
-            <div class="flex flex-col items-center justify-center text-center p-8 gap-3 select-none">
+            <div class="flex flex-col items-center justify-center text-center p-8 gap-3">
                 <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-full text-zinc-300 dark:text-zinc-700">
                     <i data-lucide="alert-circle" class="w-8 h-8"></i>
                 </div>
@@ -111,7 +111,7 @@
         <div x-data="{ activeReportTab: 'refunds' }" class="flex flex-col gap-6">
             
             <!-- Top Summary Metrics Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 select-none">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl flex items-center gap-3.5 shadow-3xs hover:shadow-md transition-all duration-200">
                     <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 rounded-lg shrink-0">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"/></svg>
@@ -140,7 +140,7 @@
             <!-- Detailed Tables Card -->
             <x-premium-card title="Ledger & Refund Statement Summary">
                 <!-- Tab Selectors -->
-                <div class="flex border-b border-zinc-100 dark:border-zinc-800/60 mb-4 select-none">
+                <div class="flex border-b border-zinc-100 dark:border-zinc-800/60 mb-4">
                     <button 
                         @click="activeReportTab = 'refunds'"
                         class="px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer focus:outline-none"

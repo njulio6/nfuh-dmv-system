@@ -125,7 +125,7 @@ test('member can submit a valid payment with a screenshot', function () {
         'member_note' => 'Paid via Zelle.',
     ]);
 
-    $response->assertRedirect('/dashboard');
+    $response->assertRedirect(route('member.njangi-payments'));
     $response->assertSessionHas('success');
 
     $submission = NjangiPaymentSubmission::first();
@@ -181,7 +181,7 @@ test('member cannot submit duplicate payment for the same session', function () 
 
     $screenshot = UploadedFile::fake()->image('zelle2.png');
 
-    $response = $this->actingAs($user)->from('/dashboard')->post('/member/submissions', [
+    $response = $this->actingAs($user)->from(route('member.njangi-payments'))->post('/member/submissions', [
         'njangi_session_id' => $session->id,
         'amount' => 400.00,
         'is_attending' => 1,
@@ -189,7 +189,7 @@ test('member cannot submit duplicate payment for the same session', function () 
         'member_note' => 'Another submission.',
     ]);
 
-    $response->assertRedirect('/dashboard');
+    $response->assertRedirect(route('member.njangi-payments'));
     $response->assertSessionHas('error');
     
     // Make sure only the first submission exists in DB
@@ -326,7 +326,7 @@ test('member can switch between multiple active cycles they are enrolled in via 
     });
 });
 
-test('member dashboard submissions list only shows submissions for the selected cycle', function () {
+test('member njangi payments list only shows submissions for the selected cycle', function () {
     $user = User::factory()->create();
     $member = Member::create([
         'organization_id' => $this->org->id,
@@ -405,21 +405,178 @@ test('member dashboard submissions list only shows submissions for the selected 
         'status' => 'pending',
     ]);
 
-    // Fetch dashboard without cycle_id query -> should load cycle1 and only show $sub1
-    $response = $this->actingAs($user)->get('/dashboard');
+    // Fetch njangi payments page without cycle_id query -> should load cycle1 and only show $sub1
+    $response = $this->actingAs($user)->get(route('member.njangi-payments'));
     $response->assertStatus(200);
     $response->assertViewHas('submissions');
     $submissions = $response->viewData('submissions');
     expect($submissions->pluck('id'))->toContain($sub1->id);
     expect($submissions->pluck('id'))->not->toContain($sub2->id);
 
-    // Fetch dashboard with cycle_id for cycle2 -> should load cycle2 and only show $sub2
-    $response = $this->actingAs($user)->get('/dashboard?cycle_id=' . $cycle2->id);
+    // Fetch njangi payments page with cycle_id for cycle2 -> should load cycle2 and only show $sub2
+    $response = $this->actingAs($user)->get(route('member.njangi-payments', ['cycle_id' => $cycle2->id]));
     $response->assertStatus(200);
     $response->assertViewHas('submissions');
     $submissions = $response->viewData('submissions');
     expect($submissions->pluck('id'))->toContain($sub2->id);
     expect($submissions->pluck('id'))->not->toContain($sub1->id);
 });
+
+test('member dashboard displays active loan progress, statement link, guarantors, and pending requests', function () {
+    $user = User::factory()->create();
+    $member = Member::create([
+        'organization_id' => $this->org->id,
+        'member_code' => 'M-TEST-1',
+        'first_name' => 'John',
+        'last_name' => 'Doe',
+        'email' => $user->email,
+        'phone' => '12345',
+        'participates_in_savings' => true,
+    ]);
+
+    $guarantor = Member::create([
+        'organization_id' => $this->org->id,
+        'member_code' => 'M-GUAR-1',
+        'first_name' => 'Guar',
+        'last_name' => 'One',
+        'email' => 'guar1@example.com',
+        'phone' => '54321',
+        'participates_in_savings' => true,
+    ]);
+
+    // Create an active loan
+    $loan = \App\Models\LoanRequest::create([
+        'organization_id' => $this->org->id,
+        'member_id' => $member->id,
+        'amount' => 1000.00,
+        'remaining_balance' => 800.00,
+        'duration_months' => 12,
+        'status' => 'active',
+        'purpose' => 'Test Loan',
+    ]);
+
+    // Assign guarantor
+    \App\Models\LoanGuarantor::create([
+        'loan_request_id' => $loan->id,
+        'guarantor_member_id' => $guarantor->id,
+        'status' => 'approved',
+    ]);
+
+    // Create a pending savings deposit request
+    $savingsReq = \App\Models\SavingsDepositRequest::create([
+        'organization_id' => $this->org->id,
+        'member_id' => $member->id,
+        'amount' => 250.00,
+        'screenshot_path' => 'screenshots/savings.png',
+        'status' => 'pending',
+        'submitted_at' => now(),
+    ]);
+
+    // Create a pending loan repayment request
+    $repayReq = \App\Models\LoanRepaymentRequest::create([
+        'organization_id' => $this->org->id,
+        'member_id' => $member->id,
+        'loan_request_id' => $loan->id,
+        'amount' => 150.00,
+        'screenshot_path' => 'screenshots/repay.png',
+        'status' => 'pending',
+        'payment_date' => now()->toDateString(),
+        'payment_method' => 'zelle',
+        'submitted_at' => now(),
+    ]);
+
+    $response = $this->actingAs($user)->get('/dashboard');
+    $response->assertStatus(200);
+
+    // Verify relations and variables passed to view
+    $response->assertViewHas('activeLoans');
+    $response->assertViewHas('pendingSavingsRequests');
+    $response->assertViewHas('pendingRepayRequests');
+    $response->assertViewHas('pendingLoanRequests');
+
+    $activeLoans = $response->viewData('activeLoans');
+    expect($activeLoans->first()->id)->toEqual($loan->id);
+    expect($activeLoans->first()->guarantors)->not->toBeEmpty();
+    expect($activeLoans->first()->guarantors->first()->guarantorMember->id)->toEqual($guarantor->id);
+
+    $pendingSavings = $response->viewData('pendingSavingsRequests');
+    expect($pendingSavings->pluck('id'))->toContain($savingsReq->id);
+
+    $pendingRepays = $response->viewData('pendingRepayRequests');
+    expect($pendingRepays->pluck('id'))->toContain($repayReq->id);
+
+    // Verify HTML has the relevant content
+    $response->assertSee('Active Loan Progress');
+    $response->assertSee('Remaining Balance');
+    $response->assertSee('Guarantors');
+    $response->assertSee('Guar One');
+    $response->assertSee('View & Print Statement', false);
+    $response->assertSee('My Pending Requests');
+    $response->assertSee('Savings Deposit');
+    $response->assertSee('Loan Repayment');
+    $response->assertSee('Active Loan Balance');
+    $response->assertSee('Pending Requests');
+});
+
+test('member not enrolled in Njangi cycle can access dashboard and see savings and active loan metrics', function () {
+    $user = User::factory()->create();
+    $member = Member::create([
+        'organization_id' => $this->org->id,
+        'member_code' => 'M-TEST-2',
+        'first_name' => 'SavingsOnly',
+        'last_name' => 'Member',
+        'email' => $user->email,
+        'phone' => '123456',
+        'participates_in_savings' => true,
+        'participates_in_njangi' => false,
+    ]);
+
+    // Give some savings balance
+    \App\Models\SavingsTransaction::create([
+        'organization_id' => $this->org->id,
+        'member_id' => $member->id,
+        'amount' => 600.00,
+        'type' => 'deposit',
+        'status' => 'approved',
+        'transaction_date' => now()->toDateString(),
+    ]);
+
+    // Active loan
+    $loan = \App\Models\LoanRequest::create([
+        'organization_id' => $this->org->id,
+        'member_id' => $member->id,
+        'amount' => 500.00,
+        'remaining_balance' => 500.00,
+        'duration_months' => 6,
+        'status' => 'active',
+        'purpose' => 'Short Loan',
+    ]);
+
+    // We do NOT enroll the member in any NjangiCycle (no NjangiCycleMember creation)
+
+    $response = $this->actingAs($user)->get('/dashboard');
+    
+    $response->assertStatus(200);
+    $response->assertViewIs('dashboard.member');
+
+    // Njangi warning banner should be shown
+    $response->assertSee('Not Enrolled in Njangi');
+
+    // Savings balance and active loan card should be visible
+    $response->assertSee('$600.00');
+    $response->assertSee('Active Loan Progress');
+    $response->assertSee('$500.00');
+    $response->assertSee('Active Loan Balance');
+    $response->assertSee('Pending Requests');
+
+    // Njangi-specific stats cards should NOT be visible
+    $response->assertDontSee('Benefit Position');
+    $response->assertDontSee('My Payout Date');
+
+    // Submit Njangi Play form should NOT be visible
+    $response->assertDontSee('Submit Njangi Play');
+});
+
+
 
 

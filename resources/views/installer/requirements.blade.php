@@ -8,7 +8,7 @@
         <div class="border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl overflow-hidden shadow-xs bg-zinc-50/30 dark:bg-zinc-950/10">
             <table class="w-full text-left border-collapse text-xs">
                 <thead>
-                    <tr class="bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 font-bold border-b border-zinc-200/60 dark:border-zinc-800/60 select-none">
+                    <tr class="bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 font-bold border-b border-zinc-200/60 dark:border-zinc-800/60">
                         <th class="p-3">Requirement</th>
                         <th class="p-3">Current</th>
                         <th class="p-3 text-right">Status</th>
@@ -21,12 +21,12 @@
                             <td class="p-3 text-zinc-500 dark:text-zinc-400 font-mono">{{ $req['current'] }}</td>
                             <td class="p-3 text-right">
                                 @if($req['status'])
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 select-none">
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                                         <span class="h-1 w-1 rounded-full bg-emerald-500"></span>
                                         Passed
                                     </span>
                                 @else
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-500/10 text-red-600 dark:text-red-400 select-none">
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-500/10 text-red-600 dark:text-red-400">
                                         <span class="h-1 w-1 rounded-full bg-red-500"></span>
                                         Failed
                                     </span>

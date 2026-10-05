@@ -5,16 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasRoles;
+
+    public function member(): HasOne
+    {
+        return $this->hasOne(Member::class);
+    }
+
     public function organization(): BelongsTo
-{
-    return $this->belongsTo(Organization::class);
-}
+    {
+        return $this->belongsTo(Organization::class);
+    }
     /**
      * The attributes that are mass assignable.
      */

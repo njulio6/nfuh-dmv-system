@@ -10,7 +10,7 @@
 />
 
 <!-- Ledger Summary Cards (Monochrome) -->
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 -mt-3 mb-6 select-none">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 -mt-3 mb-6">
     <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 hover:shadow-md transition-all duration-200">
         <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Ledger Records</span>
         <div class="text-xl md:text-2xl font-display font-black text-zinc-800 dark:text-white leading-none tracking-tight">

@@ -22,11 +22,18 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        \Illuminate\Support\Facades\View::composer('*', function ($view) {
+            try {
+                $view->with('appSettings', \App\Models\Setting::first());
+            } catch (\Exception $e) {
+                // Prevent exception during migrations
+            }
+        });
+
         try {
             if (\Illuminate\Support\Facades\Schema::hasTable('settings')) {
                 $settings = \App\Models\Setting::first();
                 if ($settings) {
-                    \Illuminate\Support\Facades\View::share('appSettings', $settings);
                     \Illuminate\Support\Facades\Config::set('app.name', $settings->app_name);
                 }
             }

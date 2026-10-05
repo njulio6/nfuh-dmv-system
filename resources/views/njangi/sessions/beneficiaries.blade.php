@@ -14,7 +14,7 @@
             @csrf
 
             <!-- Guideline Alert Box -->
-            <div class="p-3.5 bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200/40 dark:border-zinc-800/40 rounded-xl text-xs text-zinc-550 dark:text-zinc-400 flex items-start gap-3 select-none">
+            <div class="p-3.5 bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200/40 dark:border-zinc-800/40 rounded-xl text-xs text-zinc-550 dark:text-zinc-400 flex items-start gap-3">
                 <span class="p-1 bg-zinc-200/50 dark:bg-zinc-800 rounded-lg text-zinc-800 dark:text-white shrink-0">
                     <i data-lucide="info" class="w-4 h-4"></i>
                 </span>

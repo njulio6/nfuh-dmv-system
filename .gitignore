@@ -44,3 +44,6 @@ CHANGELOG.md
 # Setup & Packaging
 /storage/installed
 /composer.phar
+
+# Context
+/context/

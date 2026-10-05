@@ -3,7 +3,7 @@
 
     <!-- Validation Errors Alert Block -->
     @if ($errors->any() || $errors->has('participation'))
-        <div class="p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/60 rounded-xl text-red-800 dark:text-red-400 text-xs font-semibold flex flex-col gap-1.5 mb-2 select-none">
+        <div class="p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/60 rounded-xl text-red-800 dark:text-red-400 text-xs font-semibold flex flex-col gap-1.5 mb-2">
             <div class="flex items-center gap-2">
                 <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 dark:text-red-550 shrink-0"></i>
                 <span class="font-bold">Please correct the following errors:</span>
@@ -19,16 +19,41 @@
         </div>
     @endif
 
+    {{-- Edit mode only: read-only linked account status bar --}}
+    @if(isset($member))
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl px-4 py-3 flex items-center justify-between gap-4 shadow-none">
+            <div class="flex items-center gap-3">
+                <div class="p-1.5 rounded-lg {{ $member->user_id ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-amber-100 dark:bg-amber-900/40' }} shrink-0">
+                    @if($member->user_id && $member->user)
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-600 dark:text-emerald-400"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    @else
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-amber-600 dark:text-amber-400"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    @endif
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Portal Login Account</p>
+                    @if($member->user_id && $member->user)
+                        <p class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $member->user->email }}</p>
+                    @else
+                        <p class="text-sm font-semibold text-amber-700 dark:text-amber-400">No login account linked</p>
+                    @endif
+                </div>
+            </div>
+            @if($member->user_id)
+                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40 px-2.5 py-1 rounded-lg shrink-0">Linked ✓</span>
+            @endif
+        </div>
+    @endif
     <!-- Card 1: Personal Information -->
     <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-5 shadow-none">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white select-none">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
             Personal Information
         </h3>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- First Name -->
             <div class="flex flex-col">
-                <label for="first_name" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">First Name <span class="text-red-500">*</span></label>
+                <label for="first_name" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">First Name <span class="text-red-500">*</span></label>
                 <div class="relative">
                     <input type="text" name="first_name" id="first_name"
                         value="{{ old('first_name', $member->first_name ?? '') }}" 
@@ -41,7 +66,7 @@
 
             <!-- Last Name -->
             <div class="flex flex-col">
-                <label for="last_name" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Last Name <span class="text-red-500">*</span></label>
+                <label for="last_name" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Last Name <span class="text-red-500">*</span></label>
                 <div class="relative">
                     <input type="text" name="last_name" id="last_name"
                         value="{{ old('last_name', $member->last_name ?? '') }}" 
@@ -52,21 +77,26 @@
                 </div>
             </div>
 
-            <!-- Email -->
+
+            {{-- Email \u2014 on CREATE: sets users.email. On EDIT: updates users.email. Never stored on members table. --}}
             <div class="flex flex-col">
-                <label for="email" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Email Address</label>
+                <label for="email" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    Email Address <span class="text-red-500">*</span>
+                    <span class="text-[10px] font-normal text-zinc-400 normal-case tracking-normal ml-1">(login email)</span>
+                </label>
                 <div class="relative">
                     <input type="email" name="email" id="email"
-                        value="{{ old('email', $member->email ?? '') }}" 
+                        value="{{ old('email', isset($member) ? $member->user?->email : '') }}"
                         placeholder="e.g. john@example.com"
                         class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all"
+                        required
                     >
                 </div>
             </div>
 
             <!-- Phone -->
             <div class="flex flex-col">
-                <label for="phone" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Phone Number <span class="text-red-500">*</span></label>
+                <label for="phone" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Phone Number <span class="text-red-500">*</span></label>
                 <div class="relative">
                     <input type="text" name="phone" id="phone"
                         value="{{ old('phone', $member->phone ?? '') }}" 
@@ -76,18 +106,48 @@
                     >
                 </div>
             </div>
+
+
+            {{-- Password fields — required on CREATE, optional on EDIT (blank = keep current) --}}
+            <div class="flex flex-col">
+                <label for="password" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    Password
+                    @if(!isset($member))<span class="text-red-500">*</span>@else<span class="text-[10px] font-normal text-zinc-400 normal-case tracking-normal ml-1">(leave blank to keep current)</span>@endif
+                </label>
+                <div class="relative">
+                    <input type="password" name="password" id="password"
+                        placeholder="{{ isset($member) ? 'Leave blank to keep current' : 'Min. 8 characters' }}"
+                        class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all"
+                        {{ !isset($member) ? 'required' : '' }}
+                    >
+                </div>
+            </div>
+            <div class="flex flex-col">
+                <label for="password_confirmation" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    Confirm Password
+                    @if(!isset($member))<span class="text-red-500">*</span>@endif
+                </label>
+                <div class="relative">
+                    <input type="password" name="password_confirmation" id="password_confirmation"
+                        placeholder="Repeat password"
+                        class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all"
+                        {{ !isset($member) ? 'required' : '' }}
+                    >
+                </div>
+            </div>
+
         </div>
     </div>
 
     <!-- Card 2: Organization Profile -->
     <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-5 shadow-none">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white select-none">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
             Organization Profile
         </h3>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Rank / Traditional Title Dropdown -->
-            <div class="flex flex-col relative select-none" x-data="customSelect({
+            <div class="flex flex-col relative" x-data="customSelect({
                 value: '{{ old('rank_id', $member->rank_id ?? '') }}',
                 defaultLabel: 'Warrior (Default)',
                 options: [
@@ -97,7 +157,7 @@
                     @endforeach
                 ]
             })" @click.outside="close()">
-                <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Traditional Title</label>
+                <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Traditional Title</label>
                 <input type="hidden" name="rank_id" x-ref="hiddenInput" :value="value">
                 
                 <div class="relative">
@@ -149,7 +209,7 @@
             </div>
 
             <!-- Status Dropdown -->
-            <div class="flex flex-col relative select-none" x-data="customSelect({
+            <div class="flex flex-col relative" x-data="customSelect({
                 value: '{{ old('status', $member->status ?? 'active') }}',
                 defaultLabel: 'Active',
                 options: [
@@ -158,7 +218,7 @@
                     { value: 'suspended', label: 'Suspended' }
                 ]
             })" @click.outside="close()">
-                <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Account Status <span class="text-red-500">*</span></label>
+                <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Account Status <span class="text-red-500">*</span></label>
                 <input type="hidden" name="status" x-ref="hiddenInput" :value="value">
                 
                 <div class="relative">
@@ -210,143 +270,25 @@
             </div>
 
             <!-- Join Date Calendar Component -->
-            <div class="flex flex-col relative select-none" x-data="datepicker({
-                name: 'join_date',
-                value: '{{ old('join_date', isset($member->join_date) ? \Illuminate\Support\Carbon::parse($member->join_date)->format('Y-m-d') : '') }}',
-                required: true
-            })" @click.outside="open = false; monthOpen = false; yearOpen = false">
-                <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Join Date <span class="text-red-500">*</span></label>
-                <input type="hidden" :name="name" x-ref="hiddenInput" :value="value">
-                
-                <div class="relative">
-                    <button 
-                        type="button"
-                        @click="open = !open"
-                        @keydown.escape.prevent="open = false"
-                        class="w-full flex items-center justify-between bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 text-zinc-800 dark:text-white px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all cursor-pointer text-left select-none"
-                        :class="open ? 'border-zinc-950 dark:border-zinc-50' : ''"
-                    >
-                        <span x-text="displayValue"></span>
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-400 transition-transform duration-200 shrink-0" :class="open ? 'rotate-180 text-zinc-900 dark:text-white' : ''"></i>
-                    </button>
-                </div>
-
-                <!-- Calendar Popover Panel -->
-                <div 
-                    x-show="open" 
-                    x-cloak
-                    x-transition:enter="transition ease-out duration-100"
-                    x-transition:enter-start="transform opacity-0 scale-95"
-                    x-transition:enter-end="transform opacity-100 scale-100"
-                    x-transition:leave="transition ease-in duration-75"
-                    x-transition:leave-start="transform opacity-100 scale-100"
-                    x-transition:leave-end="transform opacity-0 scale-95"
-                    class="absolute top-[100%] left-0 mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl z-50 p-4 flex flex-col gap-3 w-72 shadow-none"
-                >
-                    <!-- Header month/year picker -->
-                    <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-2.5">
-                        <button type="button" @click="prevMonth(); monthOpen = false; yearOpen = false" class="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                        </button>
-                        
-                        <div class="flex items-center gap-1.5 font-bold text-xs">
-                            <!-- Custom Month Dropdown -->
-                            <div class="relative select-none">
-                                <button type="button" @click.stop="monthOpen = !monthOpen; yearOpen = false" class="flex items-center gap-1 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 px-2 py-1 rounded-lg transition-colors cursor-pointer text-xs font-bold text-zinc-800 dark:text-white">
-                                    <span x-text="months[month]"></span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-400 dark:text-zinc-500 transition-transform" :class="monthOpen ? 'rotate-180 text-zinc-900 dark:text-white' : ''"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                                </button>
-                                
-                                <div 
-                                    x-show="monthOpen" 
-                                    x-cloak
-                                    @click.outside="monthOpen = false"
-                                    class="absolute top-[100%] left-0 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg z-[60] p-1 flex flex-col gap-0.5 max-h-48 overflow-y-auto w-32"
-                                >
-                                    <template x-for="(m, index) in months" :key="index">
-                                        <button 
-                                            type="button" 
-                                            @click="month = index; generateCalendar(); monthOpen = false"
-                                            class="w-full px-2.5 py-1.5 rounded-lg text-[11px] transition-colors font-semibold text-left"
-                                            :class="month === index ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'"
-                                        >
-                                            <span x-text="m"></span>
-                                        </button>
-                                    </template>
-                                </div>
-                            </div>
-                            
-                            <span class="text-zinc-300 dark:text-zinc-600 font-bold select-none">/</span>
-                            
-                            <!-- Custom Year Dropdown -->
-                            <div class="relative select-none">
-                                <button type="button" @click.stop="yearOpen = !yearOpen; monthOpen = false" class="flex items-center gap-1 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 px-2 py-1 rounded-lg transition-colors cursor-pointer text-xs font-bold text-zinc-800 dark:text-white">
-                                    <span x-text="year"></span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-400 dark:text-zinc-500 transition-transform" :class="yearOpen ? 'rotate-180 text-zinc-900 dark:text-white' : ''"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                                </button>
-                                
-                                <div 
-                                    x-show="yearOpen" 
-                                    x-cloak
-                                    @click.outside="yearOpen = false"
-                                    class="absolute top-[100%] left-0 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg z-[60] p-1 flex flex-col gap-0.5 max-h-48 overflow-y-auto w-24"
-                                >
-                                    <template x-for="y in getYears()" :key="y">
-                                        <button 
-                                            type="button" 
-                                            @click="year = y; generateCalendar(); yearOpen = false"
-                                            class="w-full px-2.5 py-1.5 rounded-lg text-[11px] transition-colors font-semibold text-left"
-                                            :class="year === y ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'"
-                                        >
-                                            <span x-text="y"></span>
-                                        </button>
-                                    </template>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button type="button" @click="nextMonth(); monthOpen = false; yearOpen = false" class="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        </button>
-                    </div>
-
-                    <!-- Weekdays -->
-                    <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 py-1 select-none">
-                        <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
-                    </div>
-
-                    <!-- Days Grid -->
-                    <div class="grid grid-cols-7 gap-1 text-center">
-                        <template x-for="(dayObj, index) in days" :key="index">
-                            <button 
-                                type="button"
-                                @click="selectDate(dayObj)"
-                                class="h-8 w-8 rounded-lg text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer"
-                                :class="{
-                                    'bg-zinc-950 dark:bg-zinc-50 text-white dark:text-zinc-950 font-bold': isSelected(dayObj),
-                                    'text-zinc-300 dark:text-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800/50': !dayObj.currentMonth && !isSelected(dayObj),
-                                    'text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800': dayObj.currentMonth && !isSelected(dayObj),
-                                    'border border-zinc-200 dark:border-zinc-800': isToday(dayObj) && !isSelected(dayObj)
-                                }"
-                                x-text="dayObj.day"
-                            ></button>
-                        </template>
-                    </div>
-                </div>
-            </div>
+            <x-premium-datepicker 
+                label="Join Date" 
+                name="join_date" 
+                required="true"
+                value="{{ old('join_date', isset($member->join_date) ? \Illuminate\Support\Carbon::parse($member->join_date)->format('Y-m-d') : '') }}" 
+            />
         </div>
     </div>
 
     <!-- Card 3: Location Details -->
     <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-5 shadow-none">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white select-none">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
             Location Details
         </h3>
         
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <!-- Address -->
             <div class="flex flex-col md:col-span-3">
-                <label for="address" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Street Address <span class="text-red-500">*</span></label>
+                <label for="address" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Street Address <span class="text-red-500">*</span></label>
                 <div class="relative">
                     <input type="text" name="address" id="address"
                         value="{{ old('address', $member->address ?? '') }}" 
@@ -358,7 +300,7 @@
             </div>
 
             <!-- State Code Dropdown -->
-            <div class="flex flex-col relative select-none" x-data="customSelect({
+            <div class="flex flex-col relative" x-data="customSelect({
                 value: '{{ old('state_code', $member->state_code ?? '') }}',
                 defaultLabel: 'Select State',
                 options: [
@@ -367,7 +309,7 @@
                     { value: 'DC', label: 'DC (DC)' }
                 ]
             })" @click.outside="close()">
-                <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">State <span class="text-red-500">*</span></label>
+                <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">State <span class="text-red-500">*</span></label>
                 <input type="hidden" name="state_code" x-ref="hiddenInput" :value="value" required>
                 
                 <div class="relative">
@@ -422,14 +364,14 @@
 
     <!-- Card 4: Emergency & Next of Kin Information -->
     <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-5 shadow-none">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white select-none">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
             Emergency & Next of Kin Information
         </h3>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Next of Kin Name -->
             <div class="flex flex-col">
-                <label for="next_of_kin_name" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Next of Kin Name</label>
+                <label for="next_of_kin_name" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Next of Kin Name</label>
                 <div class="relative">
                     <input type="text" name="next_of_kin_name" id="next_of_kin_name"
                         value="{{ old('next_of_kin_name', $member->next_of_kin_name ?? '') }}" 
@@ -441,7 +383,7 @@
 
             <!-- Next of Kin Phone -->
             <div class="flex flex-col">
-                <label for="next_of_kin_phone" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Next of Kin Phone</label>
+                <label for="next_of_kin_phone" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Next of Kin Phone</label>
                 <div class="relative">
                     <input type="text" name="next_of_kin_phone" id="next_of_kin_phone"
                         value="{{ old('next_of_kin_phone', $member->next_of_kin_phone ?? '') }}" 
@@ -453,7 +395,7 @@
 
             <!-- Next of Kin Email -->
             <div class="flex flex-col">
-                <label for="next_of_kin_email" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Next of Kin Email</label>
+                <label for="next_of_kin_email" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Next of Kin Email</label>
                 <div class="relative">
                     <input type="email" name="next_of_kin_email" id="next_of_kin_email"
                         value="{{ old('next_of_kin_email', $member->next_of_kin_email ?? '') }}" 
@@ -465,7 +407,7 @@
 
             <!-- Next of Kin Address -->
             <div class="flex flex-col md:col-span-3">
-                <label for="next_of_kin_address" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">Next of Kin Address</label>
+                <label for="next_of_kin_address" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Next of Kin Address</label>
                 <div class="relative">
                     <textarea name="next_of_kin_address" id="next_of_kin_address" rows="2" placeholder="e.g. 1400 Constitution Ave NW, Washington, DC" 
                         class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all resize-none"
@@ -477,7 +419,7 @@
 
     <!-- Card 5: Administrative & Board Roles -->
     <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-5 shadow-none">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white select-none">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
             Administrative & Board Roles
         </h3>
         
@@ -508,7 +450,7 @@
 
     <!-- Card 6: Participation & Active Programs -->
     <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-5 shadow-none">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white select-none">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
             Participation & Active Programs
         </h3>
         
@@ -557,288 +499,6 @@
         </div>
     </div>
 
-    <!-- Card 7: Account Password -->
-    <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-5 shadow-none">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white select-none">
-            Account Password
-        </h3>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Password -->
-            <div class="flex flex-col">
-                <label for="password" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">
-                    Password {{ isset($member) ? '(Leave blank to keep current)' : '(Optional)' }}
-                </label>
-                <div class="relative">
-                    <input type="password" name="password" id="password"
-                        placeholder="••••••••"
-                        class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all"
-                    >
-                </div>
-            </div>
-
-            <!-- Password Confirmation -->
-            <div class="flex flex-col">
-                <label for="password_confirmation" class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 select-none">
-                    Confirm Password
-                </label>
-                <div class="relative">
-                    <input type="password" name="password_confirmation" id="password_confirmation"
-                        placeholder="••••••••"
-                        class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all"
-                    >
-                </div>
-            </div>
-        </div>
-    </div>
 
 </div>
-
-<!-- Alpine Registration Scripts for Premium Datepicker and Dropdowns -->
-<script>
-    (function() {
-        function registerAlpineComponents() {
-            if (window.AlpineCustomSelectRegistered) return;
-            window.AlpineCustomSelectRegistered = true;
-
-            // Custom Select component
-            Alpine.data('customSelect', (config) => ({
-                open: false,
-                value: config.value || '',
-                label: config.label || '',
-                options: config.options || [],
-                activeIndex: -1,
-
-                init() {
-                    if (!this.label) {
-                        const opt = this.options.find(o => String(o.value) === String(this.value));
-                        if (opt) {
-                            this.label = opt.label;
-                        } else if (this.value === '') {
-                            this.label = config.defaultLabel || 'Select Option';
-                        }
-                    }
-                    this.$watch('value', (val) => {
-                        const opt = this.options.find(o => String(o.value) === String(val));
-                        if (opt) {
-                            this.label = opt.label;
-                        } else if (val === '') {
-                            this.label = config.defaultLabel || 'Select Option';
-                        }
-                        this.$refs.hiddenInput.value = val;
-                        this.$refs.hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    });
-                },
-                toggle() {
-                    this.open = !this.open;
-                    if (this.open) {
-                        this.activeIndex = this.options.findIndex(o => String(o.value) === String(this.value));
-                        if (this.activeIndex === -1) this.activeIndex = 0;
-                        this.$nextTick(() => {
-                            this.scrollToActive();
-                        });
-                    }
-                },
-                close() {
-                    this.open = false;
-                    this.activeIndex = -1;
-                },
-                select(val) {
-                    this.value = val;
-                    this.close();
-                },
-                selectActive() {
-                    if (this.activeIndex >= 0 && this.activeIndex < this.options.length) {
-                        this.select(this.options[this.activeIndex].value);
-                    }
-                },
-                focusNext() {
-                    if (!this.open) {
-                        this.toggle();
-                        return;
-                    }
-                    this.activeIndex = (this.activeIndex + 1) % this.options.length;
-                    this.scrollToActive();
-                },
-                focusPrev() {
-                    if (!this.open) {
-                        this.toggle();
-                        return;
-                    }
-                    this.activeIndex = (this.activeIndex - 1 + this.options.length) % this.options.length;
-                    this.scrollToActive();
-                },
-                scrollToActive() {
-                    this.$nextTick(() => {
-                        const activeEl = this.$refs.optionsList.children[this.activeIndex];
-                        if (activeEl) {
-                            activeEl.scrollIntoView({ block: 'nearest' });
-                        }
-                    });
-                }
-            }));
-
-            // Custom Datepicker component
-            Alpine.data('datepicker', (config) => ({
-                value: config.value || '',
-                name: config.name || '',
-                required: config.required || false,
-                open: false,
-                monthOpen: false,
-                yearOpen: false,
-                month: null, // 0-11
-                year: null,
-                days: [],
-                months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-                
-                init() {
-                    let initialDate = new Date();
-                    if (this.value) {
-                        const parts = this.value.split('-');
-                        if (parts.length === 3) {
-                            initialDate = new Date(parts[0], parts[1] - 1, parts[2]);
-                        } else {
-                            initialDate = new Date(this.value);
-                        }
-                    }
-                    this.month = initialDate.getMonth();
-                    this.year = initialDate.getFullYear();
-                    this.generateCalendar();
-                    
-                    this.$watch('value', (val) => {
-                        if (val) {
-                            const parts = val.split('-');
-                            if (parts.length === 3) {
-                                const y = parseInt(parts[0], 10);
-                                const m = parseInt(parts[1], 10) - 1;
-                                if (!isNaN(y) && !isNaN(m)) {
-                                    this.month = m;
-                                    this.year = y;
-                                    this.generateCalendar();
-                                }
-                            }
-                        }
-                    });
-                },
-                
-                get displayValue() {
-                    if (!this.value) return 'Select Date';
-                    const parts = this.value.split('-');
-                    if (parts.length === 3) {
-                        const d = new Date(parts[0], parts[1] - 1, parts[2]);
-                        if (!isNaN(d.getTime())) {
-                            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                        }
-                    }
-                    return 'Select Date';
-                },
-                
-                getYears() {
-                    const currentYear = new Date().getFullYear();
-                    const initialYear = this.value ? parseInt(this.value.split('-')[0], 10) : currentYear;
-                    const minYear = Math.min(currentYear - 50, initialYear - 10);
-                    const maxYear = Math.max(currentYear + 10, initialYear + 10);
-                    const years = [];
-                    for (let y = minYear; y <= maxYear; y++) {
-                        years.push(y);
-                    }
-                    return years;
-                },
-                
-                generateCalendar() {
-                    const firstDayOfMonth = new Date(this.year, this.month, 1).getDay();
-                    const daysInMonth = new Date(this.year, this.month + 1, 0).getDate();
-                    const daysInPrevMonth = new Date(this.year, this.month, 0).getDate();
-                    
-                    const days = [];
-                    
-                    // Previous month trailing days
-                    for (let i = firstDayOfMonth - 1; i >= 0; i--) {
-                        days.push({
-                            day: daysInPrevMonth - i,
-                            month: this.month === 0 ? 11 : this.month - 1,
-                            year: this.month === 0 ? this.year - 1 : this.year,
-                            currentMonth: false
-                        });
-                    }
-                    
-                    // Current month days
-                    for (let i = 1; i <= daysInMonth; i++) {
-                        days.push({
-                            day: i,
-                            month: this.month,
-                            year: this.year,
-                            currentMonth: true
-                        });
-                    }
-                    
-                    // Next month leading days
-                    const totalCells = 42;
-                    const nextMonthDays = totalCells - days.length;
-                    for (let i = 1; i <= nextMonthDays; i++) {
-                        days.push({
-                            day: i,
-                            month: this.month === 11 ? 0 : this.month + 1,
-                            year: this.month === 11 ? this.year + 1 : this.year,
-                            currentMonth: false
-                        });
-                    }
-                    
-                    this.days = days;
-                },
-                
-                prevMonth() {
-                    if (this.month === 0) {
-                        this.month = 11;
-                        this.year--;
-                    } else {
-                        this.month--;
-                    }
-                    this.generateCalendar();
-                },
-                
-                nextMonth() {
-                    if (this.month === 11) {
-                        this.month = 0;
-                        this.year++;
-                    } else {
-                        this.month++;
-                    }
-                    this.generateCalendar();
-                },
-                
-                selectDate(dateObj) {
-                    const pad = (n) => String(n).padStart(2, '0');
-                    this.value = `${dateObj.year}-${pad(dateObj.month + 1)}-${pad(dateObj.day)}`;
-                    this.open = false;
-                    this.monthOpen = false;
-                    this.yearOpen = false;
-                },
-                
-                isSelected(dateObj) {
-                    if (!this.value) return false;
-                    const parts = this.value.split('-');
-                    if (parts.length === 3) {
-                        return parseInt(parts[2], 10) === dateObj.day &&
-                               (parseInt(parts[1], 10) - 1) === dateObj.month &&
-                               parseInt(parts[0], 10) === dateObj.year;
-                    }
-                    return false;
-                },
-                
-                isToday(dateObj) {
-                    const today = new Date();
-                    return today.getDate() === dateObj.day &&
-                           today.getMonth() === dateObj.month &&
-                           today.getFullYear() === dateObj.year;
-                }
-            }));
-        }
-
-        if (window.Alpine) {
-            registerAlpineComponents();
-        } else {
-            document.addEventListener('alpine:init', registerAlpineComponents);
-        }
-    })();
-</script>
+
