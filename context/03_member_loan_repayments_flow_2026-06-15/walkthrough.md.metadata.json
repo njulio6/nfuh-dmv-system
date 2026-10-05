@@ -1,0 +1,5 @@
+{
+  "artifactType": "ARTIFACT_TYPE_WALKTHROUGH",
+  "summary": "Walkthrough of the Member Loan Repayments Flow and Admin Review Queue system. Documents schema migration, models, controllers, routes, sidebar navigation, view pages, and testing results.",
+  "updatedAt": "2026-06-15T17:50:54.250279100Z"
+}

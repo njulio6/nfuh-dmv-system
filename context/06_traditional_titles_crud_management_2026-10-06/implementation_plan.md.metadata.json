@@ -1,0 +1,6 @@
+{
+  "artifactType": "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
+  "summary": "An implementation plan to add full CRUD capabilities for traditional titles (member_ranks), matching the styling and behavior of the member CRUD.",
+  "updatedAt": "2026-06-23T05:28:56.476547800Z",
+  "requestFeedback": true
+}

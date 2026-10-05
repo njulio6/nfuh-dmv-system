@@ -1,0 +1,5 @@
+{
+  "artifactType": "ARTIFACT_TYPE_OTHER",
+  "summary": "Create a scratch script to clean up non-standard Tailwind color class names that were corrupted by a search-and-replace bug.",
+  "updatedAt": "2026-06-11T07:59:53.514944400Z"
+}

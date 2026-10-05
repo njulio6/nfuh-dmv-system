@@ -68,6 +68,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     });
 
     Route::resource('members', MemberController::class);
+    Route::resource('titles', \App\Http\Controllers\TitleController::class);
     Route::resource('njangi-cycles', NjangiCycleController::class);
 
     Route::post('njangi-cycles/{njangiCycle}/add-members', [NjangiCycleController::class, 'addMembers'])

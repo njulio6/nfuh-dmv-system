@@ -1,0 +1,6 @@
+{
+  "artifactType": "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
+  "summary": "Design and implementation details for adding a dedicated My Njangi Payment page to the Member Portal, replacing dashboard widgets with a modal form, and adding the Njangi section to the sidebar.",
+  "updatedAt": "2026-06-15T20:31:05.285419Z",
+  "requestFeedback": true
+}

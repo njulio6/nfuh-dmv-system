@@ -312,7 +312,7 @@
                 >
                     Keep it
                 </button>
-                <form :action="'/members/' + deleteMemberId" method="POST" class="flex-1">
+                <form :action="'{{ url('/members') }}/' + deleteMemberId" method="POST" class="flex-1">
                     @csrf
                     @method('DELETE')
                     <button

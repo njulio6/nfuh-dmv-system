@@ -1,0 +1,5 @@
+{
+  "artifactType": "ARTIFACT_TYPE_TASK",
+  "summary": "Task list for implementing the Member Loan Repayments flow and Admin review features. Includes migration, controller, routes, views, layout adjustments, and tests.",
+  "updatedAt": "2026-06-15T17:46:27.997490100Z"
+}
