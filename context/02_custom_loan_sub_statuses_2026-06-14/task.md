@@ -1,0 +1,11 @@
+- [x] Create migration for `loan_sub_statuses` table and add `sub_status_id` to `loan_requests`
+- [x] Run the migration
+- [x] Create `LoanSubStatus` model
+- [x] Update `LoanRequest` model (add relation `subStatus` and `sub_status_id` fillable)
+- [x] Update `LoanController.php` with actions to manage sub-statuses (store, destroy, update loan sub-status)
+- [x] Register new routes in `routes/web.php`
+- [x] Update System Settings view to manage sub-statuses (list, add, delete form)
+- [x] Update Admin Loans dashboard index view to assign sub-statuses and render badges
+- [x] Update Member Loans dashboard and applications views to render sub-status badges
+- [x] Update Loan Statement view to render sub-status badges
+- [x] Create automated feature tests in `tests/Feature/LoanSubStatusTest.php` and verify they pass

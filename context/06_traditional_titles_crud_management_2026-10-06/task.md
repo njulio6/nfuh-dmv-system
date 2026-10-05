@@ -1,0 +1,11 @@
+- [x] Register routes in web.php
+- [x] Add route page title and sidebar navigation links in app.blade.php
+- [x] Create App\Http\Controllers\TitleController.php
+- [x] Create resources/views/titles/index.blade.php
+- [x] Create resources/views/titles/create.blade.php
+- [x] Create resources/views/titles/edit.blade.php
+- [x] Run test suite to verify no regressions
+- [x] Fix Delete URL 404 bug in both titles and members list modals using Laravel url helper
+- [x] Upgraded CRUD action buttons on titles page to match the premium icon look and feel (Show, Edit, Delete)
+- [x] Implemented titles show detail view showing title config and assigned members list
+- [x] Locked footer statically to the bottom of the viewport so it does not scroll with page content

@@ -1,0 +1,11 @@
+- [x] Create database migration for `loan_repayment_requests` table
+- [x] Run the database migration
+- [x] Create `LoanRepaymentRequest` model
+- [x] Define routes in `routes/web.php`
+- [x] Update `LoanController.php` with repayment request actions
+- [x] Add member sidebar link for "Repayment Requests" in `layouts/app.blade.php`
+- [x] Add admin sidebar link and badge for "Repayment Requests" in `layouts/app.blade.php`
+- [x] Create member-facing repayment requests view `member_repayment_requests.blade.php`
+- [x] Create admin-facing review view `repayment_requests.blade.php`
+- [x] Integrate "Submit Repayment" modal and actions into `member_applications.blade.php`
+- [x] Create and run feature tests `tests/Feature/LoanRepaymentRequestTest.php`

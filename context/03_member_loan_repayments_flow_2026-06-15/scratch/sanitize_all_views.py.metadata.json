@@ -1,0 +1,5 @@
+{
+  "artifactType": "ARTIFACT_TYPE_OTHER",
+  "summary": "Python script to find and replace non-standard Tailwind colors with standard ones across all Blade files in resources/views.",
+  "updatedAt": "2026-06-11T16:39:51.493302500Z"
+}
