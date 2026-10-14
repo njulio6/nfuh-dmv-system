@@ -213,12 +213,12 @@
                     <!-- Legend -->
                     <div class="flex items-center gap-3">
                         <div class="flex items-center gap-1.5">
-                            <div class="w-3 h-3 rounded-sm bg-zinc-900 dark:bg-zinc-100 shadow-xs"></div>
-                            <span class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">Contributions</span>
+                            <div class="w-3 h-3 rounded-sm shadow-xs" style="background-color: var(--brand-primary);"></div>
+                            <span class="text-[11px] font-medium text-zinc-600 dark:text-zinc-300">Contributions</span>
                         </div>
                         <div class="flex items-center gap-1.5">
-                            <div class="w-3 h-3 rounded-sm bg-zinc-300 dark:bg-zinc-600 shadow-xs"></div>
-                            <span class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">Submissions</span>
+                            <div class="w-3 h-3 rounded-sm shadow-xs" style="background-color: var(--brand-secondary);"></div>
+                            <span class="text-[11px] font-medium text-zinc-600 dark:text-zinc-300">Submissions</span>
                         </div>
                     </div>
                     <!-- Year display -->
@@ -256,14 +256,20 @@
                                 <!-- Tooltip on hover -->
                                 <div class="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 z-30 pointer-events-none bg-zinc-950/90 dark:bg-zinc-900/90 backdrop-blur-md text-zinc-100 text-[11px] font-medium p-2.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap border border-white/10">
                                     <div class="font-bold text-[11px] mb-0.5 text-white">{{ $data['month'] }} {{ $selectedYear }}</div>
-                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm bg-white"></div> Contributions: <b>{{ $data['contributions'] }}</b></div>
-                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm bg-zinc-400"></div> Submissions: <b>{{ $data['submissions'] }}</b></div>
+                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm" style="background-color: var(--brand-primary);"></div> Contributions: <b>{{ $data['contributions'] }}</b></div>
+                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm" style="background-color: var(--brand-secondary);"></div> Submissions: <b>{{ $data['submissions'] }}</b></div>
                                 </div>
 
                                 <!-- Contribution Bar -->
-                                <div class="w-[35%] max-w-[18px] min-w-[6px] shrink-0 bg-gradient-to-t from-zinc-950 to-zinc-700 dark:from-zinc-200 dark:to-white rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-75 shadow-xs" style="height: {{ $contribPct }}%; min-height: {{ $data['contributions'] > 0 ? '3px' : '0' }};"></div>
+                                <div 
+                                    class="w-[35%] max-w-[18px] min-w-[6px] shrink-0 rounded-t-sm transition-all duration-300 ease-out group-hover:opacity-80 shadow-xs" 
+                                    style="height: {{ $contribPct }}%; min-height: {{ $data['contributions'] > 0 ? '3px' : '0' }}; background: linear-gradient(to top, var(--brand-primary), rgba(var(--brand-primary-rgb), 0.72));"
+                                ></div>
                                 <!-- Submission Bar -->
-                                <div class="w-[35%] max-w-[18px] min-w-[6px] shrink-0 bg-gradient-to-t from-zinc-400 to-zinc-300 dark:from-zinc-700 dark:to-zinc-500 rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-75 shadow-xs" style="height: {{ $subPct }}%; min-height: {{ $data['submissions'] > 0 ? '3px' : '0' }};"></div>
+                                <div 
+                                    class="w-[35%] max-w-[18px] min-w-[6px] shrink-0 rounded-t-sm transition-all duration-300 ease-out group-hover:opacity-80 shadow-xs" 
+                                    style="height: {{ $subPct }}%; min-height: {{ $data['submissions'] > 0 ? '3px' : '0' }}; background: linear-gradient(to top, var(--brand-secondary), rgba(var(--brand-secondary-rgb), 0.65));"
+                                ></div>
                             </div>
                         @endforeach
                     </div>
