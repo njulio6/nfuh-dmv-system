@@ -3,6 +3,10 @@
 @section('content')
 <div 
     x-data="{ 
+        showDetailsModal: false,
+        activeGuarantors: [],
+        activeAdminNote: '',
+        activeLoanDetails: null,
         showRepayModal: false, 
         loanId: '',
         loanAmount: '',
@@ -14,6 +18,7 @@
         reviewBorrower: '',
         reviewAmount: '',
         reviewDurationMonths: '',
+        reviewRepaymentFrequency: '',
         reviewInterestRate: {{ number_format($appSettings->default_loan_interest ?? 1.00, 2) }},
         reviewInterestType: 'flat',
         reviewNotes: '',
@@ -26,6 +31,12 @@
         disburseActionUrl: '',
         disburseBorrower: '',
         disburseAmount: '',
+        disbursePayoutMethod: '',
+        disbursePayoutDetails: '',
+        disburseDurationMonths: '',
+        disburseRepaymentFrequency: '',
+        disburseDetails: '',
+        disburseProofName: '',
         getInterestAmount() {
             const principal = parseFloat(this.reviewAmount) || 0;
             const rate = parseFloat(this.reviewInterestRate) || 0;
@@ -59,12 +70,13 @@
                 return `Formula: Principal (${pStr}) × Flat Rate (${rStr}) = ${intStr} Interest`;
             }
         },
-        openReviewModal(actionUrl, type, borrower, amount, durationMonths = '') {
+        openReviewModal(actionUrl, type, borrower, amount, durationMonths = '', repaymentFrequency = '') {
             this.reviewActionUrl = actionUrl;
             this.reviewType = type;
             this.reviewBorrower = borrower;
             this.reviewAmount = amount;
             this.reviewDurationMonths = durationMonths;
+            this.reviewRepaymentFrequency = repaymentFrequency;
             this.reviewInterestRate = {{ number_format($appSettings->default_loan_interest ?? 1.00, 2) }};
             this.reviewInterestType = 'flat';
             this.reviewNotes = '';
@@ -80,10 +92,16 @@
                 this.showRestoreModal = true;
             }
         },
-        openDisburseModal(actionUrl, borrower, amount) {
+        openDisburseModal(actionUrl, borrower, amount, payoutMethod = '', payoutDetails = '', durationMonths = '', repaymentFrequency = '') {
             this.disburseActionUrl = actionUrl;
             this.disburseBorrower = borrower;
             this.disburseAmount = amount;
+            this.disbursePayoutMethod = payoutMethod;
+            this.disbursePayoutDetails = payoutDetails;
+            this.disburseDurationMonths = durationMonths;
+            this.disburseRepaymentFrequency = repaymentFrequency;
+            this.disburseDetails = '';
+            this.disburseProofName = '';
             this.showDisburseModal = true;
         }
     }"
@@ -160,13 +178,37 @@
                 $headers[] = ['label' => 'Rejection Notes', 'width' => 'min-w-[180px]'];
             }
 
-            if (in_array($status, ['pending_committee', 'approved', 'active', 'defaulted'])) {
-                $headers[] = ['label' => 'Actions', 'align' => 'center', 'width' => 'min-w-[160px]'];
-            }
+            $headers[] = ['label' => 'Actions', 'align' => 'center', 'width' => 'min-w-[160px]'];
         @endphp
 
         <x-premium-table :headers="$headers">
             @forelse($loans as $loan)
+                @php
+                    $encodedGuarantors = base64_encode(json_encode($loan->guarantors->map(fn($g) => [
+                        'name' => $g->guarantorMember->name ?? 'Unknown',
+                        'code' => $g->guarantorMember->member_code ?? '',
+                        'status' => $g->status,
+                        'responded_at' => $g->responded_at ? $g->responded_at->format('Y-m-d H:i') : null,
+                        'notes' => $g->notes
+                    ])));
+                    $encodedAdminNote = base64_encode($loan->rejection_reason ?? $loan->admin_notes ?? '');
+                    $encodedLoanDetails = base64_encode(json_encode([
+                        'id' => $loan->id,
+                        'borrower_name' => $loan->member->name ?? 'Unknown',
+                        'borrower_code' => $loan->member->member_code ?? '',
+                        'amount' => (float) $loan->amount,
+                        'duration_months' => $loan->duration_months,
+                        'repayment_frequency' => $loan->repayment_frequency === 'end_of_term' ? 'End of Term' : ucfirst($loan->repayment_frequency ?? 'monthly'),
+                        'status' => $loan->status,
+                        'purpose' => $loan->purpose ?? '',
+                        'payout_method' => $loan->payout_method ? ucwords(str_replace('_', ' ', $loan->payout_method)) : '',
+                        'payout_details' => $loan->payout_details ?? '',
+                        'disbursed_at' => $loan->disbursed_at ? $loan->disbursed_at->format('M d, Y H:i') : null,
+                        'disbursement_details' => $loan->disbursement_details ?? '',
+                        'disbursement_proof' => $loan->disbursement_proof ? asset('storage/' . $loan->disbursement_proof) : null,
+                        'repayment_due_date' => $loan->repayment_due_date ? $loan->repayment_due_date->format('M d, Y') : null,
+                    ]));
+                @endphp
                 <x-premium-table-row :is-even="$loop->index % 2 === 1">
                     <!-- Borrower Info -->
                     <td class="py-3.5 px-3">
@@ -200,7 +242,12 @@
 
                     <!-- Duration / Terms -->
                     <td class="py-3.5 px-3">
-                        <span class="font-bold text-zinc-700 dark:text-zinc-300 text-xs">{{ $loan->duration_months }} Months</span>
+                        <div class="flex flex-col">
+                            <span class="font-bold text-zinc-800 dark:text-zinc-200 text-xs">{{ $loan->duration_months }} Months</span>
+                            <span class="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 capitalize">
+                                {{ $loan->repayment_frequency === 'end_of_term' ? 'End of Term' : ucfirst($loan->repayment_frequency ?? 'monthly') }}
+                            </span>
+                        </div>
                     </td>
 
                     <!-- Status Specific Columns -->
@@ -211,7 +258,7 @@
                                 @foreach($loan->guarantors as $g)
                                     <div class="flex items-center gap-1.5">
                                         <span class="w-1.5 h-1.5 rounded-full 
-                                            {{ $g->status === 'approved' ? 'bg-emerald-500' : ($g->status === 'declined' ? 'bg-red-500' : 'bg-zinc-400') }}">
+                                             {{ $g->status === 'approved' ? 'bg-emerald-500' : ($g->status === 'declined' ? 'bg-red-500' : 'bg-zinc-400') }}">
                                         </span>
                                         <span class="font-semibold text-zinc-800 dark:text-zinc-250">{{ $g->guarantorMember->name }}</span>
                                         <span class="text-zinc-400 uppercase font-bold text-[8px]">({{ $g->status }})</span>
@@ -359,20 +406,19 @@
                         </td>
                     @elseif($status === 'rejected')
                         <!-- Rejection Note -->
-                        <td class="py-3.5 px-3 max-w-[220px] truncate text-red-600 dark:text-red-400 text-xs italic" title="{{ $loan->admin_notes }}">
-                            "{{ $loan->admin_notes ?: 'No rejection note recorded' }}"
+                        <td class="py-3.5 px-3 max-w-[220px] truncate text-red-600 dark:text-red-400 text-xs italic" title="{{ $loan->rejection_reason ?? $loan->admin_notes }}">
+                            "{{ $loan->rejection_reason ?? $loan->admin_notes ?: 'No rejection note recorded' }}"
                         </td>
                     @endif
 
                     <!-- Action Controls -->
-                    @if(in_array($status, ['pending_committee', 'approved', 'active', 'defaulted']))
-                        <td class="py-3.5 px-3 text-center">
-                            <div class="flex items-center justify-center gap-1.5">
+                    <td class="py-3.5 px-3 text-center">
+                        <div class="flex items-center justify-center gap-1.5">
                                  @if($status === 'pending_committee')
                                      <!-- Approve request -->
                                      <button 
                                          type="button" 
-                                         @click="openReviewModal('{{ route('loans.approve', $loan->id) }}', 'approve', '{{ addslashes($loan->member->name) }}', '{{ $loan->amount }}', '{{ $loan->duration_months }}')"
+                                         @click="openReviewModal('{{ route('loans.approve', $loan->id) }}', 'approve', '{{ addslashes($loan->member->name) }}', '{{ $loan->amount }}', '{{ $loan->duration_months }}', '{{ $loan->repayment_frequency === 'end_of_term' ? 'End of Term' : ucfirst($loan->repayment_frequency ?? 'monthly') }}')"
                                          class="px-2.5 py-1.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all flex items-center justify-center select-none active:scale-[0.96]"
                                      >
                                          Approve
@@ -381,7 +427,7 @@
                                      <!-- Reject request -->
                                      <button 
                                          type="button" 
-                                         @click="openReviewModal('{{ route('loans.reject', $loan->id) }}', 'reject', '{{ addslashes($loan->member->name) }}', '{{ $loan->amount }}')"
+                                         @click="openReviewModal('{{ route('loans.reject', $loan->id) }}', 'reject', '{{ addslashes($loan->member->name) }}', '{{ $loan->amount }}', '{{ $loan->duration_months }}', '{{ $loan->repayment_frequency === 'end_of_term' ? 'End of Term' : ucfirst($loan->repayment_frequency ?? 'monthly') }}')"
                                          class="px-2.5 py-1.5 border border-red-200 dark:border-red-950/60 bg-red-50 hover:bg-red-100 dark:bg-red-950/10 text-red-650 dark:text-red-400 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all flex items-center justify-center select-none active:scale-[0.96]"
                                      >
                                          Reject
@@ -390,7 +436,15 @@
                                      <!-- Disburse Funds -->
                                      <button 
                                          type="button" 
-                                         @click="openDisburseModal('{{ route('loans.disburse', $loan->id) }}', '{{ addslashes($loan->member->name) }}', '{{ $loan->amount }}')"
+                                         @click="openDisburseModal(
+                                             '{{ route('loans.disburse', $loan->id) }}', 
+                                             '{{ addslashes($loan->member->name) }}', 
+                                             '{{ $loan->amount }}',
+                                             '{{ addslashes(ucwords(str_replace('_', ' ', $loan->payout_method ?? 'Not Specified'))) }}',
+                                             '{{ addslashes($loan->payout_details ?? '') }}',
+                                             '{{ $loan->duration_months }}',
+                                             '{{ $loan->repayment_frequency === 'end_of_term' ? 'End of Term' : ucfirst($loan->repayment_frequency ?? 'monthly') }}'
+                                         )"
                                          class="px-3 py-1.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all flex items-center justify-center gap-1 select-none active:scale-[0.96]"
                                      >
                                          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
@@ -443,13 +497,28 @@
                                         Restore Active
                                     </button>
                                 @endif
+
+                                <!-- Details Button (like Member Portal) -->
+                                <button 
+                                    type="button"
+                                    @click="
+                                        activeGuarantors = JSON.parse(atob('{{ $encodedGuarantors }}'));
+                                        activeAdminNote = atob('{{ $encodedAdminNote }}');
+                                        activeLoanDetails = JSON.parse(atob('{{ $encodedLoanDetails }}'));
+                                        showDetailsModal = true;
+                                    "
+                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-[11px] font-bold rounded-[8px] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-3xs select-none"
+                                    title="View Loan & Disbursement Details"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                    <span>Details</span>
+                                </button>
                             </div>
                         </td>
-                    @endif
                 </x-premium-table-row>
             @empty
                 <tr>
-                    <td colspan="8" class="text-center text-zinc-400 dark:text-zinc-650 py-16">
+                    <td colspan="12" class="text-center text-zinc-400 dark:text-zinc-650 py-16">
                         No loans found in this queue.
                     </td>
                 </tr>
@@ -710,14 +779,18 @@
                 </button>
             </div>
 
-            <div class="mb-4 bg-zinc-50 dark:bg-zinc-950/40 p-3.5 rounded-xl border border-zinc-200/40 dark:border-zinc-800/40 text-xs">
-                <div class="flex justify-between mb-1">
+            <div class="mb-4 bg-zinc-50 dark:bg-zinc-950/40 p-3.5 rounded-xl border border-zinc-200/40 dark:border-zinc-800/40 text-xs flex flex-col gap-1.5">
+                <div class="flex justify-between">
                     <span class="text-zinc-400">Borrower:</span>
                     <span class="font-bold text-zinc-800 dark:text-zinc-200" x-text="reviewBorrower"></span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-zinc-400">Requested Amount:</span>
                     <span class="font-bold text-zinc-950 dark:text-white" x-text="'$' + parseFloat(reviewAmount).toFixed(2)"></span>
+                </div>
+                <div class="flex justify-between" x-show="reviewRepaymentFrequency">
+                    <span class="text-zinc-400">Repayment Frequency:</span>
+                    <span class="font-bold text-emerald-600 dark:text-emerald-400" x-text="reviewRepaymentFrequency"></span>
                 </div>
             </div>
 
@@ -883,24 +956,331 @@
     <!-- Disburse Confirmation Modal -->
     <div x-show="showDisburseModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;">
         <div @click="showDisburseModal = false" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"></div>
-        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-sm w-full p-6 relative z-10 text-center flex flex-col gap-4 max-h-[90vh] overflow-y-auto" x-show="showDisburseModal" x-transition>
-            <div class="mx-auto size-12 rounded-full bg-emerald-100 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/50">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 25" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-lg w-full p-6 relative z-10 text-left flex flex-col gap-4 max-h-[90vh] overflow-y-auto" x-show="showDisburseModal" x-transition>
+            
+            <!-- Header -->
+            <div class="flex items-start justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <div class="flex items-center gap-3">
+                    <div class="size-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/50">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider">Disburse Loan Funds</h3>
+                        <p class="text-[11px] text-zinc-400 dark:text-zinc-500">Confirm release and record disbursement documentation</p>
+                    </div>
+                </div>
+                <button type="button" @click="showDisburseModal = false" class="text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-250 cursor-pointer p-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
             </div>
-            <div>
-                <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider mb-1">Disburse Loan Funds?</h3>
-                <p class="text-xs text-zinc-400 dark:text-zinc-500 leading-normal">
-                    Are you sure you want to release and disburse the loan funds to <span class="font-bold text-zinc-800 dark:text-zinc-200" x-text="disburseBorrower"></span> ($<span x-text="parseFloat(disburseAmount).toFixed(2)"></span>)?
-                </p>
-                <p class="text-[10px] text-zinc-450 dark:text-zinc-550 mt-1 leading-normal">
-                    This will transition the loan request to Active status and compute the repayment due date.
-                </p>
-            </div>
-            <form :action="disburseActionUrl" method="POST" class="flex gap-3 mt-2">
+
+            <form :action="disburseActionUrl" method="POST" enctype="multipart/form-data" class="flex flex-col gap-4">
                 @csrf
-                <button type="button" class="flex-1 py-2 text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 select-none" @click="showDisburseModal = false">Cancel</button>
-                <button type="submit" class="flex-1 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg select-none">Yes, Disburse</button>
+
+                <!-- Borrower & Amount Overview Card -->
+                <div class="p-3.5 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl flex items-center justify-between gap-4">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Borrower</span>
+                        <span class="text-sm font-extrabold text-zinc-900 dark:text-white" x-text="disburseBorrower"></span>
+                        <div class="flex items-center gap-1.5 mt-0.5" x-show="disburseRepaymentFrequency">
+                            <span class="text-[10px] text-zinc-500 font-medium" x-show="disburseDurationMonths" x-text="disburseDurationMonths + ' Months'"></span>
+                            <span class="text-zinc-300 dark:text-zinc-700 text-xs" x-show="disburseDurationMonths">•</span>
+                            <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400" x-text="disburseRepaymentFrequency + ' Repayment'"></span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col text-right">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Disbursement Amount</span>
+                        <span class="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                            $<span x-text="parseFloat(disburseAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Borrower Requested Payout Destination -->
+                <div class="p-3.5 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-800/40 rounded-xl flex flex-col gap-1.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            Member Requested Destination
+                        </span>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-white dark:bg-zinc-900 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-3xs" x-text="disbursePayoutMethod || 'Standard'"></span>
+                    </div>
+                    <div class="text-xs font-mono text-zinc-800 dark:text-zinc-200 font-medium break-all" x-show="disbursePayoutDetails" x-text="disbursePayoutDetails"></div>
+                    <div class="text-[11px] text-zinc-500 italic" x-show="!disbursePayoutDetails">No specific payout instructions provided by member.</div>
+                </div>
+
+                <!-- Optional Details Field: Where/How disbursed -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label for="disbursement_details_input" class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                            Disbursement Details / Reference
+                        </label>
+                        <span class="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium uppercase tracking-wider">Optional</span>
+                    </div>
+                    <textarea 
+                        id="disbursement_details_input"
+                        name="disbursement_details" 
+                        x-model="disburseDetails"
+                        rows="2"
+                        placeholder="e.g. Bank transaction reference #TXN-83921, Wire confirmation, Check number, or Cash voucher notes..." 
+                        class="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none"
+                    ></textarea>
+                </div>
+
+                <!-- Optional File Upload: Proof / Receipt -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                            Disbursement Proof / Receipt Document
+                        </label>
+                        <span class="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium uppercase tracking-wider">Optional</span>
+                    </div>
+                    <div 
+                        x-data="{ isDragging: false }"
+                        class="relative border-2 border-dashed rounded-xl p-3.5 text-center transition-all cursor-pointer bg-zinc-50/50 dark:bg-zinc-950/40 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/60"
+                        :class="isDragging ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20' : 'border-zinc-250 dark:border-zinc-800'"
+                        @dragover.prevent="isDragging = true"
+                        @dragleave.prevent="isDragging = false"
+                        @drop.prevent="
+                            isDragging = false;
+                            if ($event.dataTransfer.files.length > 0) {
+                                $refs.proofInput.files = $event.dataTransfer.files;
+                                disburseProofName = $event.dataTransfer.files[0].name;
+                            }
+                        "
+                        @click="$refs.proofInput.click()"
+                    >
+                        <input 
+                            type="file" 
+                            name="disbursement_proof" 
+                            x-ref="proofInput" 
+                            accept="image/*,application/pdf"
+                            class="hidden"
+                            @change="disburseProofName = $event.target.files.length > 0 ? $event.target.files[0].name : ''"
+                        >
+                        <template x-if="!disburseProofName">
+                            <div class="flex flex-col items-center gap-1.5 pointer-events-none">
+                                <div class="size-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                </div>
+                                <div class="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
+                                    Click or drop receipt / transfer slip here
+                                </div>
+                                <div class="text-[10px] text-zinc-400 dark:text-zinc-500">
+                                    JPG, PNG, WEBP, or PDF up to 5MB
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="disburseProofName">
+                            <div class="flex items-center justify-between gap-2 p-1" @click.stop>
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500 shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                    <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200 truncate" x-text="disburseProofName"></span>
+                                </div>
+                                <button 
+                                    type="button" 
+                                    @click="$refs.proofInput.value = ''; disburseProofName = ''" 
+                                    class="text-zinc-400 hover:text-red-500 p-1 cursor-pointer shrink-0"
+                                    title="Remove file"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="text-[10px] text-zinc-400 dark:text-zinc-500 leading-normal">
+                    This will transition the loan to <strong class="text-emerald-600 dark:text-emerald-400 font-bold">Active</strong> and compute the repayment due date.
+                </div>
+
+                <!-- Footer buttons -->
+                <div class="flex gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                    <button type="button" class="flex-1 py-2.5 text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 select-none cursor-pointer" @click="showDisburseModal = false">Cancel</button>
+                    <button type="submit" class="flex-1 py-2.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-xs select-none cursor-pointer transition-all active:scale-[0.98]">Confirm & Disburse</button>
+                </div>
             </form>
+        </div>
+    </div>
+
+    <!-- LOAN & DISBURSEMENT DETAILS MODAL -->
+    <div 
+        x-show="showDetailsModal" 
+        x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+        style="display: none;"
+    >
+        <!-- Overlay Backing -->
+        <div 
+            @click="showDetailsModal = false" 
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"
+            x-show="showDetailsModal"
+            x-transition:enter="ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+        ></div>
+
+        <!-- Modal Content Container -->
+        <div 
+            class="relative w-full max-w-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-10 p-6 flex flex-col gap-4 transition-transform duration-300 max-h-[90vh] overflow-y-auto"
+            x-show="showDetailsModal"
+            x-transition:enter="ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+            x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+            x-transition:leave="ease-in duration-200"
+            x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+            x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+        >
+            <!-- Header -->
+            <div class="flex justify-between items-center pb-4 border-b border-zinc-100 dark:border-zinc-800/80 mb-1">
+                <div class="flex items-center gap-3">
+                    <div class="size-9 rounded-xl bg-zinc-100 dark:bg-zinc-850 text-zinc-900 dark:text-white flex items-center justify-center border border-zinc-200/60 dark:border-zinc-700/60">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider">Loan & Disbursement Details</h3>
+                        <p class="text-[11px] text-zinc-400 dark:text-zinc-500" x-show="activeLoanDetails" x-text="'Loan #' + (activeLoanDetails?.id || '') + ' • ' + (activeLoanDetails?.borrower_name || '')"></p>
+                    </div>
+                </div>
+                <button @click="showDetailsModal = false" class="text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-250 cursor-pointer p-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+
+            <div class="flex flex-col gap-4 overflow-y-auto max-h-[70vh] pr-1">
+
+                <template x-if="activeLoanDetails">
+                    <div class="flex flex-col gap-3">
+                        <!-- Borrower & Principal Overview -->
+                        <div class="p-3.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-xl flex items-center justify-between">
+                            <div class="flex flex-col">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Borrower</span>
+                                <span class="text-sm font-extrabold text-zinc-900 dark:text-white" x-text="activeLoanDetails.borrower_name"></span>
+                                <span class="font-mono text-[10px] text-zinc-400 font-bold" x-text="activeLoanDetails.borrower_code"></span>
+                            </div>
+                            <div class="flex flex-col text-right">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Principal</span>
+                                <span class="text-base font-black text-zinc-950 dark:text-white font-mono" x-text="'$' + parseFloat(activeLoanDetails.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
+                            </div>
+                        </div>
+
+                        <!-- Terms & Member Requested Payout Details -->
+                        <div class="p-3.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-xl flex flex-col gap-2.5">
+                            <span class="text-[11px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Terms & Payout Details</span>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Repayment Frequency</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 shadow-3xs" x-text="activeLoanDetails.repayment_frequency || 'Monthly'"></span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Loan Duration</span>
+                                <span class="font-bold text-xs text-zinc-800 dark:text-zinc-200" x-text="(activeLoanDetails.duration_months || 0) + ' Months'"></span>
+                            </div>
+                            <div class="flex items-center justify-between pt-1 border-t border-zinc-200/50 dark:border-zinc-800">
+                                <span class="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Payout Method</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 shadow-3xs" x-text="activeLoanDetails.payout_method || 'Standard'"></span>
+                            </div>
+                            <div class="flex flex-col gap-1" x-show="activeLoanDetails.payout_details">
+                                <span class="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">Destination Details</span>
+                                <span class="text-xs font-mono font-semibold text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-950 p-2.5 rounded-lg border border-zinc-200/50 dark:border-zinc-800 break-all" x-text="activeLoanDetails.payout_details"></span>
+                            </div>
+                        </div>
+
+                        <!-- Purpose (if provided) -->
+                        <div class="p-3.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-xl flex flex-col gap-1.5" x-show="activeLoanDetails.purpose">
+                            <span class="text-[11px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Loan Purpose</span>
+                            <p class="text-xs text-zinc-700 dark:text-zinc-300 italic" x-text="'&quot;' + activeLoanDetails.purpose + '&quot;'"></p>
+                        </div>
+
+                        <!-- Disbursement Record (Disbursement Details & Proof File) -->
+                        <div x-show="activeLoanDetails.disbursed_at || activeLoanDetails.disbursement_details || activeLoanDetails.disbursement_proof" class="p-3.5 bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 rounded-xl flex flex-col gap-2.5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[11px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                    Disbursement Record
+                                </span>
+                                <span class="text-[11px] font-mono font-bold text-emerald-700 dark:text-emerald-300" x-text="activeLoanDetails.disbursed_at || 'Disbursed'"></span>
+                            </div>
+
+                            <div x-show="activeLoanDetails.disbursement_details" class="flex flex-col gap-1">
+                                <span class="text-[10px] text-emerald-800/80 dark:text-emerald-400/80 font-bold uppercase tracking-wider">Disbursement Details / Reference</span>
+                                <p class="text-xs text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-950 p-2.5 rounded-lg border border-emerald-200/40 dark:border-emerald-900/40 italic font-medium" x-text="activeLoanDetails.disbursement_details"></p>
+                            </div>
+
+                            <div x-show="activeLoanDetails.disbursement_proof" class="pt-1">
+                                <a 
+                                    :href="activeLoanDetails.disbursement_proof" 
+                                    target="_blank" 
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-zinc-900 text-emerald-700 dark:text-emerald-400 border border-emerald-300/60 dark:border-emerald-800/60 shadow-3xs hover:bg-emerald-50 dark:hover:bg-zinc-800 transition-all select-none cursor-pointer"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                    <span>View Disbursement Receipt / Proof Document</span>
+                                </a>
+                            </div>
+
+                            <div x-show="!activeLoanDetails.disbursement_details && !activeLoanDetails.disbursement_proof" class="text-[11px] text-zinc-500 italic">
+                                No custom disbursement details or receipt uploaded.
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Admin Decision / Rejection Note -->
+                <div x-show="activeAdminNote && activeAdminNote.trim() !== ''">
+                    <p class="text-[11px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2">Decision / Rejection Note</p>
+                    <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 rounded-xl px-4 py-3">
+                        <p class="text-xs text-amber-800 dark:text-amber-300 italic font-semibold" x-text="'&quot;' + activeAdminNote + '&quot;'"></p>
+                    </div>
+                </div>
+
+                <!-- Guarantors Section -->
+                <div>
+                    <p class="text-[11px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2">Guarantor Signatures</p>
+                    <div class="flex flex-col gap-2.5">
+                        <template x-if="activeGuarantors.length === 0">
+                            <p class="text-xs text-zinc-400 dark:text-zinc-600 italic">No guarantors assigned to this application.</p>
+                        </template>
+                        <template x-for="(g, index) in activeGuarantors" :key="index">
+                            <div class="p-3.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl flex flex-col gap-2">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex flex-col min-w-0">
+                                        <span class="font-bold text-zinc-900 dark:text-zinc-100 text-xs truncate" x-text="g.name"></span>
+                                        <span class="font-mono text-[10px] text-zinc-400 dark:text-zinc-500 font-bold" x-text="g.code"></span>
+                                    </div>
+                                    <template x-if="g.status === 'approved'">
+                                        <span class="inline-flex items-center text-[9px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">Approved</span>
+                                    </template>
+                                    <template x-if="g.status === 'declined'">
+                                        <span class="inline-flex items-center text-[9px] font-black uppercase tracking-wider text-red-650 dark:text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/20">Declined</span>
+                                    </template>
+                                    <template x-if="g.status === 'pending'">
+                                        <span class="inline-flex items-center text-[9px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400 bg-zinc-500/10 dark:bg-zinc-800/80 px-2 py-0.5 rounded-full border border-zinc-200/60 dark:border-zinc-700/60">Pending</span>
+                                    </template>
+                                </div>
+                                <div class="text-[11px] text-zinc-500 dark:text-zinc-400 border-t border-zinc-200/30 dark:border-zinc-800/20 pt-1.5 flex flex-col gap-1" x-show="g.responded_at || g.notes">
+                                    <div class="flex justify-between text-[10px]" x-show="g.responded_at">
+                                        <span>Responded At:</span>
+                                        <span class="font-mono font-bold" x-text="g.responded_at"></span>
+                                    </div>
+                                    <div class="flex flex-col gap-1" x-show="g.notes">
+                                        <span class="font-bold text-[10px]">Notes:</span>
+                                        <p class="text-[11px] bg-white dark:bg-zinc-950 p-2 rounded-lg border border-zinc-200/40 dark:border-zinc-850 text-zinc-700 dark:text-zinc-300 italic" x-text="g.notes"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
+                <button type="button" class="w-full py-2.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-xs active:scale-95 text-center select-none" @click="showDetailsModal = false">
+                    Close
+                </button>
+            </div>
         </div>
     </div>
 </div>

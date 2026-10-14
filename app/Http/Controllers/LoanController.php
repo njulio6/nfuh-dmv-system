@@ -166,11 +166,28 @@ class LoanController extends Controller
             return redirect()->back()->with('error', 'Loan must be approved before disbursement.');
         }
 
-        $loan->update([
+        $validated = $request->validate([
+            'disbursement_details' => ['nullable', 'string', 'max:2000'],
+            'disbursement_proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf,webp', 'max:5120'],
+        ]);
+
+        $proofPath = null;
+        if ($request->hasFile('disbursement_proof')) {
+            $proofPath = $request->file('disbursement_proof')->store('loan_disbursements', 'public');
+        }
+
+        $updateData = [
             'status' => 'active',
             'disbursed_at' => now(),
             'repayment_due_date' => now()->addMonths($loan->duration_months)->toDateString(),
-        ]);
+            'disbursement_details' => $validated['disbursement_details'] ?? null,
+        ];
+
+        if ($proofPath) {
+            $updateData['disbursement_proof'] = $proofPath;
+        }
+
+        $loan->update($updateData);
 
         return redirect()->route('loans.index')->with('success', 'Loan funds marked as disbursed and active.');
     }
@@ -184,9 +201,18 @@ class LoanController extends Controller
             return redirect()->back()->with('error', 'Cannot reject loan at this stage.');
         }
 
+        if (!$request->filled('rejection_reason') && $request->filled('notes')) {
+            $request->merge(['rejection_reason' => $request->input('notes')]);
+        }
+
+        $validated = $request->validate([
+            'rejection_reason' => ['required', 'string', 'min:3', 'max:2000'],
+        ]);
+
         $loan->update([
             'status' => 'rejected',
-            'admin_notes' => $request->input('notes'),
+            'rejection_reason' => $validated['rejection_reason'],
+            'admin_notes' => $validated['rejection_reason'],
         ]);
 
         return redirect()->route('loans.index')->with('success', 'Loan request has been rejected.');
@@ -267,10 +293,16 @@ class LoanController extends Controller
             ->orderBy('first_name')
             ->get();
 
+        // Guaranteed active loans by this member for live tracking
+        $guaranteedLoans = LoanGuarantor::where('guarantor_member_id', $member->id)
+            ->where('status', 'approved')
+            ->with(['loanRequest.member', 'loanRequest.repayments'])
+            ->get();
+
         $appSettings = Setting::first();
         $minSavings = $appSettings?->min_savings_for_loan ?? 500.00;
 
-        return view('loans.member', compact('member', 'loans', 'guarantorRequests', 'otherMembers', 'minSavings'));
+        return view('loans.member', compact('member', 'loans', 'guarantorRequests', 'otherMembers', 'minSavings', 'guaranteedLoans', 'appSettings'));
     }
 
     /**
@@ -372,13 +404,17 @@ class LoanController extends Controller
 
         $guarantorMin = $appSettings?->loan_guarantor_min ?? 1;
         $guarantorMax = $appSettings?->loan_guarantor_max ?? 3;
+        $defaultInterest = (float) ($appSettings?->default_loan_interest ?? 1.00);
 
         $validated = $request->validate([
-            'amount'          => ['required', 'numeric', 'min:0.01'],
-            'duration_months' => ['required', 'integer', 'min:1', 'max:60'],
-            'purpose'         => ['nullable', 'string', 'max:1000'],
-            'guarantors'      => ['required', 'array', 'min:' . $guarantorMin, 'max:' . $guarantorMax],
-            'guarantors.*'    => ['required', 'exists:members,id', 'different:member_id'],
+            'amount'              => ['required', 'numeric', 'min:0.01'],
+            'duration_months'     => ['required', 'integer', 'min:1', 'max:60'],
+            'repayment_frequency' => ['required', 'string', 'in:monthly,quarterly,end_of_term'],
+            'payout_method'       => ['required', 'string', 'in:zelle,bank_transfer,check'],
+            'payout_details'      => ['required', 'string', 'max:1000'],
+            'purpose'             => ['nullable', 'string', 'max:1000'],
+            'guarantors'          => ['required', 'array', 'min:' . $guarantorMin, 'max:' . $guarantorMax],
+            'guarantors.*'        => ['required', 'exists:members,id', 'different:member_id'],
         ], [
             'guarantors.min' => "You must select at least {$guarantorMin} guarantor(s) for your loan request.",
             'guarantors.max' => "You may select no more than {$guarantorMax} guarantor(s) for your loan request.",
@@ -389,13 +425,18 @@ class LoanController extends Controller
             return redirect()->back()->with('error', 'You cannot select yourself as a guarantor.');
         }
 
-        // Create Loan request
+        // Create Loan request with dynamic interest and repayment frequency
         $loan = LoanRequest::create([
             'member_id' => $member->id,
             'organization_id' => $member->organization_id,
             'amount' => $validated['amount'],
+            'interest_rate' => $defaultInterest,
+            'interest_type' => 'flat',
             'duration_months' => $validated['duration_months'],
-            'purpose' => $validated['purpose'],
+            'repayment_frequency' => $validated['repayment_frequency'],
+            'payout_method' => $validated['payout_method'],
+            'payout_details' => $validated['payout_details'],
+            'purpose' => $validated['purpose'] ?? null,
             'status' => 'pending_guarantors',
         ]);
 
@@ -427,8 +468,16 @@ class LoanController extends Controller
             return redirect()->back()->with('error', 'You have already responded to this guarantor request.');
         }
 
+        $request->validate([
+            'terms_accepted' => ['required', 'accepted'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
         $guarantor->update([
             'status' => 'approved',
+            'terms_accepted' => true,
+            'terms_accepted_at' => now(),
+            'terms_ip_address' => $request->ip(),
             'responded_at' => now(),
             'notes' => $request->input('notes'),
         ]);

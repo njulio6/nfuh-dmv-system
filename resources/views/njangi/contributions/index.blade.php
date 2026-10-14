@@ -9,22 +9,36 @@
     back-title="{{ isset($activeCycle) ? 'Back to Cycle' : 'Back to Dashboard' }}"
 />
 
-<!-- Ledger Summary Cards (Monochrome) -->
+<!-- Ledger Summary Cards (Aeroco Gradient System) -->
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 -mt-3 mb-6">
-    <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 hover:shadow-md transition-all duration-200">
-        <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Ledger Records</span>
-        <div class="text-xl md:text-2xl font-display font-black text-zinc-800 dark:text-white leading-none tracking-tight">
-            {{ $totalContributions }}
+    <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+        <div class="flex items-center gap-3">
+            <div class="stat-icon-badge p-2 shrink-0">
+                <i data-lucide="receipt" class="w-4 h-4"></i>
+            </div>
+            <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Total Ledger Records</span>
         </div>
-        <p class="text-[9px] text-zinc-400 dark:text-zinc-500 mt-2 font-semibold">Audited rotational deposits</p>
+        <div class="flex flex-col gap-1">
+            <div class="text-2xl lg:text-3xl font-display font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+                {{ $totalContributions }}
+            </div>
+            <p class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">Audited rotational deposits</p>
+        </div>
     </div>
 
-    <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 hover:shadow-md transition-all duration-200">
-        <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Contributions Volume</span>
-        <div class="text-xl md:text-2xl font-display font-black text-zinc-800 dark:text-white leading-none tracking-tight">
-            ${{ number_format($totalAmount, 2) }}
+    <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+        <div class="flex items-center gap-3">
+            <div class="stat-icon-badge p-2 shrink-0">
+                <i data-lucide="wallet" class="w-4 h-4"></i>
+            </div>
+            <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Total Contributions Volume</span>
         </div>
-        <p class="text-[9px] text-zinc-400 dark:text-zinc-500 mt-2 font-semibold">Net cleared volume today</p>
+        <div class="flex flex-col gap-1">
+            <div class="text-2xl lg:text-3xl font-display font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+                ${{ number_format($totalAmount, 2) }}
+            </div>
+            <p class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">Net cleared volume across rounds</p>
+        </div>
     </div>
 </div>
 

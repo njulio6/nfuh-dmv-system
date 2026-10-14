@@ -426,10 +426,10 @@ test('member dashboard displays active loan progress, statement link, guarantors
     $user = User::factory()->create();
     $member = Member::create([
         'organization_id' => $this->org->id,
+        'user_id' => $user->id,
         'member_code' => 'M-TEST-1',
         'first_name' => 'John',
         'last_name' => 'Doe',
-        'email' => $user->email,
         'phone' => '12345',
         'participates_in_savings' => true,
     ]);

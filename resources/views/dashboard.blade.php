@@ -54,19 +54,19 @@
             ->get();
     @endphp
 
-<div x-data="{ receiptModalOpen: false, receiptUrl: '' }" class="flex flex-col gap-6 w-full">
-    <!-- Welcome Greeting Row (Exact same as TCG Agency Admin) -->
+<div x-data="{ receiptModalOpen: false, receiptUrl: '' }" class="flex flex-col gap-6 w-full relative">
+    <!-- Welcome Greeting Row -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex flex-col gap-1">
             <div class="flex items-center gap-2.5">
                 <!-- Dynamic Time-of-Day Icon -->
                 <span class="text-zinc-900 dark:text-zinc-100 shrink-0">
-                    <i id="welcome-greeting-icon" data-lucide="sun" class="w-6 h-6"></i>
+                    <i id="welcome-greeting-icon" data-lucide="sun" class="w-6 h-6 text-brand-primary"></i>
                 </span>
                 <h1 class="text-2xl font-bold text-zinc-950 dark:text-white tracking-tight flex items-center gap-2 font-display">
                     <span id="welcome-greeting-text">Good Afternoon</span>, {{ explode(' ', Auth::user()->name)[0] }}
                     <!-- Sparkles pulse icon -->
-                    <i data-lucide="sparkles" class="w-4 h-4 text-zinc-400 dark:text-zinc-600 animate-pulse hidden sm:inline"></i>
+                    <i data-lucide="sparkles" class="w-4 h-4 text-brand-primary animate-pulse hidden sm:inline"></i>
                 </h1>
             </div>
             <p class="text-xs text-zinc-500 dark:text-zinc-400">
@@ -96,7 +96,7 @@
         <div class="flex items-center gap-2.5">
             <button 
                 onclick="window.location.reload()"
-                class="p-2 border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all flex items-center justify-center cursor-pointer active:scale-95 disabled:opacity-50"
+                class="glass-button p-2 text-zinc-600 dark:text-zinc-300 rounded-xl flex items-center justify-center cursor-pointer disabled:opacity-50"
                 title="Refresh Analytics"
             >
                 <i data-lucide="refresh-cw" class="w-[15px] h-[15px]"></i>
@@ -105,36 +105,36 @@
             @if(Auth::user() && Auth::user()->hasRole('admin'))
                 <a
                     href="{{ route('admin.tools') }}"
-                    class="px-4 py-2 border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all flex items-center justify-center cursor-pointer active:scale-95 disabled:opacity-50"
+                    class="glass-button px-4 py-2 text-zinc-700 dark:text-zinc-200 rounded-xl flex items-center justify-center cursor-pointer"
                     title="System Tools"
                 >
-                    <i data-lucide="terminal" class="w-[15px] h-[15px] mr-2"></i>
-                    <span class="text-sm font-medium">System Tools</span>
+                    <i data-lucide="terminal" class="w-[15px] h-[15px] mr-2 text-brand-primary"></i>
+                    <span class="text-sm font-semibold">System Tools</span>
                 </a>
             @endif
 
             <button 
                 onclick="window.print()"
-                class="px-4 py-2 bg-zinc-950 text-white dark:bg-zinc-50 dark:text-zinc-950 rounded-lg text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                class="px-4 py-2 bg-brand-primary text-brand-primary-text rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
             >
-                <i data-lucide="download" class="w-[13px] h-[13px]"></i>
+                <i data-lucide="download" class="w-[14px] h-[14px]"></i>
                 <span>Export Report</span>
             </button>
         </div>
     </div>
 
-    <!-- Quick Stats Grid (Compact) -->
+    <!-- Quick Stats Grid (Aeroco Frosted Glass Gradient System) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Stat 1: Total Members -->
-        <div class="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200/60 dark:border-zinc-800/60 shadow-sm flex flex-col gap-2.5 group hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-md transition-all duration-300 relative overflow-hidden">
-            <div class="flex items-center justify-between z-10">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-445">Total Members</span>
-                <div class="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white group-hover:scale-110 transition-transform duration-300">
-                    <i data-lucide="users" class="w-3.5 h-3.5"></i>
+        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group cursor-default">
+            <div class="flex items-center gap-3">
+                <div class="stat-icon-badge p-2.5 shrink-0">
+                    <i data-lucide="users" class="w-4 h-4"></i>
                 </div>
+                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Total Members</span>
             </div>
-            <div class="flex flex-col gap-0.5 mt-0.5 z-10">
-                <span class="text-2xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight">
+            <div class="flex flex-col gap-1">
+                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
                     {{ \App\Models\Member::count() }}
                 </span>
                 <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
@@ -144,15 +144,15 @@
         </div>
 
         <!-- Stat 2: Active Cycles -->
-        <div class="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200/60 dark:border-zinc-800/60 shadow-sm flex flex-col gap-2.5 group hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-md transition-all duration-300 relative overflow-hidden">
-            <div class="flex items-center justify-between z-10">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Active Cycles</span>
-                <div class="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white group-hover:scale-110 transition-transform duration-300">
-                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+            <div class="flex items-center gap-3">
+                <div class="stat-icon-badge p-2 shrink-0">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                 </div>
+                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Active Cycles</span>
             </div>
-            <div class="flex flex-col gap-0.5 mt-0.5 z-10">
-                <span class="text-2xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight">
+            <div class="flex flex-col gap-1">
+                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
                     {{ \App\Models\NjangiCycle::where('status', 'active')->count() }}
                 </span>
                 <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
@@ -162,15 +162,15 @@
         </div>
 
         <!-- Stat 3: Pending Payments -->
-        <div class="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200/60 dark:border-zinc-800/60 shadow-sm flex flex-col gap-2.5 group hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-md transition-all duration-300 relative overflow-hidden">
-            <div class="flex items-center justify-between z-10">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Pending Payments</span>
-                <div class="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white group-hover:scale-110 transition-transform duration-300">
-                    <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
+        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+            <div class="flex items-center gap-3">
+                <div class="stat-icon-badge p-2 shrink-0">
+                    <i data-lucide="receipt" class="w-4 h-4"></i>
                 </div>
+                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Pending Payments</span>
             </div>
-            <div class="flex flex-col gap-0.5 mt-0.5 z-10">
-                <span class="text-2xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight">
+            <div class="flex flex-col gap-1">
+                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
                     {{ \App\Models\NjangiPaymentSubmission::where('status', 'pending')->count() }}
                 </span>
                 <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
@@ -180,15 +180,15 @@
         </div>
 
         <!-- Stat 4: Total Volume -->
-        <div class="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200/60 dark:border-zinc-800/60 shadow-sm flex flex-col gap-2.5 group hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-md transition-all duration-300 relative overflow-hidden">
-            <div class="flex items-center justify-between z-10">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-450">Total Contributions</span>
-                <div class="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white group-hover:scale-110 transition-transform duration-300">
-                    <i data-lucide="wallet" class="w-3.5 h-3.5"></i>
+        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+            <div class="flex items-center gap-3">
+                <div class="stat-icon-badge p-2 shrink-0">
+                    <i data-lucide="wallet" class="w-4 h-4"></i>
                 </div>
+                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Total Contributions</span>
             </div>
-            <div class="flex flex-col gap-0.5 mt-0.5 z-10">
-                <span class="text-2xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight">
+            <div class="flex flex-col gap-1">
+                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
                     ${{ number_format(\App\Models\NjangiContribution::sum('amount'), 2) }}
                 </span>
                 <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
@@ -201,9 +201,9 @@
     <!-- Overview Analytics Chart + Tabbed Activity Feed -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         
-        <!-- Left: Chart -->
-        <div class="lg:col-span-7 bg-white dark:bg-zinc-900 p-5 rounded-xl border border-zinc-200/60 dark:border-zinc-800/60 shadow-sm flex flex-col gap-3 h-full">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800/50 pb-4">
+        <!-- Left: Frosted Glass Chart Card -->
+        <div class="lg:col-span-7 glass-surface rounded-2xl p-6 shadow-xl flex flex-col gap-3 h-full">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-zinc-200/50 dark:border-white/10 pb-4">
                 <div class="flex flex-col gap-0.5">
                     <h3 class="text-base font-bold text-zinc-900 dark:text-white">Monthly Activity</h3>
                     <p class="text-xs text-zinc-500 dark:text-zinc-400">Contributions & payment submissions per month</p>
@@ -213,16 +213,16 @@
                     <!-- Legend -->
                     <div class="flex items-center gap-3">
                         <div class="flex items-center gap-1.5">
-                            <div class="w-3 h-3 rounded-sm bg-zinc-900 dark:bg-zinc-100"></div>
+                            <div class="w-3 h-3 rounded-sm bg-zinc-900 dark:bg-zinc-100 shadow-xs"></div>
                             <span class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">Contributions</span>
                         </div>
                         <div class="flex items-center gap-1.5">
-                            <div class="w-3 h-3 rounded-sm bg-zinc-300 dark:bg-zinc-600"></div>
+                            <div class="w-3 h-3 rounded-sm bg-zinc-300 dark:bg-zinc-600 shadow-xs"></div>
                             <span class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">Submissions</span>
                         </div>
                     </div>
                     <!-- Year display -->
-                    <div class="text-xs font-semibold text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5">
+                    <div class="text-xs font-semibold text-zinc-900 dark:text-zinc-100 glass-button rounded-lg px-2.5 py-1.5">
                         {{ $selectedYear }}
                     </div>
                 </div>
@@ -240,12 +240,12 @@
                     <!-- Guide lines -->
                     <div class="absolute left-8 right-0 top-12 bottom-6 flex flex-col justify-between pointer-events-none">
                         @for ($i = 0; $i < 4; $i++)
-                            <div class="w-full border-t border-dashed border-zinc-200/50 dark:border-zinc-800/40 h-0"></div>
+                            <div class="w-full border-t border-dashed border-zinc-200/50 dark:border-white/5 h-0"></div>
                         @endfor
-                        <div class="w-full border-t border-zinc-200 dark:border-zinc-800 h-0"></div>
+                        <div class="w-full border-t border-zinc-200 dark:border-white/10 h-0"></div>
                     </div>
 
-                    <!-- Bars (Exactly gap-0.5 spacing as TCG Agency) -->
+                    <!-- Bars -->
                     <div class="absolute left-8 right-0 top-12 bottom-6 flex items-end justify-between gap-0.5">
                         @foreach ($chartData as $data)
                             @php
@@ -254,16 +254,16 @@
                             @endphp
                             <div class="flex-1 flex items-end justify-center gap-0.5 group relative h-full">
                                 <!-- Tooltip on hover -->
-                                <div class="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 z-30 pointer-events-none bg-zinc-900 text-zinc-100 text-[11px] font-medium p-2 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap border border-zinc-800">
+                                <div class="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 z-30 pointer-events-none bg-zinc-950/90 dark:bg-zinc-900/90 backdrop-blur-md text-zinc-100 text-[11px] font-medium p-2.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap border border-white/10">
                                     <div class="font-bold text-[11px] mb-0.5 text-white">{{ $data['month'] }} {{ $selectedYear }}</div>
-                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm bg-zinc-100 border border-transparent"></div> Contributions: <b>{{ $data['contributions'] }}</b></div>
-                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm bg-zinc-300 dark:bg-zinc-600"></div> Submissions: <b>{{ $data['submissions'] }}</b></div>
+                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm bg-white"></div> Contributions: <b>{{ $data['contributions'] }}</b></div>
+                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm bg-zinc-400"></div> Submissions: <b>{{ $data['submissions'] }}</b></div>
                                 </div>
 
                                 <!-- Contribution Bar -->
-                                <div class="w-[35%] max-w-[18px] min-w-[6px] shrink-0 bg-zinc-900 dark:bg-zinc-100 rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-70" style="height: {{ $contribPct }}%; min-height: {{ $data['contributions'] > 0 ? '3px' : '0' }};"></div>
+                                <div class="w-[35%] max-w-[18px] min-w-[6px] shrink-0 bg-gradient-to-t from-zinc-950 to-zinc-700 dark:from-zinc-200 dark:to-white rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-75 shadow-xs" style="height: {{ $contribPct }}%; min-height: {{ $data['contributions'] > 0 ? '3px' : '0' }};"></div>
                                 <!-- Submission Bar -->
-                                <div class="w-[35%] max-w-[18px] min-w-[6px] shrink-0 bg-zinc-300 dark:bg-zinc-600 rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-70" style="height: {{ $subPct }}%; min-height: {{ $data['submissions'] > 0 ? '3px' : '0' }};"></div>
+                                <div class="w-[35%] max-w-[18px] min-w-[6px] shrink-0 bg-gradient-to-t from-zinc-400 to-zinc-300 dark:from-zinc-700 dark:to-zinc-500 rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-75 shadow-xs" style="height: {{ $subPct }}%; min-height: {{ $data['submissions'] > 0 ? '3px' : '0' }};"></div>
                             </div>
                         @endforeach
                     </div>
@@ -272,7 +272,7 @@
                     <div class="absolute left-8 right-0 bottom-0 h-5 flex justify-between">
                         @foreach ($chartData as $data)
                             <div class="flex-1 text-center">
-                                <span class="text-[11px] text-zinc-550 dark:text-zinc-400 font-medium">{{ $data['month'] }}</span>
+                                <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">{{ $data['month'] }}</span>
                             </div>
                         @endforeach
                     </div>
@@ -280,24 +280,24 @@
             </div>
         </div>
 
-        <!-- Right: Tabbed Activities -->
+        <!-- Right: Frosted Glass Tabbed Activities -->
         <div 
             x-data="{ activeTab: 'submissions' }"
-            class="lg:col-span-5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200/60 dark:border-zinc-800/60 shadow-sm overflow-hidden flex flex-col h-full"
+            class="lg:col-span-5 glass-surface rounded-2xl shadow-xl overflow-hidden flex flex-col h-full"
         >
-            <!-- Tab selectors -->
-            <div class="flex border-b border-zinc-100 dark:border-zinc-800/60 bg-zinc-50/50 dark:bg-zinc-900/60 px-3">
+            <!-- Tab selectors with glassy backing -->
+            <div class="flex border-b border-zinc-200/50 dark:border-white/10 bg-white/40 dark:bg-white/[0.03] px-3 backdrop-blur-md">
                 <button 
                     @click="activeTab = 'submissions'"
-                    class="px-3 py-3 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer"
-                    :class="activeTab === 'submissions' ? 'border-zinc-900 text-zinc-900 dark:border-white dark:text-white' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'"
+                    class="px-4 py-3 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer"
+                    :class="activeTab === 'submissions' ? 'border-brand-primary text-brand-primary font-bold' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'"
                 >
                     Submissions ({{ $recentSubmissions->count() }})
                 </button>
                 <button 
                     @click="activeTab = 'members'"
-                    class="px-3 py-3 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer"
-                    :class="activeTab === 'members' ? 'border-zinc-900 text-zinc-900 dark:border-white dark:text-white' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'"
+                    class="px-4 py-3 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer"
+                    :class="activeTab === 'members' ? 'border-brand-primary text-brand-primary font-bold' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'"
                 >
                     Members ({{ $recentMembers->count() }})
                 </button>
@@ -309,19 +309,19 @@
                 <div x-show="activeTab === 'submissions'" class="flex flex-col gap-1 w-full">
                     @if ($recentSubmissions->isEmpty())
                         <div class="flex-grow flex flex-col items-center justify-center text-center p-8 gap-3">
-                            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-full text-zinc-300 dark:text-zinc-700">
+                            <div class="p-4 bg-white/40 dark:bg-white/5 rounded-full text-zinc-400 dark:text-zinc-500 border border-white/20">
                                 <i data-lucide="inbox" class="w-8 h-8"></i>
                             </div>
-                            <span class="text-xs text-zinc-500">No submissions found.</span>
+                            <span class="text-xs text-zinc-500 font-medium">No submissions found.</span>
                         </div>
                     @else
                         @foreach ($recentSubmissions as $sub)
                             @php
                                 $subInitials = collect(explode(' ', $sub->member->name ?? 'User'))->map(fn($n) => mb_substr($n, 0, 1))->take(2)->join('');
                             @endphp
-                            <div class="flex items-center justify-between p-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors border-b border-zinc-50 dark:border-zinc-800/40 last:border-0">
+                            <div class="flex items-center justify-between p-3 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.05] transition-all duration-200 border-b border-zinc-100/60 dark:border-white/[0.04] last:border-0">
                                 <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/20 dark:border-white/5 flex items-center justify-center font-bold text-xs text-zinc-700 dark:text-zinc-300 flex-shrink-0">
+                                    <div class="w-8 h-8 rounded-full bg-white/60 dark:bg-white/10 border border-white/40 dark:border-white/10 flex items-center justify-center font-bold text-xs text-zinc-800 dark:text-zinc-200 flex-shrink-0 shadow-2xs">
                                         {{ $subInitials }}
                                     </div>
                                     <div class="flex flex-col min-w-0">
@@ -330,12 +330,12 @@
                                                 {{ $sub->member->name ?? 'Unknown Member' }}
                                             </span>
                                             <span class="text-[10px] text-zinc-400 dark:text-zinc-500">•</span>
-                                            <span class="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                                            <span class="text-xs text-zinc-600 dark:text-zinc-300 font-semibold truncate">
                                                 ${{ number_format($sub->amount, 2) }}
                                             </span>
                                         </div>
-                                        <span class="text-[11px] text-zinc-600 dark:text-zinc-300 font-bold truncate leading-relaxed">
-                                            {{ $sub->session->title ?? 'Session' }} • {{ ucfirst($sub->status) }}
+                                        <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium truncate leading-relaxed">
+                                            {{ $sub->session->title ?? 'Session' }} • <span class="font-semibold text-brand-primary">{{ ucfirst($sub->status) }}</span>
                                         </span>
                                     </div>
                                 </div>
@@ -343,7 +343,7 @@
                                     @if ($sub->screenshot_path)
                                         <button 
                                             @click="receiptUrl = '{{ asset('storage/' . $sub->screenshot_path) }}'; receiptModalOpen = true"
-                                            class="p-1 text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 rounded cursor-pointer transition-colors flex items-center justify-center select-none focus:outline-none"
+                                            class="glass-button p-1.5 rounded-lg text-zinc-600 dark:text-zinc-300 flex items-center justify-center cursor-pointer"
                                             title="View Receipt"
                                         >
                                             <i data-lucide="eye" class="w-3.5 h-3.5"></i>
@@ -351,7 +351,7 @@
                                     @endif
                                     <a 
                                         href="{{ route('njangi-submissions.index') }}"
-                                        class="p-1 text-zinc-900 hover:bg-zinc-100 dark:text-white dark:hover:bg-zinc-800 rounded cursor-pointer transition-colors flex items-center justify-center"
+                                        class="glass-button p-1.5 rounded-lg text-zinc-700 dark:text-zinc-200 flex items-center justify-center"
                                         title="View Submissions"
                                     >
                                         <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
@@ -366,19 +366,19 @@
                 <div x-show="activeTab === 'members'" class="flex flex-col gap-1 w-full" x-cloak>
                     @if ($recentMembers->isEmpty())
                         <div class="flex-grow flex flex-col items-center justify-center text-center p-8 gap-3">
-                            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-full text-zinc-300 dark:text-zinc-700">
+                            <div class="p-4 bg-white/40 dark:bg-white/5 rounded-full text-zinc-400 dark:text-zinc-500 border border-white/20">
                                 <i data-lucide="users" class="w-8 h-8"></i>
                             </div>
-                            <span class="text-xs text-zinc-500">No members found.</span>
+                            <span class="text-xs text-zinc-500 font-medium">No members found.</span>
                         </div>
                     @else
                         @foreach ($recentMembers as $mb)
                             @php
                                 $mbInitials = collect(explode(' ', $mb->name ?? 'User'))->map(fn($n) => mb_substr($n, 0, 1))->take(2)->join('');
                             @endphp
-                            <div class="flex items-center justify-between p-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors border-b border-zinc-50 dark:border-zinc-800/40 last:border-0">
+                            <div class="flex items-center justify-between p-3 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.05] transition-all duration-200 border-b border-zinc-100/60 dark:border-white/[0.04] last:border-0">
                                 <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/20 dark:border-white/5 flex items-center justify-center font-bold text-xs text-zinc-700 dark:text-zinc-300 flex-shrink-0">
+                                    <div class="w-8 h-8 rounded-full bg-white/60 dark:bg-white/10 border border-white/40 dark:border-white/10 flex items-center justify-center font-bold text-xs text-zinc-800 dark:text-zinc-200 flex-shrink-0 shadow-2xs">
                                         {{ $mbInitials }}
                                     </div>
                                     <div class="flex flex-col min-w-0">
@@ -387,11 +387,11 @@
                                                 {{ $mb->name }}
                                             </span>
                                             <span class="text-[10px] text-zinc-400 dark:text-zinc-500">•</span>
-                                            <span class="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                                            <span class="text-xs text-zinc-600 dark:text-zinc-300 font-semibold truncate">
                                                 {{ $mb->member_code }}
                                             </span>
                                         </div>
-                                        <span class="text-[11px] text-zinc-600 dark:text-zinc-300 font-bold truncate leading-relaxed">
+                                        <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium truncate leading-relaxed">
                                             Joined {{ $mb->join_date ? \Carbon\Carbon::parse($mb->join_date)->format('M d, Y') : 'N/A' }}
                                         </span>
                                     </div>
@@ -399,7 +399,7 @@
                                 <div class="flex items-center gap-2 flex-shrink-0 ml-3">
                                     <a 
                                         href="{{ route('members.show', $mb->id) }}"
-                                        class="p-1 text-zinc-900 hover:bg-zinc-100 dark:text-white dark:hover:bg-zinc-800 rounded cursor-pointer transition-colors"
+                                        class="glass-button p-1.5 rounded-lg text-zinc-700 dark:text-zinc-200 flex items-center justify-center"
                                         title="View Member Profile"
                                     >
                                         <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
@@ -415,7 +415,7 @@
     </div>
 </div>
 
-    <!-- Receipt Modal -->
+    <!-- Frosted Glass Receipt Modal -->
     <div 
         x-show="receiptModalOpen" 
         x-cloak
@@ -431,10 +431,10 @@
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
             @click="receiptModalOpen = false"
-            class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
+            class="fixed inset-0 bg-slate-950/60 backdrop-blur-md"
         ></div>
 
-        <!-- Modal Content -->
+        <!-- Modal Content with Glass Surface -->
         <div 
             x-show="receiptModalOpen"
             x-transition:enter="transition ease-out duration-300 transform"
@@ -443,13 +443,13 @@
             x-transition:leave="transition ease-in duration-200 transform"
             x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
-            class="relative max-w-2xl w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl p-4 flex flex-col gap-4 max-h-[90vh]"
+            class="relative max-w-2xl w-full glass-surface rounded-2xl p-5 shadow-2xl flex flex-col gap-4 max-h-[90vh]"
         >
-            <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-2">
+            <div class="flex items-center justify-between border-b border-zinc-200/50 dark:border-white/10 pb-3">
                 <h3 class="font-bold text-zinc-900 dark:text-white text-sm">Receipt Image Preview</h3>
                 <button 
                     @click="receiptModalOpen = false"
-                    class="p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 cursor-pointer flex items-center justify-center"
+                    class="glass-button p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 cursor-pointer flex items-center justify-center"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -457,7 +457,7 @@
                 </button>
             </div>
             
-            <div class="flex-grow overflow-auto flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-800 p-2 min-h-[300px]">
+            <div class="flex-grow overflow-auto flex items-center justify-center bg-white/30 dark:bg-black/30 backdrop-blur-sm rounded-xl border border-zinc-200/40 dark:border-white/10 p-2 min-h-[300px]">
                 <img :src="receiptUrl" alt="Receipt Upload" class="max-w-full max-h-[60vh] object-contain rounded-lg shadow-sm">
             </div>
         </div>

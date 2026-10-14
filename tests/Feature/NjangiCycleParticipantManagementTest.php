@@ -333,33 +333,31 @@ test('member cannot be deleted if they already benefited', function () {
 
 test('member dashboard displays the correct Njangi warning banner depending on registration status', function () {
     // Member who is NOT registered for Njangi
+    $userNoNjangi = User::factory()->create(['email' => 'nonjangi@test.com']);
     $memberNoNjangi = Member::create([
         'organization_id' => $this->org->id,
+        'user_id' => $userNoNjangi->id,
         'member_code' => 'M-NO',
         'first_name' => 'No',
         'last_name' => 'Njangi',
-        'email' => 'nonjangi@test.com',
         'phone' => '999',
         'participates_in_njangi' => false,
     ]);
-    
-    $userNoNjangi = User::factory()->create(['email' => $memberNoNjangi->email]);
 
     $response1 = $this->actingAs($userNoNjangi)->get(route('dashboard'));
     $response1->assertSee('You are not currently enrolled in an active Njangi rotational cycle');
 
     // Member who is registered for Njangi but not enrolled in a cycle
+    $userRegistered = User::factory()->create(['email' => 'regnjangi@test.com']);
     $memberRegistered = Member::create([
         'organization_id' => $this->org->id,
+        'user_id' => $userRegistered->id,
         'member_code' => 'M-REG',
         'first_name' => 'Reg',
         'last_name' => 'Njangi',
-        'email' => 'regnjangi@test.com',
         'phone' => '888',
         'participates_in_njangi' => true,
     ]);
-
-    $userRegistered = User::factory()->create(['email' => $memberRegistered->email]);
 
     $response2 = $this->actingAs($userRegistered)->get(route('dashboard'));
     $response2->assertSee('You are registered for Njangi participation but have not yet been assigned to an active Njangi cycle');

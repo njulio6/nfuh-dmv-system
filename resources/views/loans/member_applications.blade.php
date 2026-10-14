@@ -10,6 +10,7 @@
         showDetailsModal: false,
         activeGuarantors: [],
         activeAdminNote: '',
+        activeLoanDetails: null,
         showRequestModal: false,
         showRepayModal: false,
         repayLoanId: '',
@@ -40,58 +41,70 @@
         <input type="hidden" name="page" value="{{ $loans->currentPage() }}" x-ref="pageInput">
     </form>
 
-    {{-- ─── Loan Statistics Cards ─── --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    {{-- ─── Loan Statistics Cards (Aeroco Gradient System) ─── --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
 
         {{-- Total Principal --}}
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex items-center gap-5">
-            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-900 dark:text-zinc-50 border border-zinc-100 dark:border-zinc-850">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+            <div class="flex items-center gap-3">
+                <div class="stat-icon-badge p-2 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Total Principal</span>
             </div>
-            <div>
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Principal</span>
-                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+            <div class="flex flex-col gap-1">
+                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
                     ${{ number_format($activePrincipal, 2) }}
                 </span>
+                <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Original Borrowed Capital</span>
             </div>
         </div>
 
         {{-- Total Repayable --}}
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex items-center gap-5">
-            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-900 dark:text-zinc-50 border border-zinc-100 dark:border-zinc-850">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+            <div class="flex items-center gap-3">
+                <div class="stat-icon-badge p-2 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Total Repayable</span>
             </div>
-            <div>
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Repayable</span>
-                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+            <div class="flex flex-col gap-1">
+                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
                     ${{ number_format($activeTotalRepayable, 2) }}
                 </span>
+                <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Principal & Accrued Interest</span>
             </div>
         </div>
 
         {{-- Total Repaid --}}
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex items-center gap-5">
-            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-900 dark:text-zinc-50 border border-zinc-100 dark:border-zinc-850">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+            <div class="flex items-center gap-3">
+                <div class="stat-icon-badge p-2 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                </div>
+                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Total Repaid</span>
             </div>
-            <div>
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Repaid</span>
-                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+            <div class="flex flex-col gap-1">
+                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
                     ${{ number_format($totalRepaid, 2) }}
                 </span>
+                <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Cleared Loan Settlements</span>
             </div>
         </div>
 
         {{-- Outstanding Balance --}}
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex items-center gap-5">
-            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-900 dark:text-zinc-50 border border-zinc-100 dark:border-zinc-850">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+            <div class="flex items-center gap-3">
+                <div class="stat-icon-badge p-2 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Outstanding Balance</span>
             </div>
-            <div>
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Outstanding Balance</span>
-                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+            <div class="flex flex-col gap-1">
+                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
                     ${{ number_format($outstandingBalance, 2) }}
                 </span>
+                <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Remaining Due Balance</span>
             </div>
         </div>
 
@@ -222,9 +235,14 @@
                         @endif
                     </td>
 
-                    <!-- Term -->
-                    <td class="py-3 px-3 text-zinc-800 dark:text-zinc-200 font-semibold">
-                        {{ $loan->duration_months }} Months
+                    <!-- Term & Repayment Frequency -->
+                    <td class="py-3 px-3">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-zinc-800 dark:text-zinc-200 text-xs">{{ $loan->duration_months }} Months</span>
+                            <span class="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 capitalize">
+                                {{ $loan->repayment_frequency === 'end_of_term' ? 'End of Term' : ucfirst($loan->repayment_frequency ?? 'monthly') }}
+                            </span>
+                        </div>
                     </td>
 
                     <!-- Purpose -->
@@ -280,6 +298,11 @@
                                     <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400 border border-red-200/60 dark:border-red-800/40">
                                         Rejected
                                     </span>
+                                    @if($loan->rejection_reason || $loan->admin_notes)
+                                        <span class="block mt-1 text-[11px] text-rose-600 dark:text-rose-400 font-medium max-w-[200px] truncate" title="{{ $loan->rejection_reason ?? $loan->admin_notes }}">
+                                            {{ $loan->rejection_reason ?? $loan->admin_notes }}
+                                        </span>
+                                    @endif
                                 @elseif($loan->status === 'defaulted')
                                     <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-900/40">
                                         Defaulted
@@ -319,13 +342,28 @@
                                     'responded_at' => $g->responded_at ? $g->responded_at->format('Y-m-d H:i:s') : null,
                                     'notes' => $g->notes
                                 ])));
-                                $encodedAdminNote = base64_encode($loan->admin_notes ?? '');
+                                $encodedAdminNote = base64_encode($loan->rejection_reason ?? $loan->admin_notes ?? '');
+                                $encodedLoanDetails = base64_encode(json_encode([
+                                    'id' => $loan->id,
+                                    'amount' => (float) $loan->amount,
+                                    'duration_months' => $loan->duration_months,
+                                    'repayment_frequency' => $loan->repayment_frequency === 'end_of_term' ? 'End of Term' : ucfirst($loan->repayment_frequency ?? 'monthly'),
+                                    'status' => $loan->status,
+                                    'purpose' => $loan->purpose ?? '',
+                                    'payout_method' => $loan->payout_method ? ucwords(str_replace('_', ' ', $loan->payout_method)) : '',
+                                    'payout_details' => $loan->payout_details ?? '',
+                                    'disbursed_at' => $loan->disbursed_at ? $loan->disbursed_at->format('M d, Y H:i') : null,
+                                    'disbursement_details' => $loan->disbursement_details ?? '',
+                                    'disbursement_proof' => $loan->disbursement_proof ? asset('storage/' . $loan->disbursement_proof) : null,
+                                    'repayment_due_date' => $loan->repayment_due_date ? $loan->repayment_due_date->format('M d, Y') : null,
+                                ]));
                             @endphp
                             <button 
                                 type="button"
                                 @click="
                                     activeGuarantors = JSON.parse(atob('{{ $encodedGuarantors }}'));
                                     activeAdminNote = atob('{{ $encodedAdminNote }}');
+                                    activeLoanDetails = JSON.parse(atob('{{ $encodedLoanDetails }}'));
                                     showDetailsModal = true;
                                 "
                                 class="inline-flex items-center gap-1 px-2.5 py-1.5 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-[11px] font-bold rounded-[8px] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-3xs select-none"
@@ -575,7 +613,60 @@
                 </button>
             </div>
 
-            <div class="flex flex-col gap-5 overflow-y-auto max-h-[70vh] pr-1">
+            <div class="flex flex-col gap-4 overflow-y-auto max-h-[70vh] pr-1">
+
+                <!-- Payout Destination & Disbursement Record -->
+                <template x-if="activeLoanDetails">
+                    <div class="flex flex-col gap-3">
+                        <!-- Terms & Payout Destination -->
+                        <div class="p-3.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-xl flex flex-col gap-2.5">
+                            <span class="text-[11px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Terms & Payout Details</span>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Repayment Frequency</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 shadow-3xs" x-text="activeLoanDetails.repayment_frequency || 'Monthly'"></span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Loan Duration</span>
+                                <span class="font-bold text-xs text-zinc-800 dark:text-zinc-200" x-text="(activeLoanDetails.duration_months || 0) + ' Months'"></span>
+                            </div>
+                            <div class="flex items-center justify-between pt-1 border-t border-zinc-200/50 dark:border-zinc-800">
+                                <span class="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Payout Method</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 shadow-3xs" x-text="activeLoanDetails.payout_method || 'Standard'"></span>
+                            </div>
+                            <div class="flex flex-col gap-1" x-show="activeLoanDetails.payout_details">
+                                <span class="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">Destination Details</span>
+                                <span class="text-xs font-mono font-semibold text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-950 p-2.5 rounded-lg border border-zinc-200/50 dark:border-zinc-800 break-all" x-text="activeLoanDetails.payout_details"></span>
+                            </div>
+                        </div>
+
+                        <!-- Disbursement Record (shown if disbursed) -->
+                        <div x-show="activeLoanDetails.disbursed_at" class="p-3.5 bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 rounded-xl flex flex-col gap-2.5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[11px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                    Disbursement Record
+                                </span>
+                                <span class="text-[11px] font-mono font-bold text-emerald-700 dark:text-emerald-300" x-text="activeLoanDetails.disbursed_at"></span>
+                            </div>
+
+                            <div x-show="activeLoanDetails.disbursement_details" class="flex flex-col gap-1">
+                                <span class="text-[10px] text-emerald-800/80 dark:text-emerald-400/80 font-bold uppercase tracking-wider">Disbursement Details / Reference</span>
+                                <p class="text-xs text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-950 p-2.5 rounded-lg border border-emerald-200/40 dark:border-emerald-900/40 italic font-medium" x-text="activeLoanDetails.disbursement_details"></p>
+                            </div>
+
+                            <div x-show="activeLoanDetails.disbursement_proof" class="pt-1">
+                                <a 
+                                    :href="activeLoanDetails.disbursement_proof" 
+                                    target="_blank" 
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-zinc-900 text-emerald-700 dark:text-emerald-400 border border-emerald-300/60 dark:border-emerald-800/60 shadow-3xs hover:bg-emerald-50 dark:hover:bg-zinc-800 transition-all select-none cursor-pointer"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                    <span>View Disbursement Receipt / Proof</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </template>
 
                 <!-- Admin Decision Note -->
                 <div x-show="activeAdminNote && activeAdminNote.trim() !== ''">
@@ -689,6 +780,122 @@
                     required 
                     placeholder="e.g. 12" 
                 />
+
+                <!-- Dynamic Interest Rate Badge -->
+                <div class="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs">
+                    <span class="text-zinc-500 font-medium">Standard Association Rate:</span>
+                    <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono">{{ $appSettings->default_loan_interest ?? 1.00 }}% Simple Interest</span>
+                </div>
+
+                <!-- Repayment Frequency -->
+                <div class="flex flex-col gap-1.5 w-full" x-data="{ repaymentFrequency: 'monthly' }">
+                    <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                        Repayment Frequency <span class="text-red-500">*</span>
+                    </label>
+                    <input type="hidden" name="repayment_frequency" :value="repaymentFrequency" required>
+                    <x-dropdown align="left" width="w-full" contentClasses="p-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl flex flex-col gap-0.5">
+                        <x-slot name="trigger">
+                            <button 
+                                type="button" 
+                                class="w-full flex items-center justify-between bg-zinc-50/60 dark:bg-zinc-950/40 hover:bg-zinc-100/40 dark:hover:bg-zinc-900/40 text-zinc-900 dark:text-white px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-semibold focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all cursor-pointer text-left"
+                            >
+                                <span x-text="repaymentFrequency === 'monthly' ? 'Monthly Installments' : (repaymentFrequency === 'quarterly' ? 'Quarterly Installments' : 'End-of-Term Balloon Payment')"></span>
+                                <svg class="h-4 w-4 text-zinc-400 dark:text-zinc-500 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </x-slot>
+
+                        <x-slot name="content">
+                            <button 
+                                type="button" 
+                                @click="repaymentFrequency = 'monthly'" 
+                                class="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left select-none"
+                                :class="repaymentFrequency === 'monthly' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
+                            >
+                                <span>Monthly Installments</span>
+                                <span x-show="repaymentFrequency === 'monthly'" class="text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                            </button>
+                            <button 
+                                type="button" 
+                                @click="repaymentFrequency = 'quarterly'" 
+                                class="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left select-none"
+                                :class="repaymentFrequency === 'quarterly' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
+                            >
+                                <span>Quarterly Installments</span>
+                                <span x-show="repaymentFrequency === 'quarterly'" class="text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                            </button>
+                            <button 
+                                type="button" 
+                                @click="repaymentFrequency = 'end_of_term'" 
+                                class="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left select-none"
+                                :class="repaymentFrequency === 'end_of_term' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
+                            >
+                                <span>End-of-Term Balloon Payment</span>
+                                <span x-show="repaymentFrequency === 'end_of_term'" class="text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                            </button>
+                        </x-slot>
+                    </x-dropdown>
+                </div>
+
+                <!-- Payout Method & Destination -->
+                <div class="flex flex-col gap-1.5" x-data="{ loanPayout: 'zelle' }">
+                    <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                        Disbursement Destination <span class="text-red-500">*</span>
+                    </label>
+                    <input type="hidden" name="payout_method" :value="loanPayout" required>
+                    <x-dropdown align="left" width="w-full" contentClasses="p-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl flex flex-col gap-0.5">
+                        <x-slot name="trigger">
+                            <button 
+                                type="button" 
+                                class="w-full flex items-center justify-between bg-zinc-50/60 dark:bg-zinc-950/40 hover:bg-zinc-100/40 dark:hover:bg-zinc-900/40 text-zinc-900 dark:text-white px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-semibold focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all cursor-pointer text-left"
+                            >
+                                <span x-text="loanPayout === 'zelle' ? 'Zelle' : (loanPayout === 'bank_transfer' ? 'Direct Bank Transfer' : 'Paper Check')"></span>
+                                <svg class="h-4 w-4 text-zinc-400 dark:text-zinc-500 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </x-slot>
+
+                        <x-slot name="content">
+                            <button 
+                                type="button" 
+                                @click="loanPayout = 'zelle'" 
+                                class="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left select-none"
+                                :class="loanPayout === 'zelle' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
+                            >
+                                <span>Zelle</span>
+                                <span x-show="loanPayout === 'zelle'" class="text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                            </button>
+                            <button 
+                                type="button" 
+                                @click="loanPayout = 'bank_transfer'" 
+                                class="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left select-none"
+                                :class="loanPayout === 'bank_transfer' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
+                            >
+                                <span>Direct Bank Transfer</span>
+                                <span x-show="loanPayout === 'bank_transfer'" class="text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                            </button>
+                            <button 
+                                type="button" 
+                                @click="loanPayout = 'check'" 
+                                class="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left select-none"
+                                :class="loanPayout === 'check' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
+                            >
+                                <span>Paper Check</span>
+                                <span x-show="loanPayout === 'check'" class="text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                            </button>
+                        </x-slot>
+                    </x-dropdown>
+
+                    <textarea 
+                        name="payout_details" 
+                        rows="2" 
+                        required 
+                        :placeholder="loanPayout === 'zelle' ? 'Enter Zelle Phone Number or Email Address' : (loanPayout === 'bank_transfer' ? 'Bank Name, Routing Number, Account Number' : 'Mailing address or pickup notes')"
+                        class="w-full mt-1 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-medium focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-700"
+                    ></textarea>
+                </div>
 
                 <!-- Purpose memo -->
                 <x-premium-textarea 

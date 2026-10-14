@@ -163,63 +163,84 @@
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         @if($activeCycle && $cycleMember)
             <!-- Current Njangi Cycle -->
-            <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 hover:shadow-md transition-all duration-200">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Current Njangi Cycle</span>
-                <div class="text-lg font-display font-black text-zinc-800 dark:text-white leading-none tracking-tight">
-                    {{ $activeCycle->name }}
+            <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+                <div class="flex items-center gap-3">
+                    <div class="stat-icon-badge p-2 shrink-0">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    </div>
+                    <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Current Njangi Cycle</span>
                 </div>
-                <p class="text-[11px] text-zinc-555 dark:text-zinc-400 mt-2 font-semibold">
-                    Active Round Year: {{ $activeCycle->year }}
-                </p>
+                <div class="flex flex-col gap-1">
+                    <div class="text-xl lg:text-2xl font-display font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+                        {{ $activeCycle->name }}
+                    </div>
+                    <p class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
+                        Active Round Year: {{ $activeCycle->year }}
+                    </p>
+                </div>
             </div>
 
             <!-- Benefit Draw Position -->
-            <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 hover:shadow-md transition-all duration-200">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Benefit Position</span>
-                <div class="text-xl font-display font-black text-zinc-800 dark:text-white leading-none tracking-tight">
-                    #{{ $benefitOrder ?? '-' }}
+            <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+                <div class="flex items-center gap-3">
+                    <div class="stat-icon-badge p-2 shrink-0">
+                        <i data-lucide="award" class="w-4 h-4"></i>
+                    </div>
+                    <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Benefit Position</span>
                 </div>
-                <p class="text-[11px] text-zinc-555 dark:text-zinc-400 mt-2 font-semibold">
-                    @if($hasBenefited)
-                        Status: <span class="text-emerald-600 dark:text-emerald-400 font-bold uppercase">Benefited</span>
-                    @else
-                        Status: <span class="text-zinc-500 font-bold uppercase">Awaiting Draw</span>
-                    @endif
-                </p>
+                <div class="flex flex-col gap-1">
+                    <div class="text-2xl lg:text-3xl font-display font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+                        #{{ $benefitOrder ?? '-' }}
+                    </div>
+                    <p class="text-[11px] font-semibold">
+                        @if($hasBenefited)
+                            <span class="text-emerald-600 dark:text-emerald-400 font-bold uppercase">Status: Benefited</span>
+                        @else
+                            <span class="text-zinc-500 font-bold uppercase">Status: Awaiting Draw</span>
+                        @endif
+                    </p>
+                </div>
             </div>
 
             <!-- Next Hosting Date / Repayments -->
-            <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 hover:shadow-md transition-all duration-200">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">
-                    {{ $hasBenefited ? 'Repayments Status' : 'My Payout Date' }}
-                </span>
-                <div class="text-base font-display font-bold text-zinc-800 dark:text-white leading-none tracking-tight truncate">
-                    @if($hasBenefited)
-                        @php
-                            $totalOwedPlays = \App\Models\NjangiSession::where('njangi_cycle_id', $activeCycle->id)
-                                ->where('session_number', '>', $benefitSession?->session_number ?? 0)
-                                ->count();
-                            $paidOwedPlays = \App\Models\NjangiPaymentSubmission::where('member_id', $member->id)
-                                ->where('njangi_cycle_id', $activeCycle->id)
-                                ->whereHas('session', function($q) use ($benefitSession) {
-                                    $q->where('session_number', '>', $benefitSession?->session_number ?? 0);
-                                })
-                                ->where('status', 'approved')
-                                ->count();
-                            $remainingOwedPlays = max(0, $totalOwedPlays - $paidOwedPlays);
-                        @endphp
-                        {{ $remainingOwedPlays }} left of {{ $totalOwedPlays }} sessions
-                    @else
-                        {{ $benefitSession ? $benefitSession->session_date->format('M d, Y') : 'Not scheduled' }}
-                    @endif
+            <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+                <div class="flex items-center gap-3">
+                    <div class="stat-icon-badge p-2 shrink-0">
+                        <i data-lucide="calendar" class="w-4 h-4"></i>
+                    </div>
+                    <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300 truncate">
+                        {{ $hasBenefited ? 'Repayments Status' : 'My Payout Date' }}
+                    </span>
                 </div>
-                <p class="text-[11px] text-zinc-555 dark:text-zinc-400 mt-2.5 font-semibold">
-                    @if($hasBenefited)
-                        Post-benefit repayment count
-                    @else
-                        Upcoming benefit session
-                    @endif
-                </p>
+                <div class="flex flex-col gap-1">
+                    <div class="text-lg lg:text-xl font-display font-bold text-zinc-950 dark:text-white leading-none tracking-tight truncate">
+                        @if($hasBenefited)
+                            @php
+                                $totalOwedPlays = \App\Models\NjangiSession::where('njangi_cycle_id', $activeCycle->id)
+                                    ->where('session_number', '>', $benefitSession?->session_number ?? 0)
+                                    ->count();
+                                $paidOwedPlays = \App\Models\NjangiPaymentSubmission::where('member_id', $member->id)
+                                    ->where('njangi_cycle_id', $activeCycle->id)
+                                    ->whereHas('session', function($q) use ($benefitSession) {
+                                        $q->where('session_number', '>', $benefitSession?->session_number ?? 0);
+                                    })
+                                    ->where('status', 'approved')
+                                    ->count();
+                                $remainingOwedPlays = max(0, $totalOwedPlays - $paidOwedPlays);
+                            @endphp
+                            {{ $remainingOwedPlays }} left of {{ $totalOwedPlays }}
+                        @else
+                            {{ $benefitSession ? $benefitSession->session_date->format('M d, Y') : 'Not scheduled' }}
+                        @endif
+                    </div>
+                    <p class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
+                        @if($hasBenefited)
+                            Post-benefit repayment count
+                        @else
+                            Upcoming benefit session
+                        @endif
+                    </p>
+                </div>
             </div>
         @endif
 

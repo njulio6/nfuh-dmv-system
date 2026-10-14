@@ -42,6 +42,10 @@
                                 700: '#0f0f11',
                                 800: '#000000',
                                 900: '#000000',
+                                primary: 'var(--brand-primary)',
+                                'primary-text': 'var(--brand-primary-text)',
+                                secondary: 'var(--brand-secondary)',
+                                'secondary-text': 'var(--brand-secondary-text)',
                             },
                             darkBg: '#09090b',
                             darkCard: '#18181b',
@@ -52,9 +56,12 @@
             }
         </script>
 
+        <!-- Dynamic Theme Engine -->
+        @include('partials.theme-styles')
+
         <!-- Block to prevent dark mode flash -->
         @include('partials.theme-script')
-
+        
         <style>
             [x-cloak] { display: none !important; }
         </style>

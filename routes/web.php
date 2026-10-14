@@ -33,6 +33,10 @@ Route::middleware(['auth'])->group(function () {
         ->name('member.savings.requests');
     Route::post('/member/savings/request', [\App\Http\Controllers\SavingsController::class, 'requestDeposit'])
         ->name('member.savings.request');
+    Route::get('/member/savings/withdrawals', [\App\Http\Controllers\SavingsController::class, 'myWithdrawalRequests'])
+        ->name('member.savings.withdrawals');
+    Route::post('/member/savings/withdraw', [\App\Http\Controllers\SavingsController::class, 'requestWithdrawal'])
+        ->name('member.savings.withdraw');
 
     // Member Loan Routes
     Route::get('/member/loans', [\App\Http\Controllers\LoanController::class, 'myLoans'])
@@ -121,6 +125,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
         ->name('savings.approve');
     Route::post('/savings/requests/{depositRequest}/reject', [\App\Http\Controllers\SavingsController::class, 'reject'])
         ->name('savings.reject');
+    Route::get('/savings/withdrawal-requests', [\App\Http\Controllers\SavingsController::class, 'adminWithdrawalRequests'])
+        ->name('savings.withdrawal-requests');
+    Route::post('/savings/withdrawal-requests/{withdrawalRequest}/approve', [\App\Http\Controllers\SavingsController::class, 'approveWithdrawal'])
+        ->name('savings.withdrawal-requests.approve');
+    Route::post('/savings/withdrawal-requests/{withdrawalRequest}/reject', [\App\Http\Controllers\SavingsController::class, 'rejectWithdrawal'])
+        ->name('savings.withdrawal-requests.reject');
 
     Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'edit'])
         ->name('settings.edit');

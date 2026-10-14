@@ -83,6 +83,7 @@ test('member can request loan with sufficient savings and it defaults to pending
 
     $borrower = Member::create([
         'organization_id' => $org->id,
+        'user_id' => $borrowerUser->id,
         'member_code' => 'M-BORR',
         'first_name' => 'Loan',
         'last_name' => 'Applicant',
@@ -116,6 +117,9 @@ test('member can request loan with sufficient savings and it defaults to pending
         ->post(route('member.loans.request'), [
             'amount' => 1000.00,
             'duration_months' => 12,
+            'repayment_frequency' => 'monthly',
+            'payout_method' => 'zelle',
+            'payout_details' => 'zelle@borrower.com',
             'purpose' => 'Business',
             'guarantors' => [$guarantor->id]
         ]);
@@ -156,13 +160,17 @@ test('loan transitions to pending_committee only when all guarantors approve', f
     $gReq2 = LoanGuarantor::create(['loan_request_id' => $loan->id, 'guarantor_member_id' => $g2->id, 'status' => 'pending']);
 
     // G1 Approves
-    $response = $this->actingAs($g1User)->post(route('member.loans.guarantee.approve', $gReq1->id));
+    $response = $this->actingAs($g1User)->post(route('member.loans.guarantee.approve', $gReq1->id), [
+        'terms_accepted' => 1,
+    ]);
     $response->assertRedirect(route('member.loans'));
     expect($gReq1->fresh()->status)->toEqual('approved');
     expect($loan->fresh()->status)->toEqual('pending_guarantors'); // still pending G2
 
     // G2 Approves
-    $response = $this->actingAs($g2User)->post(route('member.loans.guarantee.approve', $gReq2->id));
+    $response = $this->actingAs($g2User)->post(route('member.loans.guarantee.approve', $gReq2->id), [
+        'terms_accepted' => 1,
+    ]);
     expect($gReq2->fresh()->status)->toEqual('approved');
     expect($loan->fresh()->status)->toEqual('pending_committee'); // both approved
 });

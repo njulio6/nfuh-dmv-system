@@ -86,11 +86,22 @@ class Member extends Model
         return $this->hasMany(SavingsTransaction::class);
     }
 
+    public function savingsWithdrawalRequests(): HasMany
+    {
+        return $this->hasMany(SavingsWithdrawalRequest::class);
+    }
+
     public function getSavingsBalanceAttribute(): float
     {
         $deposits = $this->savingsTransactions()->whereIn('type', ['deposit', 'adjustment'])->where('status', 'approved')->sum('amount');
         $withdrawals = $this->savingsTransactions()->where('type', 'withdrawal')->where('status', 'approved')->sum('amount');
         return (float) max(0, $deposits - $withdrawals);
+    }
+
+    public function getAvailableSavingsBalanceAttribute(): float
+    {
+        $pendingWithdrawals = $this->savingsWithdrawalRequests()->where('status', 'pending')->sum('gross_amount');
+        return (float) max(0, $this->savings_balance - $pendingWithdrawals);
     }
 
     public function getNameAttribute(): string

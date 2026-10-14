@@ -42,62 +42,90 @@
             </div>
         </div>
     @else
-        <!-- Njangi Payments Stats Grid -->
+        <!-- Njangi Payments Stats Grid (Aeroco Gradient System) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-2 animate-fadeIn">
             <!-- Total Contributed -->
-            <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 hover:shadow-md transition-all duration-200">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Contributed</span>
-                <div class="text-xl font-display font-black text-zinc-800 dark:text-white leading-none tracking-tight">
-                    ${{ number_format($totalPaid, 2) }}
+            <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+                <div class="flex items-center gap-3">
+                    <div class="stat-icon-badge p-2 shrink-0">
+                        <i data-lucide="wallet" class="w-4 h-4"></i>
+                    </div>
+                    <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Total Contributed</span>
                 </div>
-                <p class="text-[11px] text-zinc-555 dark:text-zinc-400 mt-2 font-semibold">
-                    Approved plays count: {{ $approvedCount }}
-                </p>
+                <div class="flex flex-col gap-1">
+                    <div class="text-2xl lg:text-3xl font-display font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+                        ${{ number_format($totalPaid, 2) }}
+                    </div>
+                    <p class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
+                        Approved plays count: {{ $approvedCount }}
+                    </p>
+                </div>
             </div>
 
             <!-- Pending Contributions -->
-            <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 hover:shadow-md transition-all duration-200">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Pending Review</span>
-                <div class="text-xl font-display font-black text-zinc-800 dark:text-white leading-none tracking-tight">
-                    ${{ number_format($totalPending, 2) }}
+            <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+                <div class="flex items-center gap-3">
+                    <div class="stat-icon-badge p-2 shrink-0">
+                        <i data-lucide="receipt" class="w-4 h-4"></i>
+                    </div>
+                    <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Pending Review</span>
                 </div>
-                <p class="text-[11px] text-zinc-555 dark:text-zinc-400 mt-2 font-semibold">
-                    @if($pendingCount > 0)
-                        <span class="text-amber-600 dark:text-amber-500 font-bold uppercase inline-flex items-center gap-1">
-                            <i data-lucide="clock" class="w-3.5 h-3.5"></i> {{ $pendingCount }} Awaiting Review
-                        </span>
-                    @else
-                        <span class="text-emerald-600 dark:text-emerald-400 font-bold uppercase inline-flex items-center gap-1">
-                            <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> All Reviewed
-                        </span>
-                    @endif
-                </p>
+                <div class="flex flex-col gap-1">
+                    <div class="text-2xl lg:text-3xl font-display font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+                        ${{ number_format($totalPending, 2) }}
+                    </div>
+                    <p class="text-[11px] font-semibold mt-0.5">
+                        @if($pendingCount > 0)
+                            <span class="text-amber-600 dark:text-amber-500 font-bold uppercase inline-flex items-center gap-1">
+                                <i data-lucide="clock" class="w-3.5 h-3.5"></i> {{ $pendingCount }} Awaiting Review
+                            </span>
+                        @else
+                            <span class="text-emerald-600 dark:text-emerald-400 font-bold uppercase inline-flex items-center gap-1">
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> All Reviewed
+                            </span>
+                        @endif
+                    </p>
+                </div>
             </div>
 
             <!-- Benefit Position -->
-            <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 hover:shadow-md transition-all duration-200">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Benefit Position</span>
-                <div class="text-xl font-display font-black text-zinc-800 dark:text-white leading-none tracking-tight">
-                    #{{ $benefitOrder ?? '-' }}
+            <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+                <div class="flex items-center gap-3">
+                    <div class="stat-icon-badge p-2 shrink-0">
+                        <i data-lucide="award" class="w-4 h-4"></i>
+                    </div>
+                    <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Benefit Position</span>
                 </div>
-                <p class="text-[11px] text-zinc-555 dark:text-zinc-400 mt-2 font-semibold">
-                    @if($hasBenefited)
-                        Status: <span class="text-emerald-600 dark:text-emerald-400 font-bold uppercase">Benefited</span>
-                    @else
-                        Status: <span class="text-zinc-555 font-bold uppercase">Awaiting Draw</span>
-                    @endif
-                </p>
+                <div class="flex flex-col gap-1">
+                    <div class="text-2xl lg:text-3xl font-display font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+                        #{{ $benefitOrder ?? '-' }}
+                    </div>
+                    <p class="text-[11px] font-semibold mt-0.5">
+                        @if($hasBenefited)
+                            <span class="text-emerald-600 dark:text-emerald-400 font-bold uppercase">Status: Benefited</span>
+                        @else
+                            <span class="text-zinc-500 font-bold uppercase">Status: Awaiting Draw</span>
+                        @endif
+                    </p>
+                </div>
             </div>
 
             <!-- Cycle Target Play -->
-            <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 hover:shadow-md transition-all duration-200">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Active Cycle</span>
-                <div class="text-base font-display font-semibold text-zinc-800 dark:text-white leading-none tracking-tight truncate">
-                    {{ $activeCycle->name }}
+            <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+                <div class="flex items-center gap-3">
+                    <div class="stat-icon-badge p-2 shrink-0">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    </div>
+                    <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300 truncate">Active Cycle</span>
                 </div>
-                <p class="text-[11px] text-zinc-555 dark:text-zinc-400 mt-2.5 font-semibold truncate">
-                    Year: {{ $activeCycle->year }} | Status: <span class="uppercase font-bold text-emerald-600 dark:text-emerald-400">{{ $activeCycle->status }}</span>
-                </p>
+                <div class="flex flex-col gap-1">
+                    <div class="text-lg lg:text-xl font-display font-semibold text-zinc-950 dark:text-white leading-none tracking-tight truncate">
+                        {{ $activeCycle->name }}
+                    </div>
+                    <p class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed truncate">
+                        Year: {{ $activeCycle->year }} | <span class="uppercase font-bold text-emerald-600 dark:text-emerald-400">{{ $activeCycle->status }}</span>
+                    </p>
+                </div>
             </div>
         </div>
     @endif

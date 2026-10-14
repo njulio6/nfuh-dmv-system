@@ -21,6 +21,12 @@ class LoanRequest extends Model
         'admin_notes',
         'interest_rate',
         'interest_type',
+        'repayment_frequency',
+        'payout_method',
+        'payout_details',
+        'rejection_reason',
+        'disbursement_details',
+        'disbursement_proof',
     ];
 
     protected $casts = [

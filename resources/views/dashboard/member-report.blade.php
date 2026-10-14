@@ -112,27 +112,33 @@
             
             <!-- Top Summary Metrics Grid -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl flex items-center gap-3.5 shadow-3xs hover:shadow-md transition-all duration-200">
-                    <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 rounded-lg shrink-0">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"/></svg>
+                <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+                    <div class="flex items-center gap-3">
+                        <div class="stat-icon-badge p-2 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"/></svg>
+                        </div>
+                        <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Total Paid Contributions</span>
                     </div>
-                    <div class="flex flex-col min-w-0">
-                        <span class="text-[11px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider">Total Paid Contributions</span>
-                        <span class="text-lg font-display font-black text-zinc-800 dark:text-white leading-none mt-1.5">
+                    <div class="flex flex-col gap-1">
+                        <span class="text-2xl lg:text-3xl font-display font-black text-zinc-950 dark:text-white leading-none tracking-tight">
                             ${{ number_format($contributionsMade->sum('amount'), 2) }}
                         </span>
+                        <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Cleared Rotational Contributions</span>
                     </div>
                 </div>
 
-                <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl flex items-center gap-3.5 shadow-3xs hover:shadow-md transition-all duration-200">
-                    <div class="p-2.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-lg shrink-0">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 4.5l-15 15m0 0h11.25m-11.25 0V8.25"/></svg>
+                <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+                    <div class="flex items-center gap-3">
+                        <div class="stat-icon-badge p-2 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 4.5l-15 15m0 0h11.25m-11.25 0V8.25"/></svg>
+                        </div>
+                        <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Total Payouts Received</span>
                     </div>
-                    <div class="flex flex-col min-w-0">
-                        <span class="text-[11px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider">Total Payouts Received</span>
-                        <span class="text-lg font-display font-black text-zinc-800 dark:text-white leading-none mt-1.5">
+                    <div class="flex flex-col gap-1">
+                        <span class="text-2xl lg:text-3xl font-display font-black text-zinc-950 dark:text-white leading-none tracking-tight">
                             ${{ number_format($contributionsReceived->sum('amount'), 2) }}
                         </span>
+                        <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Lump-Sum Draws Disbursed</span>
                     </div>
                 </div>
             </div>

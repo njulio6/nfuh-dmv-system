@@ -27,36 +27,50 @@
     }" 
     class="w-full flex flex-col gap-6"
 >
-    <!-- Member Stats Row -->
+    <!-- Member Stats Row (Aeroco Gradient System) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
         <!-- Outstanding Loan Balance -->
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-3xs">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">My Outstanding Balance</span>
-            <div class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
-                ${{ number_format($member->outstanding_loan_balance, 2) }}
+        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+            <div class="flex items-center gap-3">
+                <div class="stat-icon-badge p-2 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">My Outstanding Balance</span>
             </div>
-            <p class="text-[10px] text-zinc-555 mt-2 font-semibold">Total active loans principal remaining</p>
+            <div class="flex flex-col gap-1">
+                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
+                    ${{ number_format($member->outstanding_loan_balance, 2) }}
+                </span>
+                <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Total active loans principal remaining</span>
+            </div>
         </div>
 
         <!-- My Savings Balance -->
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-3xs">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">My Savings Balance</span>
-            <div class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
-                ${{ number_format($member->savings_balance, 2) }}
+        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+            <div class="flex items-center gap-3">
+                <div class="stat-icon-badge p-2 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                </div>
+                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">My Savings Balance</span>
             </div>
-            <p class="text-[10px] mt-2 font-bold uppercase">
-                @if($member->savings_balance >= $minSavings)
-                    <span class="text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        Eligible for Loans
-                    </span>
-                @else
-                    <span class="text-amber-600 dark:text-amber-500 inline-flex items-center gap-1" title="Under ${{ number_format($minSavings, 0) }} Settings Threshold">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        Under Limit (Min: ${{ number_format($minSavings, 0) }})
-                    </span>
-                @endif
-            </p>
+            <div class="flex flex-col gap-1">
+                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
+                    ${{ number_format($member->savings_balance, 2) }}
+                </span>
+                <div class="text-[11px] font-semibold mt-0.5">
+                    @if($member->savings_balance >= $minSavings)
+                        <span class="text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 font-bold">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            Eligible for Loans
+                        </span>
+                    @else
+                        <span class="text-amber-600 dark:text-amber-500 inline-flex items-center gap-1 font-bold" title="Under ${{ number_format($minSavings, 0) }} Settings Threshold">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            Under Limit (Min: ${{ number_format($minSavings, 0) }})
+                        </span>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 
@@ -85,7 +99,7 @@
                                         <span class="text-[10px] font-bold text-zinc-400 dark:text-zinc-550 font-mono leading-none">{{ $req->created_at->format('M d, Y') }}</span>
                                     </div>
                                     <p class="text-xs text-zinc-650 dark:text-zinc-400 leading-relaxed">
-                                        Is requesting a loan of <strong class="text-zinc-900 dark:text-white font-extrabold text-[13px]">${{ number_format($req->loanRequest->amount, 2) }}</strong> and selected you as a guarantor.
+                                        Is requesting a loan of <strong class="text-zinc-900 dark:text-white font-extrabold text-[13px]">${{ number_format($req->loanRequest->amount, 2) }}</strong> ({{ $req->loanRequest->duration_months }} Months &bull; {{ $req->loanRequest->repayment_frequency === 'end_of_term' ? 'End of Term' : ucfirst($req->loanRequest->repayment_frequency ?? 'Monthly') }}) and selected you as a guarantor.
                                     </p>
                                     @if($req->loanRequest->purpose)
                                         <div class="mt-1 text-xs text-zinc-500 dark:text-zinc-400 italic bg-white dark:bg-zinc-950 border border-zinc-200/40 dark:border-zinc-800/30 px-3 py-2 rounded-xl inline-block w-fit max-w-full truncate" title="{{ $req->loanRequest->purpose }}">
@@ -123,6 +137,73 @@
             </x-premium-card>
         </div>
     </div>
+
+    <!-- Live Guarantor Repayment Tracker Panel -->
+    <x-premium-card title="Loans I Am Guaranteeing (Live Tracker)">
+        <x-premium-table :headers="[
+            'Borrower',
+            'Total Repayable',
+            'Repaid',
+            'Remaining',
+            'Progress',
+            'Status',
+            'Due Date'
+        ]">
+            @forelse($guaranteedLoans as $gl)
+                @php
+                    $gLoan = $gl->loanRequest;
+                    $repaid = (float) $gLoan->repayments->sum('amount');
+                    $total = (float) $gLoan->total_repayable;
+                    $remaining = (float) $gLoan->remaining_balance;
+                    $progressPct = $total > 0 ? min(100, round(($repaid / $total) * 100)) : 0;
+                    $isEven = $loop->index % 2 === 1;
+                @endphp
+                <x-premium-table-row :is-even="$isEven">
+                    <td class="py-3 px-3 text-xs">
+                        <span class="font-bold text-zinc-900 dark:text-white">{{ $gLoan->member->name }}</span>
+                        <span class="font-mono text-[10px] text-zinc-400 dark:text-zinc-500 block">{{ $gLoan->member->member_code }}</span>
+                    </td>
+                    <td class="py-3 px-3 font-mono text-xs font-bold text-zinc-900 dark:text-white">
+                        ${{ number_format($total, 2) }}
+                    </td>
+                    <td class="py-3 px-3 font-mono text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                        ${{ number_format($repaid, 2) }}
+                    </td>
+                    <td class="py-3 px-3 font-mono text-xs text-zinc-700 dark:text-zinc-300 font-bold">
+                        ${{ number_format($remaining, 2) }}
+                    </td>
+                    <td class="py-3 px-3 text-xs min-w-[120px]">
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                <div class="h-full bg-emerald-500 rounded-full" style="width: {{ $progressPct }}%;"></div>
+                            </div>
+                            <span class="text-[10px] font-bold font-mono text-zinc-500">{{ $progressPct }}%</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-3 text-xs text-center">
+                        @if($gLoan->status === 'active')
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Active</span>
+                        @elseif($gLoan->status === 'completed')
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">Completed</span>
+                        @elseif($gLoan->status === 'defaulted')
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">Defaulted</span>
+                        @else
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">{{ ucfirst(str_replace('_', ' ', $gLoan->status)) }}</span>
+                        @endif
+                    </td>
+                    <td class="py-3 px-3 font-mono text-xs text-zinc-500 dark:text-zinc-400">
+                        {{ $gLoan->repayment_due_date ? $gLoan->repayment_due_date->format('M d, Y') : '-' }}
+                    </td>
+                </x-premium-table-row>
+            @empty
+                <tr>
+                    <td colspan="7" class="text-center py-10 text-zinc-400 dark:text-zinc-600 text-xs">
+                        You have not guaranteed any approved loans yet.
+                    </td>
+                </tr>
+            @endforelse
+        </x-premium-table>
+    </x-premium-card>
 
 
     <!-- VIEW GUARANTORS MODAL -->
@@ -231,9 +312,27 @@
                 
                 <div class="text-xs leading-relaxed text-zinc-650 dark:text-zinc-400">
                     <template x-if="responseType === 'approve'">
-                        <p>
-                            Are you sure you want to act as a guarantor for <strong class="text-zinc-900 dark:text-white font-bold" x-text="getMemberName(responseRequest)"></strong>'s request for a loan of <strong class="text-zinc-900 dark:text-white font-extrabold text-sm" x-text="'$' + Number(responseRequest?.loan_request?.amount || responseRequest?.loanRequest?.amount).toLocaleString('en-US', {minimumFractionDigits: 2})"></strong>?
-                        </p>
+                        <div class="flex flex-col gap-3">
+                            <p>
+                                Are you sure you want to act as a guarantor for <strong class="text-zinc-900 dark:text-white font-bold" x-text="getMemberName(responseRequest)"></strong>'s request for a loan of <strong class="text-zinc-900 dark:text-white font-extrabold text-sm" x-text="'$' + Number(responseRequest?.loan_request?.amount || responseRequest?.loanRequest?.amount).toLocaleString('en-US', {minimumFractionDigits: 2})"></strong>?
+                            </p>
+
+                            <!-- Legal Liability Box -->
+                            <div class="p-3.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
+                                <div class="font-bold uppercase tracking-wider text-[10px] text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1.5">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                    Legal Guarantor Liability Notice
+                                </div>
+                                By clicking confirm and accepting this guarantee, I legally affirm that I am acting as an unconditional financial guarantor for this loan under NFUH DMV constitution and bylaws. In the event of default or non-payment by the borrower, I acknowledge that the association holds the legal authority to recover all outstanding principal and interest from my active savings balance and Njangi entitlements.
+                            </div>
+
+                            <label class="flex items-start gap-2.5 cursor-pointer mt-1">
+                                <input type="checkbox" name="terms_accepted" value="1" required class="rounded border-zinc-300 dark:border-zinc-700 text-zinc-950 dark:text-white mt-0.5 focus:ring-0">
+                                <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                                    I understand and legally agree to full guarantor liability. <span class="text-red-500">*</span>
+                                </span>
+                            </label>
+                        </div>
                     </template>
                     <template x-if="responseType === 'decline'">
                         <p class="text-red-655 dark:text-red-400 font-medium">

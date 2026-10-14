@@ -11,11 +11,16 @@ class LoanGuarantor extends Model
         'loan_request_id',
         'guarantor_member_id',
         'status',
+        'terms_accepted',
+        'terms_accepted_at',
+        'terms_ip_address',
         'notes',
         'responded_at',
     ];
 
     protected $casts = [
+        'terms_accepted' => 'boolean',
+        'terms_accepted_at' => 'datetime',
         'responded_at' => 'datetime',
     ];
 

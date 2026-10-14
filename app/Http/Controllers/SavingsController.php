@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Member;
 use App\Models\SavingsTransaction;
 use App\Models\SavingsDepositRequest;
+use App\Models\SavingsWithdrawalRequest;
+use App\Models\Setting;
 use App\Support\MemberResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SavingsController extends Controller
 {
@@ -217,7 +220,15 @@ class SavingsController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('savings.member', compact('member', 'transactions', 'requests'));
+        // Member's recent withdrawal requests
+        $withdrawalRequests = SavingsWithdrawalRequest::where('member_id', $member->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+
+        $appSettings = Setting::first();
+
+        return view('savings.member', compact('member', 'transactions', 'requests', 'withdrawalRequests', 'appSettings'));
     }
 
     /**
@@ -384,5 +395,202 @@ class SavingsController extends Controller
         $allMembers = Member::orderBy('first_name')->orderBy('last_name')->get();
 
         return view('savings.admin_requests', compact('requests', 'pendingCount', 'allMembers'));
+    }
+
+    /**
+     * Submit a savings withdrawal request (member only).
+     */
+    public function requestWithdrawal(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $member = MemberResolver::fromUser($user);
+        if (!$member) {
+            abort(403, 'Unauthorized action. User profile is not linked to a member record.');
+        }
+
+        $availableBalance = (float) $member->available_savings_balance;
+
+        $validated = $request->validate([
+            'gross_amount' => ['required', 'numeric', 'min:1', 'max:' . $availableBalance],
+            'payout_method' => ['required', 'string', 'in:zelle,bank_transfer,check'],
+            'payout_details' => ['required', 'string', 'max:1000'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'gross_amount.max' => 'The withdrawal amount cannot exceed your available savings balance of $' . number_format($availableBalance, 2) . '.',
+            'gross_amount.min' => 'The minimum withdrawal amount is $1.00.',
+        ]);
+
+        $feePercent = (float) (Setting::first()?->savings_withdrawal_fee_percent ?? 2.00);
+        $grossAmount = (float) $validated['gross_amount'];
+        $feeAmount = round($grossAmount * ($feePercent / 100), 2);
+        $netAmount = round($grossAmount - $feeAmount, 2);
+
+        SavingsWithdrawalRequest::create([
+            'member_id' => $member->id,
+            'organization_id' => $member->organization_id,
+            'gross_amount' => $grossAmount,
+            'fee_rate' => $feePercent,
+            'fee_amount' => $feeAmount,
+            'net_amount' => $netAmount,
+            'payout_method' => $validated['payout_method'],
+            'payout_details' => $validated['payout_details'],
+            'notes' => $validated['notes'] ?? null,
+            'status' => 'pending',
+        ]);
+
+        return redirect()
+            ->route('member.savings.withdrawals')
+            ->with('success', 'Savings withdrawal request submitted successfully and is pending review.');
+    }
+
+    /**
+     * Display the logged-in member's savings withdrawal requests.
+     */
+    public function myWithdrawalRequests(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $member = MemberResolver::fromUser($user);
+        if (!$member) {
+            abort(403, 'Unauthorized action. User profile is not linked to a member record.');
+        }
+
+        $query = SavingsWithdrawalRequest::where('member_id', $member->id);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('payout_details', 'like', "%{$search}%")
+                  ->orWhere('gross_amount', 'like', "%{$search}%")
+                  ->orWhere('payout_method', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [5, 10, 20, 30, 50])) {
+            $perPage = 10;
+        }
+
+        $requests = $query->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate($perPage);
+
+        $appSettings = Setting::first();
+
+        return view('savings.member_withdrawal_requests', compact('member', 'requests', 'appSettings'));
+    }
+
+    /**
+     * Display all savings withdrawal requests for admin approval/rejection.
+     */
+    public function adminWithdrawalRequests(Request $request)
+    {
+        $query = SavingsWithdrawalRequest::with('member');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('member', function ($mq) use ($search) {
+                    $mq->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('member_code', 'like', "%{$search}%");
+                })->orWhere('payout_details', 'like', "%{$search}%")
+                  ->orWhere('gross_amount', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('member_id')) {
+            $query->where('member_id', $request->member_id);
+        }
+
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [5, 10, 20, 30, 50])) {
+            $perPage = 10;
+        }
+
+        $requests = $query->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate($perPage);
+
+        $pendingCount = SavingsWithdrawalRequest::where('status', 'pending')->count();
+        $allMembers = Member::orderBy('first_name')->orderBy('last_name')->get();
+
+        return view('savings.admin_withdrawal_requests', compact('requests', 'pendingCount', 'allMembers'));
+    }
+
+    /**
+     * Approve a pending withdrawal request (admin only).
+     */
+    public function approveWithdrawal(Request $request, SavingsWithdrawalRequest $withdrawalRequest)
+    {
+        if ($withdrawalRequest->status !== 'pending') {
+            return redirect()->back()->with('error', 'This withdrawal request is not pending.');
+        }
+
+        $member = $withdrawalRequest->member;
+        if ($member->savings_balance < (float) $withdrawalRequest->gross_amount) {
+            return redirect()->back()->with('error', 'Member does not have sufficient savings balance ($' . number_format($member->savings_balance, 2) . ') to disburse this withdrawal.');
+        }
+
+        DB::transaction(function () use ($withdrawalRequest, $member, $request) {
+            SavingsTransaction::create([
+                'member_id' => $member->id,
+                'organization_id' => $member->organization_id,
+                'amount' => $withdrawalRequest->gross_amount,
+                'type' => 'withdrawal',
+                'status' => 'approved',
+                'transaction_date' => now()->toDateString(),
+                'notes' => "Member withdrawal payout ($" . number_format($withdrawalRequest->net_amount, 2) . ") + " . number_format($withdrawalRequest->fee_rate, 2) . "% Admin Fee ($" . number_format($withdrawalRequest->fee_amount, 2) . ") via " . ucfirst(str_replace('_', ' ', $withdrawalRequest->payout_method)),
+            ]);
+
+            $withdrawalRequest->update([
+                'status' => 'approved',
+                'reviewed_by' => Auth::id(),
+                'reviewed_at' => now(),
+                'admin_notes' => $request->input('admin_notes'),
+            ]);
+        });
+
+        return redirect()->back()->with('success', 'Savings withdrawal request approved and member savings balance debited successfully.');
+    }
+
+    /**
+     * Reject a pending withdrawal request (admin only).
+     */
+    public function rejectWithdrawal(Request $request, SavingsWithdrawalRequest $withdrawalRequest)
+    {
+        if ($withdrawalRequest->status !== 'pending') {
+            return redirect()->back()->with('error', 'This withdrawal request is not pending.');
+        }
+
+        $validated = $request->validate([
+            'rejection_reason' => ['required', 'string', 'min:3', 'max:1000'],
+        ]);
+
+        $withdrawalRequest->update([
+            'status' => 'rejected',
+            'rejection_reason' => $validated['rejection_reason'],
+            'admin_notes' => $validated['rejection_reason'],
+            'reviewed_by' => Auth::id(),
+            'reviewed_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Savings withdrawal request rejected.');
     }
 }

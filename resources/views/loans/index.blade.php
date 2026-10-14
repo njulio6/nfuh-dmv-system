@@ -3,56 +3,68 @@
 @section('content')
 <div class="w-full">
     <!-- Macro KPIs Row -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <!-- Active Loans -->
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex items-center gap-5">
-            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-900 dark:text-zinc-50 border border-zinc-100 dark:border-zinc-850">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+            <div class="flex items-center gap-3">
+                <div class="stat-icon-badge p-2 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Active Loans</span>
             </div>
-            <div>
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Active Loans</span>
-                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+            <div class="flex flex-col gap-1">
+                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
                     ${{ number_format($totalActiveAmount, 2) }}
                 </span>
+                <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Currently Active Capital</span>
             </div>
         </div>
 
         <!-- Total Outstanding -->
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex items-center gap-5">
-            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-900 dark:text-zinc-50 border border-zinc-100 dark:border-zinc-850">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+            <div class="flex items-center gap-3">
+                <div class="stat-icon-badge p-2 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Total Outstanding Principal</span>
             </div>
-            <div>
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Outstanding Principal</span>
-                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+            <div class="flex flex-col gap-1">
+                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
                     ${{ number_format($totalRemainingBalance, 2) }}
                 </span>
+                <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Remaining Principal Balance</span>
             </div>
         </div>
 
         <!-- Total Repayments Collected -->
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex items-center gap-5">
-            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-900 dark:text-zinc-50 border border-zinc-100 dark:border-zinc-850">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+            <div class="flex items-center gap-3">
+                <div class="stat-icon-badge p-2 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                </div>
+                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Total Repayments Collected</span>
             </div>
-            <div>
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Total Repayments Collected</span>
-                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+            <div class="flex flex-col gap-1">
+                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
                     ${{ number_format($totalRepaymentsCollected, 2) }}
                 </span>
+                <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Principal & Interest Returned</span>
             </div>
         </div>
 
         <!-- Defaulted Balance -->
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex items-center gap-5">
-            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-zinc-900 dark:text-zinc-50 border border-zinc-100 dark:border-zinc-850">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
+            <div class="flex items-center gap-3">
+                <div class="stat-icon-badge p-2 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Defaulted Balance</span>
             </div>
-            <div>
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-1">Defaulted Balance</span>
-                <span class="text-2xl font-black text-zinc-950 dark:text-white leading-none tracking-tight">
+            <div class="flex flex-col gap-1">
+                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
                     ${{ number_format($totalDefaultedBalance, 2) }}
                 </span>
+                <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Defaulted / Delinquent Debt</span>
             </div>
         </div>
     </div>

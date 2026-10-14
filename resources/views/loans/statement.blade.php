@@ -232,7 +232,7 @@
                             <div class="flex flex-col gap-1">
                                 <span class="text-[10px] font-black uppercase text-zinc-400 tracking-wider text-print-muted">Loan Request #{{ $loan->id }}</span>
                                 <span class="text-lg font-black text-zinc-900 leading-none text-print-dark">${{ number_format($loan->amount, 2) }}</span>
-                                <span class="text-[11px] text-zinc-500 mt-1 font-semibold text-print-muted">{{ $loan->duration_months }} Months Term &bull; Requested on {{ $loan->created_at->format('M d, Y') }}</span>
+                                <span class="text-[11px] text-zinc-500 mt-1 font-semibold text-print-muted">{{ $loan->duration_months }} Months Term &bull; {{ $loan->repayment_frequency === 'end_of_term' ? 'End of Term' : ucfirst($loan->repayment_frequency ?? 'Monthly') }} Repayment &bull; Requested on {{ $loan->created_at->format('M d, Y') }}</span>
                             </div>
                                 <!-- Clean text border outline badge -->
                                 <div class="flex items-center gap-1.5 flex-wrap">
@@ -283,7 +283,56 @@
                         </div>
                     </div>
 
+                    <!-- 2. Disbursement & Destination Record (Kept together) -->
+                    @if($loan->payout_method || $loan->disbursed_at || $loan->disbursement_details)
+                        <div class="print-avoid-break bg-white p-4 rounded-xl border border-zinc-200 flex flex-col gap-3 text-xs">
+                            <div class="flex items-center justify-between pb-2 border-b border-zinc-150">
+                                <span class="font-black uppercase text-[10px] tracking-wider text-zinc-600 text-print-dark flex items-center gap-1.5">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-zinc-500 no-print"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    Disbursement & Payout Details
+                                </span>
+                                @if($loan->disbursed_at)
+                                    <span class="text-[10px] font-mono font-bold text-zinc-700 text-print-muted">
+                                        Disbursed: {{ $loan->disbursed_at->format('M d, Y H:i') }}
+                                    </span>
+                                @endif
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-[10px] uppercase font-bold text-zinc-400 text-print-muted">Repayment Frequency:</span>
+                                    <span class="font-bold text-zinc-900 text-print-dark">{{ $loan->repayment_frequency === 'end_of_term' ? 'End of Term' : ucfirst($loan->repayment_frequency ?? 'Monthly') }}</span>
+                                </div>
 
+                                @if($loan->payout_method || $loan->payout_details)
+                                    <div class="flex flex-col gap-1">
+                                        <span class="text-[10px] uppercase font-bold text-zinc-400 text-print-muted">Payout Destination:</span>
+                                        <span class="font-bold text-zinc-900 text-print-dark">{{ ucwords(str_replace('_', ' ', $loan->payout_method ?? 'Standard')) }}</span>
+                                        @if($loan->payout_details)
+                                            <span class="font-mono text-[11px] text-zinc-600 text-print-muted">{{ $loan->payout_details }}</span>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                @if($loan->disbursement_details || $loan->disbursement_proof)
+                                    <div class="flex flex-col gap-1">
+                                        <span class="text-[10px] uppercase font-bold text-zinc-400 text-print-muted">Disbursement Reference / Receipt:</span>
+                                        @if($loan->disbursement_details)
+                                            <span class="text-zinc-800 text-print-dark italic">{{ $loan->disbursement_details }}</span>
+                                        @endif
+                                        @if($loan->disbursement_proof)
+                                            <div class="mt-1">
+                                                <a href="{{ asset('storage/' . $loan->disbursement_proof) }}" target="_blank" class="no-print inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 underline">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                                    View Receipt / Proof Document
+                                                </a>
+                                                <span class="hidden text-print-muted text-[10px] font-mono">Proof on file (Electronic)</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
 
                     <!-- 3. Guarantors Table (Kept together) -->
                     <div class="print-avoid-break flex flex-col gap-2.5">

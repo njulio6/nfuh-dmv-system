@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::table('members', function (Blueprint $table) {
             // Drop unique index if it exists, then drop the column
-            if (collect(\DB::select("SHOW INDEX FROM members WHERE Column_name = 'email'"))->isNotEmpty()) {
+            if (\DB::getDriverName() === 'mysql' && collect(\DB::select("SHOW INDEX FROM members WHERE Column_name = 'email'"))->isNotEmpty()) {
                 $table->dropUnique(['email']);
             }
             $table->dropColumn('email');

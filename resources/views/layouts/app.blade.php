@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full w-full overflow-x-hidden">
+<html lang="en" class="h-full w-full overflow-hidden">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,6 +25,9 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <!-- Dynamic Theme Engine -->
+    @include('partials.theme-styles')
+
     <!-- Custom Tailwind Config -->
     <script>
         tailwind.config = {
@@ -47,6 +50,10 @@
                             700: '#0f0f11',
                             800: '#000000',
                             900: '#000000',
+                            primary: 'var(--brand-primary)',
+                            'primary-text': 'var(--brand-primary-text)',
+                            secondary: 'var(--brand-secondary)',
+                            'secondary-text': 'var(--brand-secondary-text)',
                         },
                         darkBg: '#09090b',
                         darkCard: '#18181b',
@@ -89,6 +96,12 @@
     </script>
 
     <style>
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+
         [x-cloak] { display: none !important; }
         
         /* Smooth reports dropdown collapse transition */
@@ -178,16 +191,19 @@
         }
         
         .card {
-            background-color: #ffffff;
-            border: 1px solid #e4e4e7;
+            background: rgba(255, 255, 255, 0.72) !important;
+            backdrop-filter: blur(20px) saturate(190%);
+            -webkit-backdrop-filter: blur(20px) saturate(190%);
+            border: 1px solid rgba(255, 255, 255, 0.85) !important;
             border-radius: 1rem;
             padding: 1.25rem;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.02), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+            transition: border-color 0.25s ease, box-shadow 0.25s ease;
         }
         .dark .card {
-            background-color: #18181b;
-            border-color: #27272a;
-            box-shadow: none;
+            background: rgba(20, 20, 26, 0.70) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            box-shadow: 0 14px 36px -10px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
         }
         
         .btn, button.btn {
@@ -316,7 +332,7 @@
             setTimeout(() => this.transitionActive = true, 100);
         }
     }" 
-    class="h-full w-full overflow-x-hidden bg-zinc-50 dark:bg-darkBg text-zinc-800 dark:text-zinc-200 font-sans antialiased transition-colors duration-200"
+    class="h-full w-full overflow-hidden bg-zinc-50 dark:bg-darkBg text-zinc-800 dark:text-zinc-200 font-sans antialiased transition-colors duration-200"
 >
     <!-- Dynamic helper PHP properties -->
     @php
@@ -340,6 +356,7 @@
 
         // Dynamic Route-based Page Title
         $routeName = Route::currentRouteName();
+        $isMemberPortal = str_starts_with($routeName ?? '', 'member.') || ($routeName === 'dashboard' && !$isAdminUser);
         $pageTitle = 'Dashboard';
         if ($routeName) {
             if (str_starts_with($routeName, 'members')) $pageTitle = 'Members';
@@ -353,8 +370,10 @@
             elseif ($routeName === 'savings.index') $pageTitle = 'Savings Balances';
             elseif ($routeName === 'savings.transactions') $pageTitle = 'Savings Transactions';
             elseif ($routeName === 'savings.requests') $pageTitle = 'Deposit Requests';
+            elseif ($routeName === 'savings.withdrawal-requests') $pageTitle = 'Withdrawal Requests';
             elseif ($routeName === 'member.savings') $pageTitle = 'My Savings';
             elseif ($routeName === 'member.savings.requests') $pageTitle = 'My Deposit Requests';
+            elseif ($routeName === 'member.savings.withdrawals') $pageTitle = 'My Withdrawal Requests';
             elseif ($routeName === 'loans.index') $pageTitle = 'Loan Management';
             elseif ($routeName === 'loans.sub-statuses') $pageTitle = 'Loan Sub Statuses';
             elseif ($routeName === 'loans.status-list') {
@@ -379,18 +398,25 @@
         }
     @endphp
 
-    <div class="flex h-full w-full overflow-hidden">
+    <!-- Ambient Frosted Glass Depth Mesh (Reacts to Primary/Secondary brand palette across full system) -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10 select-none">
+        <div class="absolute -top-28 -left-24 w-[38rem] h-[38rem] rounded-full bg-[rgba(var(--brand-primary-rgb),0.04)] dark:bg-[rgba(var(--brand-primary-rgb),0.10)] blur-[150px] transition-all duration-700"></div>
+        <div class="absolute top-1/3 -right-28 w-[36rem] h-[36rem] rounded-full bg-[rgba(var(--brand-secondary-rgb),0.03)] dark:bg-[rgba(var(--brand-secondary-rgb),0.08)] blur-[160px] transition-all duration-700"></div>
+        <div class="absolute -bottom-24 left-1/4 w-[32rem] h-[32rem] rounded-full bg-[rgba(var(--brand-primary-rgb),0.025)] dark:bg-[rgba(var(--brand-primary-rgb),0.07)] blur-[150px] transition-all duration-700"></div>
+    </div>
+
+    <div class="flex h-full w-full overflow-hidden relative">
         
         <!-- ================= SIDEBAR (DESKTOP) ================= -->
         <aside 
             id="desktop-sidebar"
-            class="hidden lg:flex flex-col h-screen overflow-hidden bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 shrink-0 relative z-30 font-sans"
+            class="hidden lg:flex flex-col h-full overflow-hidden glass-surface border-r border-zinc-200/50 dark:border-white/10 shrink-0 relative z-30 font-sans shadow-xs"
             :class="[sidebarCollapsed ? 'w-12' : 'w-[256px]', transitionActive ? 'transition-all duration-300 transitions-enabled' : '']"
         >
             <!-- Sidebar Header / Logo -->
             <div class="h-14 flex items-center border-b border-zinc-200/60 dark:border-zinc-800/60 px-2 flex-shrink-0" :class="sidebarCollapsed ? 'justify-center' : ''">
                 <div class="sidebar-logo-container flex items-center w-full rounded-[10px] transition-all duration-200 cursor-pointer select-none" :class="sidebarCollapsed ? 'justify-center p-0' : 'gap-2 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'">
-                    <div class="flex aspect-square size-8 items-center justify-center rounded-[10px] bg-zinc-950 dark:bg-zinc-50 text-white dark:text-zinc-950 flex-shrink-0 overflow-hidden">
+                    <div class="flex aspect-square size-8 items-center justify-center rounded-[10px] bg-brand-primary text-brand-primary-text flex-shrink-0 overflow-hidden shadow-2xs">
                         @if(isset($appSettings) && $appSettings->logo_light_path && $appSettings->logo_dark_path)
                             <img src="{{ asset('storage/' . $appSettings->logo_light_path) }}" alt="Logo" class="w-full h-full object-cover dark:hidden">
                             <img src="{{ asset('storage/' . $appSettings->logo_dark_path) }}" alt="Logo" class="w-full h-full object-cover hidden dark:block">
@@ -545,6 +571,17 @@
                             >
                                 <i data-lucide="inbox" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('savings.requests') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
                                 <span x-show="!sidebarCollapsed" class="truncate">Deposit Requests</span>
+                            </a>
+                            <!-- Withdrawal Requests -->
+                            <a 
+                                href="{{ route('savings.withdrawal-requests') }}" 
+                                class="group flex items-center gap-2 overflow-hidden rounded-[10px] text-sm outline-none transition-all duration-200 relative select-none cursor-pointer {{ Route::is('savings.withdrawal-requests') ? 'bg-zinc-100 dark:bg-zinc-800 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}"
+                                :class="sidebarCollapsed ? 'size-8 p-2 justify-center' : 'h-7 px-2 w-full'"
+                                title="Withdrawal Requests"
+                                x-show="!searchQuery || 'withdrawal requests'.includes(searchQuery.toLowerCase())"
+                            >
+                                <i data-lucide="arrow-up-right" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('savings.withdrawal-requests') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                <span x-show="!sidebarCollapsed" class="truncate">Withdrawals</span>
                             </a>
                             <!-- Transactions -->
                             <a 
@@ -717,6 +754,17 @@
                                 <i data-lucide="inbox" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('member.savings.requests') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
                                 <span x-show="!sidebarCollapsed" class="truncate">Deposit Requests</span>
                             </a>
+                            <!-- Withdrawal Requests -->
+                            <a 
+                                href="{{ route('member.savings.withdrawals') }}" 
+                                class="group flex items-center gap-2 overflow-hidden rounded-[10px] text-sm outline-none transition-all duration-200 relative select-none cursor-pointer {{ Route::is('member.savings.withdrawals') ? 'bg-zinc-100 dark:bg-zinc-800 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}"
+                                :class="sidebarCollapsed ? 'size-8 p-2 justify-center' : 'h-7 px-2 w-full'"
+                                title="Withdrawal Requests"
+                                x-show="!searchQuery || 'withdrawal requests'.includes(searchQuery.toLowerCase()) || 'my withdrawals'.includes(searchQuery.toLowerCase())"
+                            >
+                                <i data-lucide="arrow-up-right" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('member.savings.withdrawals') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
+                                <span x-show="!sidebarCollapsed" class="truncate">Withdrawals</span>
+                            </a>
                         </div>
                     </div>
 
@@ -789,7 +837,7 @@
                     x-show="userMenuOpen" 
                     x-cloak
                     @click.outside="userMenuOpen = false"
-                    class="absolute bottom-[100%] mb-2 left-2 right-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-1.5 shadow-xl z-50 flex flex-col gap-1 border-opacity-60"
+                    class="absolute bottom-[100%] mb-2 left-2 right-2 glass-surface border border-zinc-200/50 dark:border-white/10 rounded-xl p-1.5 shadow-2xl z-50 flex flex-col gap-1"
                 >
                     <div class="px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-zinc-400 dark:text-zinc-500 select-none">
                         User Account
@@ -848,7 +896,7 @@
                 x-transition:leave="transition ease-in-out duration-300 transform"
                 x-transition:leave-start="translate-x-0"
                 x-transition:leave-end="-translate-x-full"
-                class="relative flex w-full max-w-xs flex-1 flex-col bg-white dark:bg-zinc-900 pt-5 pb-4 border-r border-zinc-200/40 dark:border-zinc-800"
+                class="relative flex w-full max-w-xs flex-1 flex-col glass-surface pt-5 pb-4 border-r border-zinc-200/40 dark:border-white/10"
             >
                 <div class="absolute top-0 right-0 -mr-12 pt-2">
                     <button 
@@ -862,7 +910,7 @@
                 <!-- Logo Section -->
                 <div class="flex shrink-0 items-center px-5 mb-6">
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
-                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-black dark:bg-white text-white dark:text-black shadow-sm overflow-hidden">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-primary text-brand-primary-text shadow-sm overflow-hidden">
                             @if(isset($appSettings) && $appSettings->logo_light_path && $appSettings->logo_dark_path)
                                 <img src="{{ asset('storage/' . $appSettings->logo_light_path) }}" alt="Logo" class="w-full h-full object-cover dark:hidden">
                                 <img src="{{ asset('storage/' . $appSettings->logo_dark_path) }}" alt="Logo" class="w-full h-full object-cover hidden dark:block">
@@ -1040,10 +1088,10 @@
         </div>
 
         <!-- ================= MAIN BODY CONTAINER ================= -->
-        <div class="flex-grow flex flex-col min-w-0 overflow-hidden bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
+        <div class="flex-grow flex flex-col h-full min-w-0 min-h-0 overflow-hidden bg-transparent transition-colors duration-300">
             
             <!-- HEADER -->
-            <header class="h-[65px] border-b border-zinc-200/60 dark:border-zinc-800/60 px-4 md:px-6 flex items-center justify-between flex-shrink-0 z-35 bg-white dark:bg-zinc-900">
+            <header class="h-[65px] border-b border-zinc-200/50 dark:border-white/10 px-4 md:px-6 flex items-center justify-between flex-shrink-0 z-35 glass-surface shadow-xs">
                 <!-- Left: Burger Menu, Collapse Toggle & Page Title -->
                 <div class="flex items-center gap-4">
                     <button 
@@ -1056,7 +1104,7 @@
                     <!-- Sidebar Collapse Button inside the Header (Panel Toggle) -->
                     <button 
                         @click="sidebarCollapsed = !sidebarCollapsed" 
-                        class="hidden lg:flex p-2.5 border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl text-zinc-700 dark:text-zinc-300 bg-white/50 dark:bg-zinc-950/20 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all cursor-pointer shadow-xs active:scale-[0.97]"
+                        class="hidden lg:flex p-2.5 border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl text-zinc-700 dark:text-zinc-300 glass-button hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all cursor-pointer shadow-xs"
                         title="Toggle Sidebar"
                     >
                         <i data-lucide="sidebar" class="w-[15px] h-[15px]"></i>
@@ -1072,6 +1120,49 @@
                 <!-- Right: Search, Theme Toggle & Avatar Circle -->
                 <div class="flex items-center gap-3">
                     
+                    @if($member && $isMemberPortal)
+                        <!-- Member Current Balance Header Widget -->
+                        <div 
+                            x-data="{ showBalance: localStorage.getItem('member_balance_visible') !== 'false' }"
+                            class="flex items-center gap-2 px-3 h-9 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/90 dark:bg-zinc-950/90 backdrop-blur-md shadow-xs select-none"
+                        >
+                            <a 
+                                href="{{ Route::has('member.savings') ? route('member.savings') : '#' }}" 
+                                class="flex items-center gap-2 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer group"
+                                title="View Current Savings Balance details"
+                            >
+                                <i data-lucide="wallet" class="w-4 h-4 text-brand-primary shrink-0"></i>
+                                <span class="text-xs font-medium text-zinc-500 dark:text-zinc-400">Balance:</span>
+                                <span 
+                                    x-show="showBalance" 
+                                    class="text-xs font-bold text-zinc-950 dark:text-white font-display tracking-tight flex items-center"
+                                >
+                                    <span>$</span><span>{{ number_format($member->savings_balance, 2) }}</span>
+                                </span>
+                                <span 
+                                    x-show="!showBalance" 
+                                    x-cloak 
+                                    class="text-xs font-black tracking-widest text-zinc-400 dark:text-zinc-500"
+                                >
+                                    ••••••
+                                </span>
+                            </a>
+
+                            <div class="h-3.5 w-px bg-zinc-200 dark:bg-zinc-800"></div>
+
+                            <button 
+                                type="button" 
+                                @click="showBalance = !showBalance; localStorage.setItem('member_balance_visible', showBalance)"
+                                class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors cursor-pointer p-0.5 rounded flex items-center justify-center"
+                                :title="showBalance ? 'Hide balance' : 'Show balance'"
+                                aria-label="Toggle balance visibility"
+                            >
+                                <i data-lucide="eye" x-show="!showBalance" x-cloak class="w-3.5 h-3.5"></i>
+                                <i data-lucide="eye-off" x-show="showBalance" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    @endif
+
                     <!-- Search menus input (functional) -->
                     <div class="relative w-44 md:w-60 hidden md:block">
                         <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500 pointer-events-none">
@@ -1100,6 +1191,7 @@
 
                     <!-- Dark Mode Toggle Button -->
                     <button 
+                        id="theme-toggle-btn"
                         @click="darkMode = !darkMode"
                         class="p-2 rounded-lg border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                         title="Toggle Theme"
@@ -1111,9 +1203,9 @@
                     <!-- User Initials Circle Avatar Dropdown -->
                     <div class="relative shrink-0" x-data="{ open: false }">
                         <button 
-                            @click="open = !open"
+                            @click="open = !open" 
                             @click.outside="open = false"
-                            class="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-950 dark:bg-zinc-50 text-white dark:text-zinc-950 font-bold text-xs flex items-center justify-center cursor-pointer select-none hover:scale-105 active:scale-95 transition-transform duration-200 shadow-sm"
+                            class="w-8 h-8 rounded-full border border-black/10 dark:border-white/10 bg-brand-primary text-brand-primary-text font-bold text-xs flex items-center justify-center cursor-pointer select-none shadow-sm"
                         >
                             {{ $userInitials }}
                         </button>
@@ -1122,11 +1214,11 @@
                             x-show="open"
                             x-cloak
                             @click.outside="open = false"
-                            class="absolute right-0 top-10 w-56 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] z-50 overflow-hidden animate-swift-up-premium flex flex-col"
+                            class="absolute right-0 top-10 w-56 glass-surface border border-zinc-200/50 dark:border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col"
                         >
                             <!-- Profile Info Section (Same to same as TCG Agency) -->
                             <div class="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-3">
-                                <div class="w-9 h-9 rounded-full bg-zinc-950 dark:bg-zinc-50 text-white dark:text-zinc-950 font-bold text-sm flex items-center justify-center flex-shrink-0 select-none">
+                                <div class="w-9 h-9 rounded-full bg-brand-primary text-brand-primary-text font-bold text-sm flex items-center justify-center flex-shrink-0 select-none">
                                     {{ $userInitials }}
                                 </div>
                                 <div class="min-w-0 flex flex-col text-start">
@@ -1167,8 +1259,8 @@
                 </div>
             </header>
 
-            <!-- MAIN WORKSPACE CONTENT (Exactly structured layout to match TCG Agency) -->
-            <main class="flex-grow px-4 md:px-6 py-5 md:py-6 flex flex-col gap-6 overflow-y-auto w-full bg-zinc-50 dark:bg-zinc-950/50">
+            <!-- MAIN WORKSPACE CONTENT -->
+            <main class="flex-grow min-h-0 px-4 md:px-6 py-5 md:py-6 flex flex-col gap-6 overflow-y-auto w-full bg-transparent">
                 <!-- Toast Status Notification -->
                 @if(session('success'))
                     <div 

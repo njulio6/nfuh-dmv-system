@@ -35,10 +35,14 @@ class ReportsController extends Controller
                 'Borrower Name', 
                 'Amount ($)', 
                 'Duration (Months)', 
+                'Repayment Frequency', 
                 'Status', 
                 'Outstanding Balance ($)', 
                 'Repayment Due Date', 
                 'Disbursed At',
+                'Payout Method',
+                'Payout Details',
+                'Disbursement Details',
                 'Date Created'
             ]);
 
@@ -49,10 +53,14 @@ class ReportsController extends Controller
                     $loan->member->name,
                     number_format($loan->amount, 2, '.', ''),
                     $loan->duration_months,
+                    $loan->repayment_frequency === 'end_of_term' ? 'End of Term' : ucfirst($loan->repayment_frequency ?? 'monthly'),
                     ucfirst(str_replace('_', ' ', $loan->status)),
                     number_format($loan->remaining_balance, 2, '.', ''),
                     $loan->repayment_due_date ? $loan->repayment_due_date->format('Y-m-d') : '-',
                     $loan->disbursed_at ? $loan->disbursed_at->format('Y-m-d H:i:s') : '-',
+                    $loan->payout_method ? ucfirst(str_replace('_', ' ', $loan->payout_method)) : '-',
+                    $loan->payout_details ?: '-',
+                    $loan->disbursement_details ?: '-',
                     $loan->created_at->format('Y-m-d H:i:s')
                 ]);
             }
