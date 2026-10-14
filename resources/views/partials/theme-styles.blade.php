@@ -215,59 +215,58 @@
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
     }
 
-    /* ─── Premium Frosted Glass Stats Card (Ultra-Soft Elegant Gradient) ─── */
+    /* ─── Premium Frosted Glass Stats Card (Ultra-Soft, Gentle Glass Gradient) ─── */
     .stat-card-gradient {
         position: relative;
         border-radius: 1rem;
-        background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.035) 0%, rgba(var(--brand-secondary-rgb), 0.012) 40%, rgba(255, 255, 255, 0.86) 100%) !important;
+        background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.012) 0%, rgba(255, 255, 255, 0.82) 50%, rgba(255, 255, 255, 0.90) 100%) !important;
         backdrop-filter: blur(20px) saturate(180%);
         -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(var(--brand-primary-rgb), 0.08) !important;
-        box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.025), 0 1px 3px 0 rgba(0, 0, 0, 0.015), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.88) !important;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.025), 0 1px 3px 0 rgba(0, 0, 0, 0.015), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
         transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
 
     html.dark .stat-card-gradient {
-        background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.09) 0%, rgba(var(--brand-secondary-rgb), 0.035) 40%, rgba(20, 20, 26, 0.78) 100%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.07) !important;
-        box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
+        background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.025) 0%, rgba(20, 20, 26, 0.75) 50%, rgba(22, 22, 28, 0.82) 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.06) !important;
+        box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
     }
 
     .stat-card-gradient:hover {
-        background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.05) 0%, rgba(var(--brand-secondary-rgb), 0.018) 40%, rgba(255, 255, 255, 0.94) 100%) !important;
-        border-color: rgba(var(--brand-primary-rgb), 0.18) !important;
-        box-shadow: 0 6px 22px -3px rgba(var(--brand-primary-rgb), 0.08), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+        background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.02) 0%, rgba(255, 255, 255, 0.88) 50%, rgba(255, 255, 255, 0.95) 100%) !important;
+        border-color: rgba(255, 255, 255, 0.95) !important;
+        box-shadow: 0 6px 22px -3px rgba(0, 0, 0, 0.035), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
     }
 
     html.dark .stat-card-gradient:hover {
-        background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.12) 0%, rgba(var(--brand-secondary-rgb), 0.045) 40%, rgba(24, 24, 32, 0.84) 100%) !important;
-        border-color: rgba(var(--brand-primary-rgb), 0.25) !important;
-        box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+        background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.04) 0%, rgba(22, 22, 28, 0.78) 50%, rgba(24, 24, 32, 0.84) 100%) !important;
+        border-color: rgba(255, 255, 255, 0.09) !important;
+        box-shadow: 0 10px 28px -4px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
     }
 
-    /* Elevated Stat Icon Badge - Clean static appearance without zoom */
+    /* Elevated Stat Icon Badge - Soft refined appearance */
     .stat-icon-badge {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         border-radius: 0.75rem;
-        background-color: rgba(var(--brand-primary-rgb), 0.09) !important;
-        border: 1px solid rgba(var(--brand-primary-rgb), 0.22) !important;
+        background-color: rgba(var(--brand-primary-rgb), 0.05) !important;
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.10) !important;
         color: var(--brand-primary) !important;
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
-        transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        transition: background-color 0.2s ease;
     }
 
     html.dark .stat-icon-badge {
-        background-color: rgba(var(--brand-primary-rgb), 0.18) !important;
-        border: 1px solid rgba(var(--brand-primary-rgb), 0.35) !important;
+        background-color: rgba(var(--brand-primary-rgb), 0.08) !important;
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.15) !important;
         color: var(--brand-primary) !important;
     }
 
     .stat-card-gradient:hover .stat-icon-badge {
-        background-color: rgba(var(--brand-primary-rgb), 0.16) !important;
-        box-shadow: 0 4px 12px rgba(var(--brand-primary-rgb), 0.25);
+        background-color: rgba(var(--brand-primary-rgb), 0.08) !important;
     }
 
     /* ─── System-wide Frosted Glass Overrides ─── */

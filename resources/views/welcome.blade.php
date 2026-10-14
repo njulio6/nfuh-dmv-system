@@ -66,7 +66,7 @@
             [x-cloak] { display: none !important; }
         </style>
     </head>
-    <body class="font-sans antialiased bg-zinc-50 dark:bg-darkBg text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col justify-between transition-colors duration-200"
+    <body class="relative font-sans antialiased bg-zinc-50 dark:bg-darkBg text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col justify-between transition-colors duration-200 overflow-x-hidden"
           x-data="{ 
               darkMode: localStorage.getItem('theme') === 'dark',
               toggleTheme() {
@@ -81,6 +81,39 @@
               }
           }">
 
+        <!-- Modern Blurred Ambient Mesh & Glow System (Linear / Vercel Style) -->
+        <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10 select-none">
+            <!-- Top Hero Radial Aura -->
+            <div 
+                class="absolute -top-[12%] left-1/2 -translate-x-1/2 w-[130%] max-w-[1200px] h-[680px] opacity-45 dark:opacity-65 blur-[110px]"
+                style="background: radial-gradient(ellipse 65% 55% at 50% 18%, rgba(var(--brand-primary-rgb), 0.42), rgba(var(--brand-secondary-rgb), 0.22) 48%, transparent 75%);"
+            ></div>
+
+            <!-- Floating Brand Primary Orb (Left) -->
+            <div 
+                class="absolute top-[12%] -left-[10%] w-[540px] h-[540px] rounded-full blur-[140px] opacity-25 dark:opacity-35"
+                style="background: radial-gradient(circle, rgba(var(--brand-primary-rgb), 0.35) 0%, transparent 70%);"
+            ></div>
+
+            <!-- Floating Brand Secondary Orb (Right) -->
+            <div 
+                class="absolute top-[28%] -right-[10%] w-[480px] h-[480px] rounded-full blur-[140px] opacity-20 dark:opacity-30"
+                style="background: radial-gradient(circle, rgba(var(--brand-secondary-rgb), 0.35) 0%, transparent 70%);"
+            ></div>
+
+            <!-- Bottom Center Subtle Mesh Glow -->
+            <div 
+                class="absolute bottom-[5%] left-[25%] w-[620px] h-[460px] rounded-full blur-[160px] opacity-15 dark:opacity-25"
+                style="background: radial-gradient(circle, rgba(var(--brand-primary-rgb), 0.25) 0%, rgba(var(--brand-secondary-rgb), 0.15) 50%, transparent 70%);"
+            ></div>
+
+            <!-- Subtle Radial Dot Matrix Grid Pattern Overlay -->
+            <div 
+                class="absolute inset-0 opacity-15 dark:opacity-25"
+                style="background-image: radial-gradient(rgba(var(--brand-primary-rgb), 0.22) 1px, transparent 1px); background-size: 28px 28px; mask-image: radial-gradient(ellipse 70% 55% at 50% 30%, #000 20%, transparent 80%); -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 30%, #000 20%, transparent 80%);"
+            ></div>
+        </div>
+
         <!-- Navigation Header -->
         <header class="w-full max-w-7xl mx-auto px-6 lg:px-8 py-5 flex items-center justify-between z-10">
             <!-- Logo & Brand Name -->
@@ -91,7 +124,7 @@
             <!-- Right Nav Links & Theme Toggle -->
             <div class="flex items-center gap-4">
                 <!-- Theme Switcher -->
-                <button @click="toggleTheme()" class="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 shadow-sm transition-all cursor-pointer">
+                <button @click="toggleTheme()" class="p-2 rounded-xl glass-button text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white shadow-xs transition-all cursor-pointer" title="Toggle theme">
                     <!-- Sun Icon -->
                     <svg x-show="darkMode" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
@@ -105,15 +138,15 @@
                 @if (Route::has('login'))
                     <nav class="flex items-center gap-2">
                         @auth
-                            <a href="{{ url('/dashboard') }}" class="inline-flex items-center justify-center rounded-xl text-xs font-bold px-4 py-2 bg-zinc-950 text-white hover:bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-100 shadow-sm transition-all">
+                            <a href="{{ url('/dashboard') }}" class="inline-flex items-center justify-center rounded-xl text-xs font-bold px-4 py-2 bg-brand-primary text-brand-primary-text hover:brightness-110 shadow-sm transition-all">
                                 Dashboard
                             </a>
                         @else
-                            <a href="{{ route('login') }}" class="inline-flex items-center justify-center rounded-xl text-xs font-semibold px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">
+                            <a href="{{ route('login') }}" class="inline-flex items-center justify-center rounded-xl text-xs font-semibold px-4 py-2 glass-button text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white shadow-xs transition-all">
                                 Log in
                             </a>
                             @if (Route::has('register'))
-                                <a href="{{ route('register') }}" class="inline-flex items-center justify-center rounded-xl text-xs font-bold px-4 py-2 bg-zinc-950 text-white hover:bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-100 shadow-sm transition-all">
+                                <a href="{{ route('register') }}" class="inline-flex items-center justify-center rounded-xl text-xs font-bold px-4 py-2 bg-brand-primary text-brand-primary-text hover:brightness-110 shadow-sm transition-all">
                                     Register
                                 </a>
                             @endif
@@ -124,13 +157,13 @@
         </header>
 
         <!-- Main Hero & Feature Sections -->
-        <main class="w-full max-w-7xl mx-auto px-6 lg:px-8 py-10 lg:py-16 flex flex-col gap-16 lg:gap-24">
+        <main class="w-full max-w-7xl mx-auto px-6 lg:px-8 py-10 lg:py-16 flex flex-col gap-16 lg:gap-24 relative z-10">
             
             <!-- Hero Container -->
             <div class="text-center max-w-3xl mx-auto flex flex-col items-center gap-6">
                 <!-- Premium Badge -->
-                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-zinc-950/5 dark:bg-zinc-50/5 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
-                    <span class="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold glass-surface border border-zinc-200/80 dark:border-white/10 text-zinc-700 dark:text-zinc-300 shadow-xs">
+                    <span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     Community Co-op Workspace
                 </div>
 
@@ -148,17 +181,17 @@
                 <!-- Actions -->
                 <div class="flex flex-col sm:flex-row gap-3 items-center mt-2 w-full sm:w-auto">
                     @auth
-                        <a href="{{ url('/dashboard') }}" class="w-full sm:w-auto inline-flex items-center justify-center rounded-xl text-sm font-bold px-6 py-3.5 bg-zinc-950 text-white hover:bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-100 shadow-md transition-all">
+                        <a href="{{ url('/dashboard') }}" class="w-full sm:w-auto inline-flex items-center justify-center rounded-xl text-sm font-bold px-6 py-3.5 bg-brand-primary text-brand-primary-text hover:brightness-110 shadow-lg shadow-brand-primary/20 transition-all">
                             Enter Dashboard
                             <svg class="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
                         </a>
                     @else
-                        <a href="{{ route('login') }}" class="w-full sm:w-auto inline-flex items-center justify-center rounded-xl text-sm font-bold px-6 py-3.5 bg-zinc-950 text-white hover:bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-100 shadow-md transition-all">
+                        <a href="{{ route('login') }}" class="w-full sm:w-auto inline-flex items-center justify-center rounded-xl text-sm font-bold px-6 py-3.5 bg-brand-primary text-brand-primary-text hover:brightness-110 shadow-lg shadow-brand-primary/20 transition-all">
                             Get Started
                             <svg class="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7-7 7M3 12h18"></path></svg>
                         </a>
                         @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="w-full sm:w-auto inline-flex items-center justify-center rounded-xl text-sm font-bold px-6 py-3.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 shadow-sm transition-all">
+                            <a href="{{ route('register') }}" class="w-full sm:w-auto inline-flex items-center justify-center rounded-xl text-sm font-bold px-6 py-3.5 glass-button border border-zinc-200/80 dark:border-white/10 text-zinc-800 dark:text-zinc-200 hover:text-zinc-950 dark:hover:text-white shadow-xs transition-all">
                                 Request Membership
                             </a>
                         @endif
@@ -169,8 +202,8 @@
             <!-- Features Grid -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- Card 1: Njangi Cycles -->
-                <div class="group bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 flex flex-col gap-4 shadow-sm hover:shadow-md dark:hover:shadow-zinc-950/20 transition-all duration-300">
-                    <div class="flex aspect-square size-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-white font-bold group-hover:scale-105 transition-all">
+                <div class="group glass-surface rounded-2xl p-6 flex flex-col gap-4 shadow-xl border border-zinc-200/80 dark:border-white/10 hover:border-brand-primary/40 dark:hover:border-brand-primary/40 transition-all duration-300">
+                    <div class="flex aspect-square size-10 items-center justify-center rounded-xl bg-brand-primary/10 text-brand-primary font-bold transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17m-.002-4h.002v4m-.002 0H13"></path>
                         </svg>
@@ -184,8 +217,8 @@
                 </div>
 
                 <!-- Card 2: Reciprocal Balances -->
-                <div class="group bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 flex flex-col gap-4 shadow-sm hover:shadow-md dark:hover:shadow-zinc-950/20 transition-all duration-300">
-                    <div class="flex aspect-square size-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-white font-bold group-hover:scale-105 transition-all">
+                <div class="group glass-surface rounded-2xl p-6 flex flex-col gap-4 shadow-xl border border-zinc-200/80 dark:border-white/10 hover:border-brand-primary/40 dark:hover:border-brand-primary/40 transition-all duration-300">
+                    <div class="flex aspect-square size-10 items-center justify-center rounded-xl bg-brand-primary/10 text-brand-primary font-bold transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                         </svg>
@@ -199,8 +232,8 @@
                 </div>
 
                 <!-- Card 3: Dynamic Policies -->
-                <div class="group bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 flex flex-col gap-4 shadow-sm hover:shadow-md dark:hover:shadow-zinc-950/20 transition-all duration-300">
-                    <div class="flex aspect-square size-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-white font-bold group-hover:scale-105 transition-all">
+                <div class="group glass-surface rounded-2xl p-6 flex flex-col gap-4 shadow-xl border border-zinc-200/80 dark:border-white/10 hover:border-brand-primary/40 dark:hover:border-brand-primary/40 transition-all duration-300">
+                    <div class="flex aspect-square size-10 items-center justify-center rounded-xl bg-brand-primary/10 text-brand-primary font-bold transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
                         </svg>
@@ -217,7 +250,7 @@
         </main>
 
         <!-- Footer -->
-        <footer class="w-full border-t border-zinc-200 dark:border-zinc-900 bg-white/50 dark:bg-zinc-950/40 backdrop-blur-xs select-none">
+        <footer class="w-full border-t border-zinc-200/80 dark:border-white/10 bg-white/40 dark:bg-zinc-950/40 backdrop-blur-md select-none relative z-10">
             <div class="max-w-7xl mx-auto px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
                 <div class="flex items-center gap-1.5">
                     &copy; {{ date('Y') }} {{ !empty($appSettings->app_name) ? $appSettings->app_name : 'NFUH DMV' }}. All rights reserved.
