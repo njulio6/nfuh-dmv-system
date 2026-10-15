@@ -55,9 +55,30 @@
                             secondary: 'var(--brand-secondary)',
                             'secondary-text': 'var(--brand-secondary-text)',
                         },
-                        darkBg: '#09090b',
-                        darkCard: '#18181b',
-                        darkBorder: '#27272a',
+                        darkBg: '#0f1011',
+                        darkCard: '#191a1b',
+                        darkBorder: '#262729',
+                        zinc: {
+                            950: '#0f1011',
+                            905: '#141516',
+                            900: '#191a1b',
+                            850: '#212224',
+                            800: '#2a2b2d',
+                            750: '#333437',
+                            700: '#3d3f42',
+                            650: '#484a4d',
+                            600: '#55575b',
+                            555: '#66686d',
+                            500: '#787a80',
+                            450: '#8c8f95',
+                            400: '#a3a6ac',
+                            350: '#b4b7bd',
+                            300: '#c2c5cb',
+                            255: '#d0d3d9',
+                            200: '#e4e6eb',
+                            100: '#f0f2f5',
+                            50: '#f7f8fa',
+                        },
                     }
                 }
             }
@@ -134,7 +155,7 @@
             border-radius: 10px;
         }
         .dark ::-webkit-scrollbar-thumb {
-            background: #27272a;
+            background: #2a2b2d;
         }
         
         /* Base input styles — no !important so Tailwind focus classes can win */
@@ -155,9 +176,12 @@
         .dark input[type="text"], .dark input[type="email"], .dark input[type="number"], 
         .dark input[type="password"], .dark input[type="date"], .dark input[type="tel"], 
         .dark select, .dark textarea {
-            background-color: #09090b;
-            border-color: #27272a;
-            color: #f8fafc;
+            background-color: #2a2b2d;
+            border-color: #3d3f42;
+            color: #e4e6eb;
+        }
+        .dark input::placeholder, .dark textarea::placeholder {
+            color: #a3a6ac;
         }
         /* Global focus reset to prevent browser default outlines and blue border flashing */
         input:focus, select:focus, textarea:focus, button:focus, [role="button"]:focus,
@@ -176,7 +200,7 @@
             padding-bottom: 0.75rem;
         }
         .dark .page-header {
-            border-color: #27272a;
+            border-color: #262729;
         }
         .page-header h1, .page-header h2 {
             font-family: 'Outfit', sans-serif;
@@ -187,7 +211,7 @@
             margin: 0;
         }
         .dark .page-header h1, .dark .page-header h2 {
-            color: #f8fafc;
+            color: #e4e6eb;
         }
         
         .card {
@@ -201,9 +225,9 @@
             transition: border-color 0.25s ease, box-shadow 0.25s ease;
         }
         .dark .card {
-            background: rgba(20, 20, 26, 0.70) !important;
-            border: 1px solid rgba(255, 255, 255, 0.08) !important;
-            box-shadow: 0 14px 36px -10px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
+            background: #191a1b !important;
+            border: 1px solid #262729 !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
         }
         
         .btn, button.btn {
@@ -240,12 +264,12 @@
             border: 1px solid #d4d4d8;
         }
         .dark .btn-secondary, .dark a.btn-secondary {
-            background-color: #27272a;
-            color: #e4e4e7;
-            border-color: #3f3f46;
+            background-color: #2a2b2d;
+            color: #e4e6eb;
+            border-color: #3d3f42;
         }
-        .btn-secondary:hover, .dark .btn-secondary:hover {
-            background-color: #e4e4e7;
+        .dark .btn-secondary:hover, .dark a.btn-secondary:hover {
+            background-color: #3d3f42;
         }
         
         table {
@@ -265,9 +289,9 @@
             border-bottom: 1px solid #e4e4e7;
         }
         .dark th {
-            background-color: #18181b;
-            color: #a1a1aa;
-            border-color: #27272a;
+            background-color: #191a1b;
+            color: #a3a6ac;
+            border-color: #262729;
         }
         td {
             padding: 0.625rem 0.75rem;
@@ -275,21 +299,21 @@
             color: #27272a;
         }
         .dark td {
-            border-color: #27272a;
-            color: #d4d4d8;
+            border-color: #262729;
+            color: #e4e6eb;
         }
         tr:hover td {
             background-color: #f4f4f5;
         }
         .dark tr:hover td {
-            background-color: #18181b;
+            background-color: #212224;
         }
         
         /* Premium custom sidebar classes (Same to same as TCG Agency) */
         .sidebar-text-primary { color: #18181b !important; }
-        .dark .sidebar-text-primary { color: #f4f4f5 !important; }
+        .dark .sidebar-text-primary { color: #e4e6eb !important; }
         .sidebar-text-secondary { color: oklch(0.129 0.042 264.695) !important; }
-        .dark .sidebar-text-secondary { color: #a1a1aa !important; }
+        .dark .sidebar-text-secondary { color: #a3a6ac !important; }
         
         @keyframes swift-up-premium {
             0% {

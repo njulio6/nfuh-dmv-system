@@ -171,9 +171,9 @@
     }
 
     html.dark .glass-surface {
-        background: rgba(20, 20, 26, 0.70) !important;
+        background: rgba(25, 26, 27, 0.92) !important;
         border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        box-shadow: 0 14px 36px -10px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
+        box-shadow: 0 14px 36px -10px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
     }
 
     .glass-surface-interactive:hover {
@@ -203,16 +203,16 @@
     }
 
     html.dark .glass-button {
-        background: rgba(28, 28, 36, 0.68) !important;
+        background: rgba(42, 43, 45, 0.85) !important;
         border: 1px solid rgba(255, 255, 255, 0.10) !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
         transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     html.dark .glass-button:hover {
-        background: rgba(38, 38, 48, 0.85) !important;
+        background: rgba(60, 61, 64, 0.95) !important;
         border-color: rgba(var(--brand-primary-rgb), 0.45) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
     }
 
     /* ─── Premium Frosted Glass Stats Card (Ultra-Soft, Gentle Glass Gradient) ─── */
@@ -228,9 +228,9 @@
     }
 
     html.dark .stat-card-gradient {
-        background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.025) 0%, rgba(20, 20, 26, 0.75) 50%, rgba(22, 22, 28, 0.82) 100%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.06) !important;
-        box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+        background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.025) 0%, rgba(25, 26, 27, 0.92) 50%, rgba(27, 28, 30, 0.95) 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.07) !important;
+        box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
     }
 
     .stat-card-gradient:hover {
@@ -240,7 +240,7 @@
     }
 
     html.dark .stat-card-gradient:hover {
-        background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.04) 0%, rgba(22, 22, 28, 0.78) 50%, rgba(24, 24, 32, 0.84) 100%) !important;
+        background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.04) 0%, rgba(30, 31, 33, 0.95) 50%, rgba(32, 33, 35, 0.98) 100%) !important;
         border-color: rgba(255, 255, 255, 0.09) !important;
         box-shadow: 0 10px 28px -4px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
     }
@@ -283,9 +283,9 @@
     html.dark .glass-panel,
     html.dark .table-container,
     html.dark .filter-bar {
-        background: rgba(20, 20, 26, 0.70) !important;
+        background: rgba(25, 26, 27, 0.92) !important;
         border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        box-shadow: 0 14px 36px -10px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
+        box-shadow: 0 14px 36px -10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
     }
 
     /* Modal dialog frosted glass */
@@ -298,8 +298,8 @@
     }
 
     html.dark .modal-glass {
-        background: rgba(20, 20, 26, 0.80) !important;
+        background: rgba(25, 26, 27, 0.96) !important;
         border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
     }
 </style>
