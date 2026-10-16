@@ -38,6 +38,22 @@
         openRemarkModal(title, status, memberName, date, content) {
             this.activeRemark = { title, status, memberName, date, content };
             this.showRemarkModal = true;
+        },
+        getPayoutPairs(raw) {
+            if (!raw) return [];
+            if (!raw.includes('|') && !raw.includes(':')) {
+                return [{ label: 'Details', value: raw }];
+            }
+            return raw.split('|').map(part => {
+                let idx = part.indexOf(':');
+                if (idx !== -1) {
+                    return {
+                        label: part.substring(0, idx).trim(),
+                        value: part.substring(idx + 1).trim()
+                    };
+                }
+                return { label: '', value: part.trim() };
+            }).filter(item => item.value && item.value.length > 0);
         }
     }"
     class="w-full flex flex-col gap-6 animate-fadeIn"
@@ -186,9 +202,9 @@
                                         selectedGrossAmount = '{{ number_format($req->gross_amount, 2) }}';
                                         selectedFeeAmount = '{{ number_format($req->fee_amount, 2) }}';
                                         selectedNetAmount = '{{ number_format($req->net_amount, 2) }}';
-                                        selectedMemberName = '{{ addslashes($req->member->name) }}';
-                                        selectedPayoutMethod = '{{ ucfirst(str_replace('_', ' ', $req->payout_method)) }}';
-                                        selectedPayoutDetails = '{{ addslashes($req->payout_details) }}';
+                                        selectedMemberName = {{ json_encode($req->member->name) }};
+                                        selectedPayoutMethod = {{ json_encode(ucfirst(str_replace('_', ' ', $req->payout_method))) }};
+                                        selectedPayoutDetails = {{ json_encode($req->payout_details) }};
                                         showApproveModal = true;
                                     "
                                     class="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 transition-all cursor-pointer"
@@ -200,7 +216,7 @@
                                     type="button" 
                                     @click="
                                         selectedRequestId = '{{ $req->id }}';
-                                        selectedMemberName = '{{ addslashes($req->member->name) }}';
+                                        selectedMemberName = {{ json_encode($req->member->name) }};
                                         selectedGrossAmount = '{{ number_format($req->gross_amount, 2) }}';
                                         rejectionReason = '';
                                         showRejectModal = true;
@@ -348,55 +364,107 @@
     >
         <div 
             @click.away="showApproveModal = false" 
-            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl max-w-md w-full p-6 flex flex-col gap-4 animate-scaleIn"
+            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl max-w-lg w-full p-6 flex flex-col gap-5 animate-scaleIn"
         >
-            <div class="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
-                <h3 class="text-base font-bold text-zinc-900 dark:text-white">Approve Withdrawal Request</h3>
-                <button type="button" @click="showApproveModal = false" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
-                    <i data-lucide="x" class="w-5 h-5"></i>
+            <!-- Header -->
+            <div class="flex items-start justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-900 dark:text-white shrink-0 border border-zinc-200/60 dark:border-zinc-700/60">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    </div>
+                    <div class="flex flex-col">
+                        <h3 class="text-base font-bold text-zinc-900 dark:text-white">Approve Withdrawal Request</h3>
+                        <span class="text-xs text-zinc-500">Review amounts and payout destination before debiting savings</span>
+                    </div>
+                </div>
+                <button type="button" @click="showApproveModal = false" class="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
 
-            <p class="text-xs text-zinc-600 dark:text-zinc-400">
-                You are approving savings payout for <strong class="text-zinc-900 dark:text-white" x-text="selectedMemberName"></strong>.
-            </p>
-
-            <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col gap-1.5 text-xs font-mono">
-                <div class="flex justify-between">
-                    <span class="text-zinc-500">Gross Debit Amount:</span>
-                    <span class="font-bold text-zinc-900 dark:text-white">$<span x-text="selectedGrossAmount"></span></span>
+            <!-- Recipient & Financial Summary Card -->
+            <div class="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-zinc-50/50 dark:bg-zinc-950/40">
+                <div class="px-4 py-2.5 bg-zinc-100/60 dark:bg-zinc-900/60 border-b border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Recipient Member</span>
+                    <span class="text-xs font-bold text-zinc-900 dark:text-white" x-text="selectedMemberName"></span>
                 </div>
-                <div class="flex justify-between">
-                    <span class="text-zinc-500">Processing Fee:</span>
-                    <span class="text-amber-600 dark:text-amber-400">-$<span x-text="selectedFeeAmount"></span></span>
-                </div>
-                <div class="flex justify-between border-t border-zinc-200 dark:border-zinc-800 pt-1 font-bold">
-                    <span>Net Disbursable:</span>
-                    <span class="text-emerald-600 dark:text-emerald-400">$<span x-text="selectedNetAmount"></span></span>
+                <div class="p-3.5 flex flex-col gap-2.5 text-xs">
+                    <div class="flex items-center justify-between text-zinc-600 dark:text-zinc-400">
+                        <span>Gross Debit Amount</span>
+                        <span class="font-bold font-mono text-zinc-900 dark:text-white text-xs">$<span x-text="selectedGrossAmount"></span></span>
+                    </div>
+                    <div class="flex items-center justify-between text-zinc-600 dark:text-zinc-400">
+                        <span>Processing Fee</span>
+                        <span class="font-bold font-mono text-amber-600 dark:text-amber-400 text-xs">-$<span x-text="selectedFeeAmount"></span></span>
+                    </div>
+                    <div class="pt-2 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                        <span class="font-bold text-zinc-900 dark:text-white">Net Disbursable Payout</span>
+                        <span class="font-extrabold font-mono text-emerald-600 dark:text-emerald-400 text-base">$<span x-text="selectedNetAmount"></span></span>
+                    </div>
                 </div>
             </div>
 
-            <div class="text-xs text-zinc-500">
-                <strong>Disburse via:</strong> <span x-text="selectedPayoutMethod"></span> (<span x-text="selectedPayoutDetails"></span>)
+            <!-- Payout Destination Details Card -->
+            <div class="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-zinc-50/50 dark:bg-zinc-950/40 p-4 flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-500"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                            Disbursement Destination
+                        </span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-800 shadow-3xs" x-text="selectedPayoutMethod"></span>
+                </div>
+
+                <!-- Structured Grid -->
+                <template x-if="getPayoutPairs(selectedPayoutDetails).length > 0">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <template x-for="(pair, idx) in getPayoutPairs(selectedPayoutDetails)" :key="idx">
+                            <div 
+                                class="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col gap-0.5 shadow-3xs"
+                                :class="(pair.label.toLowerCase() === 'delivery' || pair.label.toLowerCase() === 'address' || getPayoutPairs(selectedPayoutDetails).length === 1) ? 'sm:col-span-2' : ''"
+                            >
+                                <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500" x-text="pair.label || 'Detail'"></span>
+                                <span class="font-mono font-semibold text-zinc-900 dark:text-zinc-100 text-xs break-all" x-text="pair.value"></span>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+                <template x-if="getPayoutPairs(selectedPayoutDetails).length === 0">
+                    <div class="text-xs text-zinc-500 italic">No payout details provided.</div>
+                </template>
             </div>
 
-            <form :action="'{{ url('/savings/withdrawal-requests') }}/' + selectedRequestId + '/approve'" method="POST" class="flex flex-col gap-3">
+            <!-- Form -->
+            <form :action="'{{ url('/savings/withdrawal-requests') }}/' + selectedRequestId + '/approve'" method="POST" class="flex flex-col gap-4">
                 @csrf
-                <div class="flex flex-col gap-1">
-                    <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-                        Admin Note (Optional)
-                    </label>
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex items-center justify-between">
+                        <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                            Admin Note / Confirmation Ref
+                        </label>
+                        <span class="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">Optional</span>
+                    </div>
                     <input 
                         type="text" 
                         name="admin_notes" 
                         placeholder="e.g. Disbursed via Zelle confirmation #12345"
-                        class="w-full bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs"
+                        class="w-full bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all shadow-2xs"
                     />
                 </div>
 
-                <div class="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                    <button type="button" @click="showApproveModal = false" class="px-4 py-2 text-xs font-semibold rounded-xl text-zinc-500">Cancel</button>
-                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm">
+                <div class="flex items-center gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                    <button 
+                        type="button" 
+                        @click="showApproveModal = false" 
+                        class="flex-1 py-2.5 text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all cursor-pointer select-none"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        type="submit" 
+                        class="flex-1 py-2.5 text-xs font-bold bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 rounded-xl shadow-xs transition-all active:scale-[0.98] cursor-pointer select-none"
+                    >
                         Confirm & Debit Savings
                     </button>
                 </div>
@@ -417,8 +485,8 @@
         >
             <div class="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
                 <h3 class="text-base font-bold text-zinc-900 dark:text-white">Reject Withdrawal Request</h3>
-                <button type="button" @click="showRejectModal = false" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
-                    <i data-lucide="x" class="w-5 h-5"></i>
+                <button type="button" @click="showRejectModal = false" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
 
@@ -426,9 +494,9 @@
                 Please provide a mandatory reason for rejecting this withdrawal request for <strong class="text-zinc-900 dark:text-white" x-text="selectedMemberName"></strong>. The member will be able to see this reason.
             </p>
 
-            <form :action="'{{ url('/savings/withdrawal-requests') }}/' + selectedRequestId + '/reject'" method="POST" class="flex flex-col gap-3">
+            <form :action="'{{ url('/savings/withdrawal-requests') }}/' + selectedRequestId + '/reject'" method="POST" class="flex flex-col gap-3.5">
                 @csrf
-                <div class="flex flex-col gap-1">
+                <div class="flex flex-col gap-1.5">
                     <label class="text-[11px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
                         Mandatory Rejection Reason *
                     </label>
@@ -438,13 +506,13 @@
                         required 
                         minlength="3"
                         placeholder="Explain clearly why this withdrawal cannot be approved (e.g. Invalid Zelle info, unconfirmed identity)"
-                        class="w-full bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs focus:border-rose-500"
+                        class="w-full bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs focus:border-rose-500 shadow-2xs resize-none"
                     ></textarea>
                 </div>
 
-                <div class="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                    <button type="button" @click="showRejectModal = false" class="px-4 py-2 text-xs font-semibold rounded-xl text-zinc-500">Cancel</button>
-                    <button type="submit" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm">
+                <div class="flex items-center gap-3 pt-2.5 border-t border-zinc-100 dark:border-zinc-800">
+                    <button type="button" @click="showRejectModal = false" class="flex-1 py-2.5 text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all cursor-pointer select-none">Cancel</button>
+                    <button type="submit" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-[0.98] cursor-pointer select-none">
                         Confirm Rejection
                     </button>
                 </div>
@@ -602,9 +670,24 @@
             </div>
 
             <!-- Content Card -->
-            <div class="p-4 rounded-xl border bg-zinc-50 dark:bg-zinc-950 border-zinc-200/60 dark:border-zinc-800 flex flex-col gap-2">
+            <div class="p-3.5 rounded-xl border bg-zinc-50/50 dark:bg-zinc-950/40 border-zinc-200/80 dark:border-zinc-800/80 flex flex-col gap-2.5">
                 <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Destination Account / Address:</span>
-                <p class="text-xs sm:text-sm font-mono text-zinc-900 dark:text-zinc-100 leading-relaxed whitespace-pre-wrap break-words" x-text="activePayoutDetails"></p>
+                <template x-if="getPayoutPairs(activePayoutDetails).length > 0">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <template x-for="(pair, idx) in getPayoutPairs(activePayoutDetails)" :key="idx">
+                            <div 
+                                class="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col gap-0.5 shadow-3xs"
+                                :class="(pair.label.toLowerCase() === 'delivery' || pair.label.toLowerCase() === 'address' || getPayoutPairs(activePayoutDetails).length === 1) ? 'sm:col-span-2' : ''"
+                            >
+                                <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500" x-text="pair.label || 'Detail'"></span>
+                                <span class="font-mono font-semibold text-zinc-900 dark:text-zinc-100 text-xs break-all" x-text="pair.value"></span>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+                <template x-if="getPayoutPairs(activePayoutDetails).length === 0">
+                    <p class="text-xs font-mono text-zinc-900 dark:text-zinc-100" x-text="activePayoutDetails"></p>
+                </template>
             </div>
 
             <div class="pt-2 flex items-center justify-between gap-2.5">

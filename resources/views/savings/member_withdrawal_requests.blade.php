@@ -31,6 +31,7 @@
         gross: '',
         feePercent: {{ $appSettings->savings_withdrawal_fee_percent ?? 2.00 }},
         payoutMethod: 'zelle',
+        bankAccountType: 'checking',
         get feeAmount() {
             let val = parseFloat(this.gross) || 0;
             return (val * (this.feePercent / 100)).toFixed(2);
@@ -151,7 +152,7 @@
                     <td class="px-3.5 py-3.5 text-xs sm:text-sm">
                         <button 
                             type="button" 
-                            @click="openPayoutModal({{ json_encode(ucfirst(str_replace('_', ' ', $req->payout_method))) }}, {{ json_encode($req->payout_details) }})"
+                            @click="openPayoutModal({{ json_encode(ucfirst(str_replace('_', ' ', $req->payout_method))) }}, {{ json_encode($req->masked_payout_details) }})"
                             class="group inline-flex items-center gap-1.5 text-left cursor-pointer focus:outline-none"
                             title="View Payout Destination Details"
                         >
@@ -420,18 +421,154 @@
                     </x-dropdown>
                 </div>
 
-                <!-- Payout Details -->
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-                        Payout Destination & Details
-                    </label>
-                    <textarea 
-                        name="payout_details" 
-                        rows="2" 
-                        required
-                        :placeholder="payoutMethod === 'zelle' ? 'Enter Zelle Phone Number or Email Address' : (payoutMethod === 'bank_transfer' ? 'Bank Name, Routing Number, Account Number, Account Type' : 'Mailing address or pickup contact')"
-                        class="w-full bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-medium focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-700"
-                    ></textarea>
+                <!-- Method-Specific Payout Details (Mandatory) -->
+                <div class="flex flex-col gap-2 p-3.5 bg-zinc-50/70 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+                    <div class="flex items-center justify-between">
+                        <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200 flex items-center gap-1">
+                            <span>Payout Destination Details <span class="text-red-500">*</span></span>
+                        </label>
+                        <span class="text-[10px] text-red-500 font-semibold uppercase tracking-wider">Required</span>
+                    </div>
+
+                    <!-- Zelle Inputs -->
+                    <div x-show="payoutMethod === 'zelle'" class="flex flex-col gap-2.5">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">Recipient Full Name <span class="text-red-500">*</span></label>
+                            <input 
+                                type="text" 
+                                name="zelle_name" 
+                                :required="payoutMethod === 'zelle'"
+                                placeholder="Full legal name on Zelle account"
+                                class="w-full bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-medium focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
+                            />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">Registered Zelle Phone or Email <span class="text-red-500">*</span></label>
+                            <input 
+                                type="text" 
+                                name="zelle_contact" 
+                                :required="payoutMethod === 'zelle'"
+                                placeholder="e.g. member@email.com or (555) 123-4567"
+                                class="w-full bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-medium focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Direct Bank Transfer Inputs -->
+                    <div x-show="payoutMethod === 'bank_transfer'" class="flex flex-col gap-2.5">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div class="flex flex-col gap-1">
+                                <label class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">Account Holder Name <span class="text-red-500">*</span></label>
+                                <input 
+                                    type="text" 
+                                    name="bank_account_holder" 
+                                    :required="payoutMethod === 'bank_transfer'"
+                                    placeholder="Account holder name"
+                                    class="w-full bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-medium focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
+                                />
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">Bank Name <span class="text-red-500">*</span></label>
+                                <input 
+                                    type="text" 
+                                    name="bank_name" 
+                                    :required="payoutMethod === 'bank_transfer'"
+                                    placeholder="e.g. Chase, Wells Fargo, BoA"
+                                    class="w-full bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-medium focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
+                                />
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div class="flex flex-col gap-1">
+                                <label class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">Routing Number <span class="text-red-500">*</span></label>
+                                <input 
+                                    type="text" 
+                                    name="bank_routing_number" 
+                                    maxlength="9"
+                                    pattern="[0-9]{9}"
+                                    :required="payoutMethod === 'bank_transfer'"
+                                    placeholder="Routing number"
+                                    class="w-full bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-mono font-medium focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
+                                />
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">Account Number <span class="text-red-500">*</span></label>
+                                <input 
+                                    type="text" 
+                                    name="bank_account_number" 
+                                    :required="payoutMethod === 'bank_transfer'"
+                                    placeholder="Full account number"
+                                    class="w-full bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-mono font-medium focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
+                                />
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">Account Type <span class="text-red-500">*</span></label>
+                            <input type="hidden" name="bank_account_type" :value="bankAccountType" :required="payoutMethod === 'bank_transfer'">
+                            <x-dropdown align="left" width="w-full" contentClasses="p-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl flex flex-col gap-0.5">
+                                <x-slot name="trigger">
+                                    <button 
+                                        type="button" 
+                                        class="w-full flex items-center justify-between bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 text-zinc-900 dark:text-white px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all cursor-pointer text-left"
+                                    >
+                                        <span x-text="bankAccountType === 'checking' ? 'Checking Account' : 'Savings Account'"></span>
+                                        <svg class="h-4 w-4 text-zinc-400 dark:text-zinc-500 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </x-slot>
+
+                                <x-slot name="content">
+                                    <button 
+                                        type="button" 
+                                        @click="bankAccountType = 'checking'" 
+                                        class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left select-none"
+                                        :class="bankAccountType === 'checking' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
+                                    >
+                                        <span>Checking Account</span>
+                                        <span x-show="bankAccountType === 'checking'" class="text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        @click="bankAccountType = 'savings'" 
+                                        class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left select-none"
+                                        :class="bankAccountType === 'savings' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
+                                    >
+                                        <span>Savings Account</span>
+                                        <span x-show="bankAccountType === 'savings'" class="text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                                    </button>
+                                </x-slot>
+                            </x-dropdown>
+                        </div>
+                        <div class="text-[10px] text-zinc-400 dark:text-zinc-500 flex items-center gap-1 pt-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            <span>Bank account numbers are protected and accessible only to authorized financial officers.</span>
+                        </div>
+                    </div>
+
+                    <!-- Paper Check Inputs -->
+                    <div x-show="payoutMethod === 'check'" class="flex flex-col gap-2.5">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">Check Payee Name <span class="text-red-500">*</span></label>
+                            <input 
+                                type="text" 
+                                name="check_payee_name" 
+                                :required="payoutMethod === 'check'"
+                                placeholder="Legal name to print on the check"
+                                class="w-full bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-medium focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
+                            />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">Mailing Address / Pickup Instructions <span class="text-red-500">*</span></label>
+                            <textarea 
+                                name="check_delivery_address" 
+                                rows="2"
+                                :required="payoutMethod === 'check'"
+                                placeholder="Street address, City, State, ZIP code, or specific in-person collection request"
+                                class="w-full bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-medium focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 resize-none"
+                            ></textarea>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Member Notes -->

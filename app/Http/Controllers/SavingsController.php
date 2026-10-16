@@ -414,15 +414,71 @@ class SavingsController extends Controller
 
         $availableBalance = (float) $member->available_savings_balance;
 
-        $validated = $request->validate([
+        $rules = [
             'gross_amount' => ['required', 'numeric', 'min:1', 'max:' . $availableBalance],
             'payout_method' => ['required', 'string', 'in:zelle,bank_transfer,check'],
-            'payout_details' => ['required', 'string', 'max:1000'],
             'notes' => ['nullable', 'string', 'max:1000'],
-        ], [
+        ];
+
+        $payoutMethod = $request->input('payout_method');
+        $hasStructuredFields = false;
+
+        if ($payoutMethod === 'zelle') {
+            if ($request->hasAny(['zelle_name', 'zelle_contact']) || !$request->has('payout_details')) {
+                $hasStructuredFields = true;
+                $rules['zelle_name'] = ['required', 'string', 'min:2', 'max:255'];
+                $rules['zelle_contact'] = ['required', 'string', 'min:4', 'max:255'];
+            } else {
+                $rules['payout_details'] = ['required', 'string', 'min:4', 'max:1000'];
+            }
+        } elseif ($payoutMethod === 'bank_transfer') {
+            if ($request->hasAny(['bank_account_holder', 'bank_name', 'bank_routing_number', 'bank_account_number']) || !$request->has('payout_details')) {
+                $hasStructuredFields = true;
+                $rules['bank_account_holder'] = ['required', 'string', 'min:2', 'max:255'];
+                $rules['bank_name'] = ['required', 'string', 'min:2', 'max:255'];
+                $rules['bank_routing_number'] = ['required', 'digits:9'];
+                $rules['bank_account_number'] = ['required', 'string', 'min:4', 'max:30'];
+                $rules['bank_account_type'] = ['required', 'string', 'in:checking,savings'];
+            } else {
+                $rules['payout_details'] = ['required', 'string', 'min:5', 'max:1000'];
+            }
+        } elseif ($payoutMethod === 'check') {
+            if ($request->hasAny(['check_payee_name', 'check_delivery_address']) || !$request->has('payout_details')) {
+                $hasStructuredFields = true;
+                $rules['check_payee_name'] = ['required', 'string', 'min:2', 'max:255'];
+                $rules['check_delivery_address'] = ['required', 'string', 'min:5', 'max:1000'];
+            } else {
+                $rules['payout_details'] = ['required', 'string', 'min:5', 'max:1000'];
+            }
+        }
+
+        $validated = $request->validate($rules, [
             'gross_amount.max' => 'The withdrawal amount cannot exceed your available savings balance of $' . number_format($availableBalance, 2) . '.',
             'gross_amount.min' => 'The minimum withdrawal amount is $1.00.',
+            'zelle_name.required' => 'Recipient full name is required for Zelle payouts.',
+            'zelle_contact.required' => 'Registered Zelle phone number or email address is required.',
+            'bank_account_holder.required' => 'Account holder full name is required for bank transfers.',
+            'bank_name.required' => 'Bank name is required.',
+            'bank_routing_number.required' => 'A valid 9-digit routing number is required.',
+            'bank_routing_number.digits' => 'Routing number must be exactly 9 digits.',
+            'bank_account_number.required' => 'Account number is required.',
+            'bank_account_type.required' => 'Account type (Checking or Savings) is required.',
+            'check_payee_name.required' => 'Payee name is required for check issuance.',
+            'check_delivery_address.required' => 'Delivery mailing address or pickup instructions are required.',
+            'payout_details.required' => 'Payout destination details are required and cannot be empty.',
         ]);
+
+        $finalPayoutDetails = $validated['payout_details'] ?? '';
+        if ($hasStructuredFields) {
+            if ($payoutMethod === 'zelle') {
+                $finalPayoutDetails = "Recipient: {$validated['zelle_name']} | Contact: {$validated['zelle_contact']}";
+            } elseif ($payoutMethod === 'bank_transfer') {
+                $typeStr = ucfirst($validated['bank_account_type'] ?? 'Checking');
+                $finalPayoutDetails = "Holder: {$validated['bank_account_holder']} | Bank: {$validated['bank_name']} | Routing: {$validated['bank_routing_number']} | Account: {$validated['bank_account_number']} | Type: {$typeStr}";
+            } elseif ($payoutMethod === 'check') {
+                $finalPayoutDetails = "Payee: {$validated['check_payee_name']} | Delivery: {$validated['check_delivery_address']}";
+            }
+        }
 
         $feePercent = (float) (Setting::first()?->savings_withdrawal_fee_percent ?? 2.00);
         $grossAmount = (float) $validated['gross_amount'];
@@ -437,7 +493,7 @@ class SavingsController extends Controller
             'fee_amount' => $feeAmount,
             'net_amount' => $netAmount,
             'payout_method' => $validated['payout_method'],
-            'payout_details' => $validated['payout_details'],
+            'payout_details' => $finalPayoutDetails,
             'notes' => $validated['notes'] ?? null,
             'status' => 'pending',
         ]);

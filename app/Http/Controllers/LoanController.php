@@ -69,7 +69,7 @@ class LoanController extends Controller
         }
 
         $query = LoanRequest::where('status', $status)
-            ->with(['member', 'guarantors.guarantorMember', 'repayments', 'subStatus']);
+            ->with(['member', 'guarantors.guarantorMember', 'repayments', 'subStatus', 'disbursedBy']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -167,29 +167,44 @@ class LoanController extends Controller
         }
 
         $validated = $request->validate([
+            'disbursement_method' => ['required', 'string', 'max:50'],
+            'disbursement_destination' => ['required', 'string', 'min:3', 'max:1000'],
+            'disbursement_reference' => ['required', 'string', 'min:2', 'max:255'],
+            'disbursement_date' => ['required', 'date', 'before_or_equal:today'],
+            'disbursement_proof' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf,webp', 'max:5120'],
             'disbursement_details' => ['nullable', 'string', 'max:2000'],
-            'disbursement_proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf,webp', 'max:5120'],
+        ], [
+            'disbursement_method.required' => 'A payment method is mandatory to confirm disbursement.',
+            'disbursement_destination.required' => 'Recipient / payout destination details are mandatory.',
+            'disbursement_reference.required' => 'A transaction reference, check number, or payment identifier is mandatory.',
+            'disbursement_date.required' => 'Disbursement date is mandatory.',
+            'disbursement_date.before_or_equal' => 'Disbursement date cannot be a future date.',
+            'disbursement_proof.required' => 'Supporting payment receipt or transfer proof document is mandatory.',
+            'disbursement_proof.mimes' => 'Receipt proof document must be a JPG, PNG, WEBP, or PDF file.',
+            'disbursement_proof.max' => 'Receipt proof document cannot exceed 5MB.',
         ]);
 
-        $proofPath = null;
-        if ($request->hasFile('disbursement_proof')) {
-            $proofPath = $request->file('disbursement_proof')->store('loan_disbursements', 'public');
-        }
+        $proofPath = $request->file('disbursement_proof')->store('loan_disbursements', 'public');
 
-        $updateData = [
+        $disbursedDate = \Carbon\Carbon::parse($validated['disbursement_date']);
+        $disbursedAt = $disbursedDate->isToday() 
+            ? now() 
+            : $disbursedDate->copy()->setTime(now()->hour, now()->minute, now()->second);
+
+        $loan->update([
             'status' => 'active',
-            'disbursed_at' => now(),
-            'repayment_due_date' => now()->addMonths($loan->duration_months)->toDateString(),
+            'disbursed_at' => $disbursedAt,
+            'disbursed_date' => $validated['disbursement_date'],
+            'disbursed_by_user_id' => \Illuminate\Support\Facades\Auth::id(),
+            'disbursement_method' => $validated['disbursement_method'],
+            'disbursement_destination' => $validated['disbursement_destination'],
+            'disbursement_reference' => $validated['disbursement_reference'],
+            'disbursement_proof' => $proofPath,
             'disbursement_details' => $validated['disbursement_details'] ?? null,
-        ];
+            'repayment_due_date' => $disbursedDate->copy()->addMonths($loan->duration_months)->toDateString(),
+        ]);
 
-        if ($proofPath) {
-            $updateData['disbursement_proof'] = $proofPath;
-        }
-
-        $loan->update($updateData);
-
-        return redirect()->route('loans.index')->with('success', 'Loan funds marked as disbursed and active.');
+        return redirect()->route('loans.index')->with('success', 'Loan funds marked as disbursed and active with verified audit documentation.');
     }
 
     /**

@@ -200,7 +200,14 @@ test('admin can approve and disburse loan, and record repayment lifecycle', func
     expect($loan->fresh()->status)->toEqual('approved');
 
     // Admin disburses
-    $response = $this->actingAs($adminUser)->post(route('loans.disburse', $loan->id));
+    $file = \Illuminate\Http\UploadedFile::fake()->create('proof.png', 100, 'image/png');
+    $response = $this->actingAs($adminUser)->post(route('loans.disburse', $loan->id), [
+        'disbursement_method' => 'bank_transfer',
+        'disbursement_destination' => 'Chase Bank 12345',
+        'disbursement_reference' => 'TXN-99881',
+        'disbursement_date' => now()->toDateString(),
+        'disbursement_proof' => $file,
+    ]);
     $response->assertRedirect(route('loans.index'));
     
     $freshLoan = $loan->fresh();
@@ -272,7 +279,14 @@ test('admin can approve loan and override repayment term duration_months', funct
     expect($freshLoan->admin_notes)->toEqual('Term reduced per request.');
 
     // Admin disburses
-    $response = $this->actingAs($adminUser)->post(route('loans.disburse', $loan->id));
+    $file = \Illuminate\Http\UploadedFile::fake()->create('proof.png', 100, 'image/png');
+    $response = $this->actingAs($adminUser)->post(route('loans.disburse', $loan->id), [
+        'disbursement_method' => 'zelle',
+        'disbursement_destination' => 'borrower@example.com',
+        'disbursement_reference' => 'ZEL-5544',
+        'disbursement_date' => now()->toDateString(),
+        'disbursement_proof' => $file,
+    ]);
     $response->assertRedirect(route('loans.index'));
 
     $disbursedLoan = $loan->fresh();
@@ -530,7 +544,14 @@ test('admin can approve loan with flat interest rate and calculations are correc
     expect((float) $freshLoan->remaining_balance)->toEqual(1100.00);
 
     // Disburse and pay $400
-    $this->actingAs($adminUser)->post(route('loans.disburse', $loan->id));
+    $file1 = \Illuminate\Http\UploadedFile::fake()->create('proof.png', 100, 'image/png');
+    $this->actingAs($adminUser)->post(route('loans.disburse', $loan->id), [
+        'disbursement_method' => 'cash',
+        'disbursement_destination' => 'In-person meeting',
+        'disbursement_reference' => 'CASH-001',
+        'disbursement_date' => now()->toDateString(),
+        'disbursement_proof' => $file1,
+    ]);
     $this->actingAs($adminUser)->post(route('loans.repay', $loan->id), [
         'amount' => 400.00,
         'payment_date' => now()->toDateString(),
@@ -584,7 +605,14 @@ test('admin can approve loan with duration based interest rate and calculations 
     expect((float) $freshLoan->remaining_balance)->toEqual(1050.00);
 
     // Disburse and pay $350
-    $this->actingAs($adminUser)->post(route('loans.disburse', $loan->id));
+    $file2 = \Illuminate\Http\UploadedFile::fake()->create('proof.png', 100, 'image/png');
+    $this->actingAs($adminUser)->post(route('loans.disburse', $loan->id), [
+        'disbursement_method' => 'bank_transfer',
+        'disbursement_destination' => 'Bank Acct #100',
+        'disbursement_reference' => 'TXN-002',
+        'disbursement_date' => now()->toDateString(),
+        'disbursement_proof' => $file2,
+    ]);
     $this->actingAs($adminUser)->post(route('loans.repay', $loan->id), [
         'amount' => 350.00,
         'payment_date' => now()->toDateString(),

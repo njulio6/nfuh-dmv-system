@@ -359,3 +359,100 @@ test('member can view their own withdrawal requests', function () {
     $response->assertSee('$350.00');
     $response->assertSee('350zelle@test.com');
 });
+
+test('method-specific validation enforces required fields for Zelle, Bank Transfer, and Check (M1-002)', function () {
+    [$user, $member, $org] = createMemberWithUser(2000.00);
+
+    // 1. Zelle missing recipient and contact
+    $resZelleFail = $this->actingAs($user)->post(route('member.savings.withdraw'), [
+        'gross_amount' => 100.00,
+        'payout_method' => 'zelle',
+        'zelle_name' => '',
+        'zelle_contact' => '',
+    ]);
+    $resZelleFail->assertSessionHasErrors(['zelle_name', 'zelle_contact']);
+
+    // Valid Zelle
+    $resZelleOk = $this->actingAs($user)->post(route('member.savings.withdraw'), [
+        'gross_amount' => 100.00,
+        'payout_method' => 'zelle',
+        'zelle_name' => 'John Doe',
+        'zelle_contact' => 'john.doe@example.com',
+    ]);
+    $resZelleOk->assertRedirect(route('member.savings.withdrawals'));
+    $zelleReq = SavingsWithdrawalRequest::where('member_id', $member->id)->latest('id')->first();
+    expect($zelleReq->payout_details)->toContain('Recipient: John Doe')
+        ->and($zelleReq->payout_details)->toContain('Contact: john.doe@example.com');
+
+    // 2. Bank transfer invalid routing and missing details
+    $resBankFail = $this->actingAs($user)->post(route('member.savings.withdraw'), [
+        'gross_amount' => 200.00,
+        'payout_method' => 'bank_transfer',
+        'bank_account_holder' => '',
+        'bank_name' => '',
+        'bank_routing_number' => '123', // Not 9 digits
+        'bank_account_number' => '',
+        'bank_account_type' => 'checking',
+    ]);
+    $resBankFail->assertSessionHasErrors(['bank_account_holder', 'bank_name', 'bank_routing_number', 'bank_account_number']);
+
+    // Valid Bank Transfer
+    $resBankOk = $this->actingAs($user)->post(route('member.savings.withdraw'), [
+        'gross_amount' => 200.00,
+        'payout_method' => 'bank_transfer',
+        'bank_account_holder' => 'Jane Smith',
+        'bank_name' => 'Wells Fargo',
+        'bank_routing_number' => '123456789',
+        'bank_account_number' => '9876543210',
+        'bank_account_type' => 'checking',
+    ]);
+    $resBankOk->assertRedirect(route('member.savings.withdrawals'));
+    $bankReq = SavingsWithdrawalRequest::where('member_id', $member->id)->latest('id')->first();
+    expect($bankReq->payout_details)->toContain('Holder: Jane Smith')
+        ->and($bankReq->payout_details)->toContain('Bank: Wells Fargo')
+        ->and($bankReq->payout_details)->toContain('Routing: 123456789')
+        ->and($bankReq->payout_details)->toContain('Account: 9876543210');
+
+    // 3. Check missing payee and delivery
+    $resCheckFail = $this->actingAs($user)->post(route('member.savings.withdraw'), [
+        'gross_amount' => 150.00,
+        'payout_method' => 'check',
+        'check_payee_name' => '',
+        'check_delivery_address' => '',
+    ]);
+    $resCheckFail->assertSessionHasErrors(['check_payee_name', 'check_delivery_address']);
+
+    // Valid Check
+    $resCheckOk = $this->actingAs($user)->post(route('member.savings.withdraw'), [
+        'gross_amount' => 150.00,
+        'payout_method' => 'check',
+        'check_payee_name' => 'Alice Johnson',
+        'check_delivery_address' => '123 Main St, Springfield, VA 22150',
+    ]);
+    $resCheckOk->assertRedirect(route('member.savings.withdrawals'));
+    $checkReq = SavingsWithdrawalRequest::where('member_id', $member->id)->latest('id')->first();
+    expect($checkReq->payout_details)->toContain('Payee: Alice Johnson')
+        ->and($checkReq->payout_details)->toContain('Delivery: 123 Main St');
+});
+
+test('masked payout details attribute masks account number and routing number for non-privileged views (M1-002)', function () {
+    [$user, $member, $org] = createMemberWithUser(1000.00);
+
+    $bankReq = SavingsWithdrawalRequest::create([
+        'member_id' => $member->id,
+        'organization_id' => $org->id,
+        'gross_amount' => 200.00,
+        'fee_rate' => 2.00,
+        'fee_amount' => 4.00,
+        'net_amount' => 196.00,
+        'payout_method' => 'bank_transfer',
+        'payout_details' => 'Holder: Jane Smith | Bank: Wells Fargo | Routing: 123456789 | Account: 9876543210 | Type: Checking',
+        'status' => 'pending',
+    ]);
+
+    // Masked details should hide full routing and account digits
+    expect($bankReq->masked_payout_details)->toContain('•••••6789')
+        ->and($bankReq->masked_payout_details)->toContain('••••3210')
+        ->and($bankReq->masked_payout_details)->not->toContain('123456789')
+        ->and($bankReq->masked_payout_details)->not->toContain('9876543210');
+});

@@ -307,6 +307,10 @@ test('admin can disburse loan with optional details and uploaded receipt proof',
     $file = \Illuminate\Http\UploadedFile::fake()->create('disbursement_voucher.pdf', 300, 'application/pdf');
 
     $response = $this->actingAs($admin)->post(route('loans.disburse', $loan->id), [
+        'disbursement_method' => 'bank_transfer',
+        'disbursement_destination' => 'Chase Bank Acct #88392019',
+        'disbursement_reference' => 'WIRE-992144',
+        'disbursement_date' => now()->toDateString(),
         'disbursement_details' => 'Wire Ref #WIRE-992144 sent via Chase Corporate Banking.',
         'disbursement_proof' => $file,
     ]);
@@ -317,13 +321,18 @@ test('admin can disburse loan with optional details and uploaded receipt proof',
     $freshLoan = $loan->fresh();
     expect($freshLoan->status)->toEqual('active')
         ->and($freshLoan->disbursed_at)->not->toBeNull()
+        ->and($freshLoan->disbursed_by_user_id)->toEqual($admin->id)
+        ->and($freshLoan->disbursement_method)->toEqual('bank_transfer')
+        ->and($freshLoan->disbursement_destination)->toEqual('Chase Bank Acct #88392019')
+        ->and($freshLoan->disbursement_reference)->toEqual('WIRE-992144')
+        ->and($freshLoan->disbursed_date->toDateString())->toEqual(now()->toDateString())
         ->and($freshLoan->disbursement_details)->toEqual('Wire Ref #WIRE-992144 sent via Chase Corporate Banking.')
         ->and($freshLoan->disbursement_proof)->not->toBeNull();
 
     \Illuminate\Support\Facades\Storage::disk('public')->assertExists($freshLoan->disbursement_proof);
 });
 
-test('admin can disburse loan without optional details or receipt proof', function () {
+test('disbursement is strictly blocked when mandatory proof or audit details are omitted (M1-001)', function () {
     [$user, $member, $org] = createLoanTestMember(2000.00);
     $admin = createLoanAdmin();
 
@@ -337,16 +346,21 @@ test('admin can disburse loan without optional details or receipt proof', functi
         'payout_details' => 'Handed over in meeting hall',
     ]);
 
+    // Omit all mandatory fields
     $response = $this->actingAs($admin)->post(route('loans.disburse', $loan->id), []);
 
-    $response->assertRedirect(route('loans.index'));
-    $response->assertSessionHas('success');
+    $response->assertSessionHasErrors([
+        'disbursement_method',
+        'disbursement_destination',
+        'disbursement_reference',
+        'disbursement_date',
+        'disbursement_proof',
+    ]);
 
     $freshLoan = $loan->fresh();
-    expect($freshLoan->status)->toEqual('active')
-        ->and($freshLoan->disbursed_at)->not->toBeNull()
-        ->and($freshLoan->disbursement_details)->toBeNull()
-        ->and($freshLoan->disbursement_proof)->toBeNull();
+    expect($freshLoan->status)->toEqual('approved')
+        ->and($freshLoan->disbursed_at)->toBeNull()
+        ->and($freshLoan->disbursed_by_user_id)->toBeNull();
 });
 
 test('disbursed details and receipt proof are displayed in member applications and statement views', function () {

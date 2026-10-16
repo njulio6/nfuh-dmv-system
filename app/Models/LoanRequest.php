@@ -27,16 +27,27 @@ class LoanRequest extends Model
         'rejection_reason',
         'disbursement_details',
         'disbursement_proof',
+        'disbursed_by_user_id',
+        'disbursement_method',
+        'disbursement_reference',
+        'disbursement_destination',
+        'disbursed_date',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'duration_months' => 'integer',
         'disbursed_at' => 'datetime',
+        'disbursed_date' => 'date',
         'repayment_due_date' => 'date',
         'interest_rate' => 'float',
         'interest_type' => 'string',
     ];
+
+    public function disbursedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'disbursed_by_user_id');
+    }
 
     public function member(): BelongsTo
     {

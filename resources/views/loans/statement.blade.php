@@ -313,9 +313,20 @@
                                     </div>
                                 @endif
 
-                                @if($loan->disbursement_details || $loan->disbursement_proof)
+                                @if($loan->disbursement_details || $loan->disbursement_proof || $loan->disbursement_reference)
                                     <div class="flex flex-col gap-1">
                                         <span class="text-[10px] uppercase font-bold text-zinc-400 text-print-muted">Disbursement Reference / Receipt:</span>
+                                        @if($loan->disbursement_method || $loan->disbursement_reference)
+                                            <span class="font-bold text-zinc-900 text-print-dark">
+                                                {{ ucwords(str_replace('_', ' ', $loan->disbursement_method ?? 'Transfer')) }} 
+                                                @if($loan->disbursement_reference)
+                                                    <span class="font-mono text-emerald-700">({{ $loan->disbursement_reference }})</span>
+                                                @endif
+                                            </span>
+                                        @endif
+                                        @if($loan->disbursedBy)
+                                            <span class="text-[10px] text-zinc-500 text-print-muted">Officer: {{ $loan->disbursedBy->name }}</span>
+                                        @endif
                                         @if($loan->disbursement_details)
                                             <span class="text-zinc-800 text-print-dark italic">{{ $loan->disbursement_details }}</span>
                                         @endif
