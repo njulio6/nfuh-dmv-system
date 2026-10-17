@@ -166,30 +166,18 @@ class LoanController extends Controller
             return redirect()->back()->with('error', 'Loan must be approved before disbursement.');
         }
 
-        $noTxnRef = $request->boolean('no_transaction_reference');
-
         $rules = [
             'disbursement_method' => ['required', 'string', 'max:50'],
             'disbursement_destination' => ['required', 'string', 'min:3', 'max:1000'],
             'disbursement_date' => ['required', 'date', 'before_or_equal:today'],
             'disbursement_proof' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf,webp', 'max:5120'],
+            'disbursement_reference' => ['nullable', 'string', 'max:255'],
             'disbursement_details' => ['nullable', 'string', 'max:2000'],
-            'no_transaction_reference' => ['nullable', 'boolean'],
         ];
-
-        if ($noTxnRef) {
-            $rules['disbursement_reference_reason'] = ['required', 'string', 'min:3', 'max:1000'];
-            $rules['disbursement_reference'] = ['nullable', 'string', 'max:255'];
-        } else {
-            $rules['disbursement_reference'] = ['required', 'string', 'min:2', 'max:255'];
-            $rules['disbursement_reference_reason'] = ['nullable', 'string', 'max:1000'];
-        }
 
         $validated = $request->validate($rules, [
             'disbursement_method.required' => 'A payment method is mandatory to confirm disbursement.',
             'disbursement_destination.required' => 'Recipient / payout destination details are mandatory.',
-            'disbursement_reference.required' => 'A transaction reference, check number, or payment identifier is mandatory.',
-            'disbursement_reference_reason.required' => 'Please provide an explanation why no transaction reference was provided.',
             'disbursement_date.required' => 'Disbursement date is mandatory.',
             'disbursement_date.before_or_equal' => 'Disbursement date cannot be a future date.',
             'disbursement_proof.required' => 'Supporting payment receipt or transfer proof document is mandatory.',
@@ -204,6 +192,8 @@ class LoanController extends Controller
             ? now() 
             : $disbursedDate->copy()->setTime(now()->hour, now()->minute, now()->second);
 
+        $ref = !empty($validated['disbursement_reference']) ? trim($validated['disbursement_reference']) : null;
+
         $loan->update([
             'status' => 'active',
             'disbursed_at' => $disbursedAt,
@@ -211,9 +201,9 @@ class LoanController extends Controller
             'disbursed_by_user_id' => \Illuminate\Support\Facades\Auth::id(),
             'disbursement_method' => $validated['disbursement_method'],
             'disbursement_destination' => $validated['disbursement_destination'],
-            'disbursement_reference' => $noTxnRef ? null : ($validated['disbursement_reference'] ?? null),
-            'no_transaction_reference' => $noTxnRef,
-            'disbursement_reference_reason' => $noTxnRef ? $validated['disbursement_reference_reason'] : null,
+            'disbursement_reference' => $ref,
+            'no_transaction_reference' => empty($ref),
+            'disbursement_reference_reason' => null,
             'disbursement_proof' => $proofPath,
             'disbursement_details' => $validated['disbursement_details'] ?? null,
             'repayment_due_date' => $disbursedDate->copy()->addMonths($loan->duration_months)->toDateString(),

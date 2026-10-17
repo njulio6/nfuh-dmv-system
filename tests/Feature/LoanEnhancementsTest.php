@@ -352,7 +352,6 @@ test('disbursement is strictly blocked when mandatory proof or audit details are
     $response->assertSessionHasErrors([
         'disbursement_method',
         'disbursement_destination',
-        'disbursement_reference',
         'disbursement_date',
         'disbursement_proof',
     ]);
@@ -404,7 +403,7 @@ test('disbursed details and receipt proof are displayed in member applications a
     $adminResponse->assertSee(base64_encode('MoMo Transaction ID: 20261014-99881122') ? 'Details' : '');
 });
 
-test('treasurer can disburse loan using transaction reference exception checkbox with mandatory explanation (M1-004)', function () {
+test('treasurer can disburse loan with optional transaction reference omitted without checkbox or explanation (M1-005)', function () {
     \Illuminate\Support\Facades\Storage::fake('public');
 
     [$user, $member, $org] = createLoanTestMember(2000.00);
@@ -422,13 +421,11 @@ test('treasurer can disburse loan using transaction reference exception checkbox
 
     $file = \Illuminate\Http\UploadedFile::fake()->create('signed_cash_voucher.pdf', 250, 'application/pdf');
 
-    // Submit with no_transaction_reference checked and a reason provided, leaving disbursement_reference blank
+    // Submit leaving disbursement_reference blank (no checkbox, no explanation required)
     $response = $this->actingAs($admin)->post(route('loans.disburse', $loan->id), [
         'disbursement_method' => 'cash',
         'disbursement_destination' => 'Physical meeting desk',
-        'no_transaction_reference' => '1',
         'disbursement_reference' => '',
-        'disbursement_reference_reason' => 'Direct cash handover in meeting; signed physical disbursement voucher attached.',
         'disbursement_date' => now()->toDateString(),
         'disbursement_proof' => $file,
     ]);
@@ -438,15 +435,11 @@ test('treasurer can disburse loan using transaction reference exception checkbox
 
     $freshLoan = $loan->fresh();
     expect($freshLoan->status)->toEqual('active')
-        ->and($freshLoan->no_transaction_reference)->toBeTrue()
         ->and($freshLoan->disbursement_reference)->toBeNull()
-        ->and($freshLoan->disbursement_reference_reason)->toEqual('Direct cash handover in meeting; signed physical disbursement voucher attached.')
         ->and($freshLoan->disbursement_proof)->not->toBeNull();
 });
 
-test('loan disbursement reference exception fails if explanation is omitted when checkbox is checked (M1-004)', function () {
-    \Illuminate\Support\Facades\Storage::fake('public');
-
+test('loan disbursement proof remains strictly mandatory even when transaction reference is omitted (M1-005)', function () {
     [$user, $member, $org] = createLoanTestMember(2000.00);
     $admin = createLoanAdmin();
 
@@ -460,42 +453,11 @@ test('loan disbursement reference exception fails if explanation is omitted when
         'payout_details' => 'Handed over in person',
     ]);
 
-    $file = \Illuminate\Http\UploadedFile::fake()->create('voucher.pdf', 200, 'application/pdf');
-
+    // Omit proof while leaving reference empty
     $response = $this->actingAs($admin)->post(route('loans.disburse', $loan->id), [
         'disbursement_method' => 'cash',
         'disbursement_destination' => 'Meeting hall',
-        'no_transaction_reference' => '1',
         'disbursement_reference' => '',
-        'disbursement_reference_reason' => '', // Omitted reason
-        'disbursement_date' => now()->toDateString(),
-        'disbursement_proof' => $file,
-    ]);
-
-    $response->assertSessionHasErrors(['disbursement_reference_reason']);
-    expect($loan->fresh()->status)->toEqual('approved');
-});
-
-test('loan disbursement proof remains strictly mandatory even when reference exception is used (M1-004)', function () {
-    [$user, $member, $org] = createLoanTestMember(2000.00);
-    $admin = createLoanAdmin();
-
-    $loan = LoanRequest::create([
-        'member_id' => $member->id,
-        'organization_id' => $org->id,
-        'amount' => 1000.00,
-        'duration_months' => 6,
-        'status' => 'approved',
-        'payout_method' => 'cash',
-        'payout_details' => 'Handed over in person',
-    ]);
-
-    // Omit proof
-    $response = $this->actingAs($admin)->post(route('loans.disburse', $loan->id), [
-        'disbursement_method' => 'cash',
-        'disbursement_destination' => 'Meeting hall',
-        'no_transaction_reference' => '1',
-        'disbursement_reference_reason' => 'Payment made via cash voucher.',
         'disbursement_date' => now()->toDateString(),
         // missing disbursement_proof
     ]);

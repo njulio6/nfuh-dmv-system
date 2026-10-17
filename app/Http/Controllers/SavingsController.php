@@ -638,32 +638,20 @@ class SavingsController extends Controller
             return redirect()->back()->with('error', 'Withdrawal request must be approved before disbursement.');
         }
 
-        $noTxnRef = $request->boolean('no_transaction_reference');
-
         $rules = [
             'disbursement_method' => ['required', 'string', 'max:50'],
             'disbursement_destination' => ['required', 'string', 'min:3', 'max:1000'],
             'disbursement_date' => ['required', 'date', 'before_or_equal:today'],
             'disbursement_proof' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf,webp', 'max:5120'],
+            'disbursement_reference' => ['nullable', 'string', 'max:255'],
             'disbursement_details' => ['nullable', 'string', 'max:2000'],
-            'no_transaction_reference' => ['nullable', 'boolean'],
         ];
-
-        if ($noTxnRef) {
-            $rules['disbursement_reference_reason'] = ['required', 'string', 'min:3', 'max:1000'];
-            $rules['disbursement_reference'] = ['nullable', 'string', 'max:255'];
-        } else {
-            $rules['disbursement_reference'] = ['required', 'string', 'min:2', 'max:255'];
-            $rules['disbursement_reference_reason'] = ['nullable', 'string', 'max:1000'];
-        }
 
         $messages = [
             'disbursement_method.required' => 'A payment method is mandatory to confirm disbursement.',
             'disbursement_destination.required' => 'Recipient / payout destination details are mandatory.',
             'disbursement_date.required' => 'Disbursement date is mandatory.',
             'disbursement_date.before_or_equal' => 'Disbursement date cannot be a future date.',
-            'disbursement_reference.required' => 'A transaction reference or check number is mandatory unless the exception is checked.',
-            'disbursement_reference_reason.required' => 'Please provide an explanation why no transaction reference was provided.',
             'disbursement_proof.required' => 'Supporting payment receipt or transfer screenshot is mandatory.',
             'disbursement_proof.mimes' => 'Receipt proof document must be a JPG, PNG, WEBP, or PDF file.',
             'disbursement_proof.max' => 'Receipt proof document cannot exceed 5MB.',
@@ -678,10 +666,10 @@ class SavingsController extends Controller
             ? now() 
             : $disbursedDate->copy()->setTime(now()->hour, now()->minute, now()->second);
 
-        DB::transaction(function () use ($withdrawalRequest, $validated, $proofPath, $disbursedDate, $disbursedAt, $noTxnRef) {
-            $refNote = $noTxnRef 
-                ? " (No TXN Ref: {$validated['disbursement_reference_reason']})"
-                : " (Ref: {$validated['disbursement_reference']})";
+        $ref = !empty($validated['disbursement_reference']) ? trim($validated['disbursement_reference']) : null;
+
+        DB::transaction(function () use ($withdrawalRequest, $validated, $proofPath, $disbursedDate, $disbursedAt, $ref) {
+            $refNote = $ref ? " (Ref: {$ref})" : "";
 
             $notes = "Member withdrawal payout ($" . number_format($withdrawalRequest->net_amount, 2) . ") + " . number_format($withdrawalRequest->fee_rate, 2) . "% Admin Fee ($" . number_format($withdrawalRequest->fee_amount, 2) . ") via " . ucfirst(str_replace('_', ' ', $validated['disbursement_method'])) . $refNote;
 
@@ -721,9 +709,9 @@ class SavingsController extends Controller
                 'disbursed_by_user_id' => Auth::id(),
                 'disbursement_method' => $validated['disbursement_method'],
                 'disbursement_destination' => $validated['disbursement_destination'],
-                'disbursement_reference' => $noTxnRef ? null : ($validated['disbursement_reference'] ?? null),
-                'no_transaction_reference' => $noTxnRef,
-                'disbursement_reference_reason' => $noTxnRef ? $validated['disbursement_reference_reason'] : null,
+                'disbursement_reference' => $ref,
+                'no_transaction_reference' => empty($ref),
+                'disbursement_reference_reason' => null,
                 'disbursement_proof' => $proofPath,
                 'disbursement_details' => $validated['disbursement_details'] ?? null,
             ]);

@@ -1228,56 +1228,16 @@
                     />
                     <div class="flex flex-col w-full">
                         <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center justify-between">
-                            <span>Transaction Reference / ID <span class="text-red-500" x-show="!disburseNoReference">*</span></span>
-                            <span class="text-[11px] text-zinc-400 font-normal lowercase" x-show="disburseNoReference">(bypassed)</span>
+                            <span>Transaction Reference / ID</span>
+                            <span class="text-[11px] text-zinc-400 font-normal lowercase">(optional)</span>
                         </label>
                         <input 
                             type="text" 
                             name="disbursement_reference" 
                             x-model="disburseReference" 
-                            :required="!disburseNoReference" 
-                            :disabled="disburseNoReference"
-                            :placeholder="disburseNoReference ? 'No reference provided by service' : 'e.g. TXN-83921, Wire Ref...'"
-                            class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-900 dark:text-white px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-semibold focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all font-mono disabled:opacity-50 disabled:cursor-not-allowed"
+                            placeholder="e.g. TXN-83921, Wire Ref, Check # (Optional)..."
+                            class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-900 dark:text-white px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-semibold focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all font-mono"
                         />
-                    </div>
-                </div>
-
-                <!-- M1-004: Transaction Reference Exception Checkbox -->
-                <div class="flex flex-col gap-1.5 p-2.5 bg-zinc-50/70 dark:bg-zinc-950/40 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80">
-                    <label class="flex items-start gap-2 cursor-pointer select-none">
-                        <input 
-                            type="checkbox" 
-                            name="no_transaction_reference" 
-                            value="1" 
-                            x-model="disburseNoReference"
-                            @change="if (disburseNoReference) { disburseReference = ''; }"
-                            class="mt-0.5 size-3.5 rounded border-zinc-300 dark:border-zinc-700 text-zinc-950 dark:text-zinc-100 focus:ring-0 focus:ring-offset-0 cursor-pointer"
-                        />
-                        <div class="flex flex-col">
-                            <span class="text-xs font-bold text-zinc-900 dark:text-white">
-                                No transaction reference provided by payment service.
-                            </span>
-                            <span class="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight">
-                                When selected, provide an explanation below. The payment receipt remains mandatory.
-                            </span>
-                        </div>
-                    </label>
-
-                    <!-- Explanation field required when exception is checked -->
-                    <div x-show="disburseNoReference" x-cloak class="mt-2 flex flex-col gap-1.5">
-                        <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center justify-between">
-                            <span>Explanation for Missing Reference <span class="text-red-500">*</span></span>
-                            <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wider">Required</span>
-                        </label>
-                        <textarea 
-                            name="disbursement_reference_reason" 
-                            x-model="disburseReferenceReason" 
-                            :required="disburseNoReference"
-                            rows="3"
-                            placeholder="State why no transaction ID was provided by payment service (e.g. In-person paper check, cash voucher, or direct teller release)..."
-                            class="w-full px-3.5 py-2.5 text-xs leading-relaxed rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all min-h-[76px] font-medium"
-                        ></textarea>
                     </div>
                 </div>
 
@@ -1491,11 +1451,14 @@
                                 </div>
                                 <div class="flex flex-col gap-0.5">
                                     <span class="text-[10px] text-emerald-800/90 dark:text-emerald-400 font-semibold uppercase tracking-wider block">Transaction Ref / ID</span>
-                                    <template x-if="activeLoanDetails.no_transaction_reference">
-                                        <span class="font-mono text-amber-700 dark:text-amber-400 text-xs font-semibold" x-text="'No Ref (' + (activeLoanDetails.disbursement_reference_reason || 'N/A') + ')'"></span>
+                                    <template x-if="activeLoanDetails.disbursement_reference">
+                                        <span class="font-mono font-bold text-xs text-emerald-700 dark:text-emerald-300" x-text="activeLoanDetails.disbursement_reference"></span>
                                     </template>
-                                    <template x-if="!activeLoanDetails.no_transaction_reference">
-                                        <span class="font-mono font-bold text-xs text-emerald-700 dark:text-emerald-300" x-text="activeLoanDetails.disbursement_reference || '-'"></span>
+                                    <template x-if="!activeLoanDetails.disbursement_reference && activeLoanDetails.disbursement_reference_reason">
+                                        <span class="font-mono text-amber-700 dark:text-amber-400 text-xs font-semibold" x-text="'No Ref (' + activeLoanDetails.disbursement_reference_reason + ')'"></span>
+                                    </template>
+                                    <template x-if="!activeLoanDetails.disbursement_reference && !activeLoanDetails.disbursement_reference_reason">
+                                        <span class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 italic">None (Receipt on file)</span>
                                     </template>
                                 </div>
                             </div>

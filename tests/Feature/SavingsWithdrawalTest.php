@@ -335,7 +335,7 @@ test('savings withdrawal disbursement requires mandatory receipt proof (M1-003)'
     expect($req->fresh()->status)->toEqual('approved');
 });
 
-test('savings withdrawal disbursement supports M1-004 reference exception with mandatory reason', function () {
+test('savings withdrawal disbursement allows transaction reference to be optional by default without checkbox or explanation (M1-005)', function () {
     \Illuminate\Support\Facades\Storage::fake('public');
 
     [$user, $member, $org] = createMemberWithUser(1000.00);
@@ -355,37 +355,22 @@ test('savings withdrawal disbursement supports M1-004 reference exception with m
 
     $file = \Illuminate\Http\UploadedFile::fake()->create('signed_voucher.pdf', 100, 'application/pdf');
 
-    // Exception without reason should fail
-    $resFail = $this->actingAs($treasurer)->post(route('savings.withdrawal-requests.disburse', $req->id), [
+    // Disbursement without any transaction reference or explanation should succeed (optional by default)
+    $response = $this->actingAs($treasurer)->post(route('savings.withdrawal-requests.disburse', $req->id), [
         'disbursement_method' => 'cash',
         'disbursement_destination' => 'Cash envelope',
-        'no_transaction_reference' => '1',
-        'disbursement_reference' => '',
-        'disbursement_reference_reason' => '',
-        'disbursement_date' => now()->toDateString(),
-        'disbursement_proof' => $file,
-    ]);
-    $resFail->assertSessionHasErrors(['disbursement_reference_reason']);
-
-    // Exception with reason should succeed
-    $resSuccess = $this->actingAs($treasurer)->post(route('savings.withdrawal-requests.disburse', $req->id), [
-        'disbursement_method' => 'cash',
-        'disbursement_destination' => 'Cash envelope',
-        'no_transaction_reference' => '1',
-        'disbursement_reference' => '',
-        'disbursement_reference_reason' => 'Direct cash disbursement at general meeting; signed receipt attached.',
+        'disbursement_reference' => '', // Left empty by Treasurer
         'disbursement_date' => now()->toDateString(),
         'disbursement_proof' => $file,
     ]);
 
-    $resSuccess->assertRedirect(route('savings.withdrawal-requests'));
-    $resSuccess->assertSessionHas('success');
+    $response->assertRedirect(route('savings.withdrawal-requests'));
+    $response->assertSessionHas('success');
 
     $freshReq = $req->fresh();
     expect($freshReq->status)->toEqual('disbursed')
-        ->and($freshReq->no_transaction_reference)->toBeTrue()
         ->and($freshReq->disbursement_reference)->toBeNull()
-        ->and($freshReq->disbursement_reference_reason)->toEqual('Direct cash disbursement at general meeting; signed receipt attached.');
+        ->and($freshReq->disbursement_proof)->not->toBeNull();
 });
 
 test('admin cannot approve an already approved or rejected withdrawal', function () {
