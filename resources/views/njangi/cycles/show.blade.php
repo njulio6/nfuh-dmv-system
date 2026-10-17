@@ -123,9 +123,12 @@
 
                     <!-- Add Participant Modal -->
                     <div x-show="addMemberOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/50 backdrop-blur-sm">
-                        <div @click.away="addMemberOpen = false" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-swift-up-premium text-left max-h-[90vh] overflow-y-auto">
+                        <div @click.away="addMemberOpen = false" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-swift-up-premium text-left max-h-[90vh] overflow-y-auto">
                             <div class="flex items-center justify-between border-b border-zinc-150 dark:border-zinc-800 pb-3 mb-4">
-                                <h4 class="text-sm font-bold text-zinc-900 dark:text-white">Add Individual Participant</h4>
+                                <div>
+                                    <h4 class="text-base font-bold text-zinc-900 dark:text-white">Add Individual Participant</h4>
+                                    <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">Enroll an eligible organization member into this cycle.</p>
+                                </div>
                                 <button type="button" @click="addMemberOpen = false" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
                                     <i data-lucide="x" class="w-4 h-4"></i>
                                 </button>

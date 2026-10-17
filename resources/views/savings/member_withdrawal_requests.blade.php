@@ -165,9 +165,13 @@
                         </button>
                     </td>
                     <td class="text-center px-3.5 py-3.5">
-                        @if ($req->status === 'approved')
+                        @if ($req->status === 'disbursed')
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                Approved
+                                Disbursed / Completed
+                            </span>
+                        @elseif ($req->status === 'approved')
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20">
+                                Approved – Pending Disbursement
                             </span>
                         @elseif ($req->status === 'rejected')
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
@@ -175,7 +179,7 @@
                             </span>
                         @else
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                Pending
+                                Pending Approval
                             </span>
                         @endif
                     </td>
@@ -184,7 +188,30 @@
                             $hasRemark = ($req->status === 'rejected' && $req->rejection_reason) || $req->admin_notes;
                             $remarkText = $req->status === 'rejected' ? $req->rejection_reason : $req->admin_notes;
                         @endphp
-                        @if($hasRemark)
+                        @if($req->status === 'disbursed')
+                            <div class="flex items-center gap-2">
+                                @if($req->disbursement_proof)
+                                    <a 
+                                        href="{{ asset('storage/' . $req->disbursement_proof) }}" 
+                                        target="_blank" 
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-xs font-semibold cursor-pointer transition-all border shadow-2xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900/50"
+                                        title="View Payout Confirmation Receipt"
+                                    >
+                                        <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
+                                        <span>Receipt</span>
+                                    </a>
+                                @endif
+                                @if($hasRemark)
+                                    <button 
+                                        type="button" 
+                                        @click="openRemarkModal({{ json_encode('Disbursement Note') }}, {{ json_encode($req->status) }}, {{ json_encode($req->disbursed_at ? $req->disbursed_at->format('M d, Y h:i A') : $req->created_at->format('M d, Y h:i A')) }}, {{ json_encode($remarkText) }})"
+                                        class="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 text-xs font-medium underline"
+                                    >
+                                        Notes
+                                    </button>
+                                @endif
+                            </div>
+                        @elseif($hasRemark)
                             <button 
                                 type="button" 
                                 @click="openRemarkModal({{ json_encode($req->status === 'rejected' ? 'Rejection Reason' : 'Admin Review Remarks') }}, {{ json_encode($req->status) }}, {{ json_encode($req->updated_at ? $req->updated_at->format('M d, Y h:i A') : $req->created_at->format('M d, Y h:i A')) }}, {{ json_encode($remarkText) }})"
@@ -194,6 +221,8 @@
                                 <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
                                 <span>View Remarks</span>
                             </button>
+                        @elseif($req->status === 'approved')
+                            <span class="text-sky-600 dark:text-sky-400 font-medium italic text-xs">Awaiting Payout Release</span>
                         @elseif($req->status === 'pending')
                             <span class="text-zinc-400 dark:text-zinc-500 italic text-xs">Under Review</span>
                         @else
@@ -613,9 +642,9 @@
     >
         <div 
             @click.away="showFilterModal = false" 
-            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl max-w-sm w-full p-5 flex flex-col gap-4 animate-scaleIn"
+            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl max-w-lg w-full p-6 flex flex-col gap-4 animate-scaleIn"
         >
-            <h4 class="text-sm font-bold text-zinc-900 dark:text-white">Filter Requests</h4>
+            <h4 class="text-base font-bold text-zinc-900 dark:text-white">Filter Requests</h4>
             <div class="flex flex-col gap-2">
                 <label class="text-xs font-bold text-zinc-600 dark:text-zinc-400">Status</label>
                 <select 
@@ -650,25 +679,25 @@
     >
         <div 
             @click.away="showRemarkModal = false"
-            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 max-w-md w-full shadow-2xl flex flex-col gap-4 animate-scaleUp"
+            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 max-w-lg w-full shadow-2xl flex flex-col gap-5 animate-scaleUp"
         >
-            <div class="flex items-start justify-between">
+            <div class="flex items-start justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
                 <div class="flex items-center gap-3">
                     <div 
-                        class="p-2.5 rounded-xl border flex items-center justify-center"
+                        class="w-9 h-9 rounded-xl border flex items-center justify-center shrink-0"
                         :class="activeRemark.status === 'rejected' ? 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50' : 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50'"
                     >
-                        <i data-lucide="message-square-text" class="w-5 h-5"></i>
+                        <i data-lucide="message-square-text" class="w-4 h-4"></i>
                     </div>
                     <div class="flex flex-col">
-                        <h3 class="text-sm font-bold text-zinc-900 dark:text-white" x-text="activeRemark.title"></h3>
-                        <span class="text-[11px] text-zinc-400 dark:text-zinc-500 font-mono" x-text="activeRemark.date"></span>
+                        <h3 class="text-base font-bold text-zinc-900 dark:text-white" x-text="activeRemark.title"></h3>
+                        <span class="text-xs text-zinc-400 dark:text-zinc-500 font-mono" x-text="activeRemark.date"></span>
                     </div>
                 </div>
                 <button 
                     type="button" 
                     @click="showRemarkModal = false"
-                    class="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-lg cursor-pointer transition-colors"
+                    class="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-lg cursor-pointer transition-colors"
                 >
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
@@ -676,7 +705,7 @@
 
             <!-- Content Card -->
             <div 
-                class="p-4 rounded-xl border text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-words min-h-[80px]"
+                class="p-4 rounded-xl border text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-words min-h-[90px]"
                 :class="activeRemark.status === 'rejected' ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200/60 dark:border-rose-900/40 text-rose-900 dark:text-rose-200' : 'bg-zinc-50 dark:bg-zinc-950 border-zinc-200/60 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200'"
                 x-text="activeRemark.content"
             ></div>
@@ -702,34 +731,34 @@
     >
         <div 
             @click.away="showPayoutModal = false"
-            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 max-w-md w-full shadow-2xl flex flex-col gap-4 animate-scaleUp"
+            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 max-w-lg w-full shadow-2xl flex flex-col gap-5 animate-scaleUp"
         >
-            <div class="flex items-start justify-between">
+            <div class="flex items-start justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
                 <div class="flex items-center gap-3">
-                    <div class="p-2.5 rounded-xl border bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-900/50 flex items-center justify-center">
-                        <i data-lucide="wallet" class="w-5 h-5"></i>
+                    <div class="w-9 h-9 rounded-xl border bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-900/50 flex items-center justify-center shrink-0">
+                        <i data-lucide="wallet" class="w-4 h-4"></i>
                     </div>
                     <div class="flex flex-col">
-                        <h3 class="text-sm font-bold text-zinc-900 dark:text-white">Payout Destination Details</h3>
-                        <span class="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium" x-text="activePayoutMethod"></span>
+                        <h3 class="text-base font-bold text-zinc-900 dark:text-white">Payout Destination Details</h3>
+                        <span class="text-xs text-zinc-500 dark:text-zinc-400 font-medium" x-text="activePayoutMethod"></span>
                     </div>
                 </div>
                 <button 
                     type="button" 
                     @click="showPayoutModal = false"
-                    class="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-lg cursor-pointer transition-colors"
+                    class="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-lg cursor-pointer transition-colors"
                 >
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
 
             <!-- Content Card -->
-            <div class="p-4 rounded-xl border bg-zinc-50 dark:bg-zinc-950 border-zinc-200/60 dark:border-zinc-800 flex flex-col gap-2">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Destination Account / Address:</span>
+            <div class="p-4 rounded-xl border bg-zinc-50/50 dark:bg-zinc-950/40 border-zinc-200/80 dark:border-zinc-800/80 flex flex-col gap-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Destination Account / Address:</span>
                 <p class="text-xs sm:text-sm font-mono text-zinc-900 dark:text-zinc-100 leading-relaxed whitespace-pre-wrap break-words" x-text="activePayoutDetails"></p>
             </div>
 
-            <div class="pt-2 flex items-center justify-between gap-2.5">
+            <div class="pt-2 flex items-center justify-between gap-3">
                 <button 
                     type="button" 
                     @click="navigator.clipboard.writeText(activePayoutDetails); copiedDetails = true; setTimeout(() => copiedDetails = false, 2000)"

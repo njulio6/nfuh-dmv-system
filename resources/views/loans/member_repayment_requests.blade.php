@@ -344,7 +344,7 @@
         
         <!-- Modal Container -->
         <div 
-            class="relative w-full max-w-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-6 text-left z-10 transition-transform duration-300 max-h-[90vh] overflow-y-auto"
+            class="relative w-full max-w-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl p-6 text-left z-10 transition-transform duration-300 max-h-[90vh] overflow-y-auto"
             x-transition:enter="ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
@@ -352,7 +352,7 @@
             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
             x-transition:leave-end="opacity-0 scale-95 translate-y-4"
         >
-            <h3 class="text-sm font-bold text-zinc-900 dark:text-white mb-4">
+            <h3 class="text-base font-bold text-zinc-900 dark:text-white mb-4">
                 Filter Repayment Requests
             </h3>
 

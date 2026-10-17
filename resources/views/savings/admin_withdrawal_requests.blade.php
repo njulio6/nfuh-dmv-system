@@ -10,6 +10,8 @@
         showRejectModal: false,
         showRemarkModal: false,
         showPayoutModal: false,
+        showDisburseModal: false,
+        showDisbursementDetailsModal: false,
         activePayoutMethod: '',
         activePayoutDetails: '',
         copiedDetails: false,
@@ -18,6 +20,57 @@
             this.activePayoutDetails = details;
             this.copiedDetails = false;
             this.showPayoutModal = true;
+        },
+        disburseActionUrl: '',
+        disburseMemberName: '',
+        disburseGrossAmount: '',
+        disburseNetAmount: '',
+        disburseFeeAmount: '',
+        disburseMethod: 'zelle',
+        disburseDestination: '',
+        disburseEditDestination: false,
+        disburseCopiedDestination: false,
+        disburseReference: '',
+        disburseNoReference: false,
+        disburseReferenceReason: '',
+        disburseDate: '{{ date('Y-m-d') }}',
+        disburseDetails: '',
+        disburseProofName: '',
+        openDisburseModal(data) {
+            this.disburseActionUrl = '{{ url('/savings/withdrawal-requests') }}/' + data.id + '/disburse';
+            this.disburseMemberName = data.memberName;
+            this.disburseGrossAmount = data.grossAmount;
+            this.disburseNetAmount = data.netAmount;
+            this.disburseFeeAmount = data.feeAmount;
+            let mapped = 'zelle';
+            if (data.payoutMethod) {
+                const lower = data.payoutMethod.toLowerCase();
+                if (lower.includes('bank') || lower.includes('transfer') || lower.includes('ach')) mapped = 'bank_transfer';
+                else if (lower.includes('check')) mapped = 'check';
+                else if (lower.includes('wire')) mapped = 'wire';
+                else if (lower.includes('cash')) mapped = 'cash';
+                else mapped = 'zelle';
+            }
+            this.disburseMethod = mapped;
+            this.disburseDestination = data.payoutDetails || '';
+            this.disburseEditDestination = false;
+            this.disburseCopiedDestination = false;
+            this.disburseReference = '';
+            this.disburseNoReference = false;
+            this.disburseReferenceReason = '';
+            this.disburseDate = '{{ date('Y-m-d') }}';
+            this.disburseDetails = '';
+            this.disburseProofName = '';
+            this.showDisburseModal = true;
+            this.$nextTick(() => { if (window.lucide) { window.lucide.createIcons(); } });
+        },
+        activeDisbursementDetails: null,
+        copiedReceiptDest: false,
+        openDisbursementDetailsModal(data) {
+            this.activeDisbursementDetails = data;
+            this.copiedReceiptDest = false;
+            this.showDisbursementDetailsModal = true;
+            this.$nextTick(() => { if (window.lucide) { window.lucide.createIcons(); } });
         },
         selectedRequestId: '',
         selectedGrossAmount: '',
@@ -178,9 +231,13 @@
                         </button>
                     </td>
                     <td class="text-center px-3.5 py-3.5">
-                        @if ($req->status === 'approved')
+                        @if ($req->status === 'disbursed')
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                Approved
+                                Disbursed / Completed
+                            </span>
+                        @elseif ($req->status === 'approved')
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20">
+                                Approved – Pending Payout
                             </span>
                         @elseif ($req->status === 'rejected')
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
@@ -188,7 +245,7 @@
                             </span>
                         @else
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                Pending
+                                Pending Approval
                             </span>
                         @endif
                     </td>
@@ -208,7 +265,7 @@
                                         showApproveModal = true;
                                     "
                                     class="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 transition-all cursor-pointer"
-                                    title="Approve & Debit Savings Balance"
+                                    title="Approve Request (Step 1)"
                                 >
                                     <i data-lucide="check" class="w-4 h-4"></i>
                                 </button>
@@ -227,6 +284,64 @@
                                     <i data-lucide="x" class="w-4 h-4"></i>
                                 </button>
                             </div>
+                        @elseif ($req->status === 'approved')
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button 
+                                    type="button" 
+                                    @click="openDisburseModal({
+                                        id: '{{ $req->id }}',
+                                        memberName: {{ json_encode($req->member->name) }},
+                                        grossAmount: '{{ number_format($req->gross_amount, 2) }}',
+                                        feeAmount: '{{ number_format($req->fee_amount, 2) }}',
+                                        netAmount: '{{ number_format($req->net_amount, 2) }}',
+                                        payoutMethod: '{{ $req->payout_method }}',
+                                        payoutDetails: {{ json_encode($req->payout_details) }}
+                                    })"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all active:scale-[0.96]"
+                                    title="Disburse Payout & Upload Receipt (Step 2)"
+                                >
+                                    <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
+                                    <span>Disburse</span>
+                                </button>
+                                <button 
+                                    type="button" 
+                                    @click="
+                                        selectedRequestId = '{{ $req->id }}';
+                                        selectedMemberName = {{ json_encode($req->member->name) }};
+                                        selectedGrossAmount = '{{ number_format($req->gross_amount, 2) }}';
+                                        rejectionReason = '';
+                                        showRejectModal = true;
+                                    "
+                                    class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 transition-all cursor-pointer"
+                                    title="Reject Request"
+                                >
+                                    <i data-lucide="x" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        @elseif ($req->status === 'disbursed')
+                            <button 
+                                type="button" 
+                                @click="openDisbursementDetailsModal({
+                                    id: '{{ $req->id }}',
+                                    memberName: {{ json_encode($req->member->name) }},
+                                    netAmount: '{{ number_format($req->net_amount, 2) }}',
+                                    disbursedAt: '{{ $req->disbursed_at ? $req->disbursed_at->format('M d, Y h:i A') : '' }}',
+                                    disbursedDate: '{{ $req->disbursed_date ? $req->disbursed_date->format('M d, Y') : ($req->disbursed_at ? $req->disbursed_at->format('M d, Y') : '') }}',
+                                    disbursedBy: {{ json_encode($req->disbursedBy ? $req->disbursedBy->name : 'Treasurer / Admin') }},
+                                    method: '{{ $req->disbursement_method ? ucwords(str_replace('_', ' ', $req->disbursement_method)) : ucfirst(str_replace('_', ' ', $req->payout_method)) }}',
+                                    destination: {{ json_encode($req->disbursement_destination ?? $req->payout_details) }},
+                                    reference: {{ json_encode($req->disbursement_reference ?? '') }},
+                                    noTxnRef: {{ $req->no_transaction_reference ? 'true' : 'false' }},
+                                    referenceReason: {{ json_encode($req->disbursement_reference_reason ?? '') }},
+                                    proofUrl: '{{ $req->disbursement_proof ? asset('storage/' . $req->disbursement_proof) : '' }}',
+                                    details: {{ json_encode($req->disbursement_details ?? '') }}
+                                })"
+                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] text-[11px] font-semibold cursor-pointer transition-all border shadow-2xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900/50"
+                                title="View Disbursement Audit & Receipt"
+                            >
+                                <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
+                                <span>Receipt</span>
+                            </button>
                         @else
                             @php
                                 $hasAdminRemark = ($req->status === 'rejected' && $req->rejection_reason) || $req->admin_notes;
@@ -373,8 +488,8 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                     </div>
                     <div class="flex flex-col">
-                        <h3 class="text-base font-bold text-zinc-900 dark:text-white">Approve Withdrawal Request</h3>
-                        <span class="text-xs text-zinc-500">Review amounts and payout destination before debiting savings</span>
+                        <h3 class="text-base font-bold text-zinc-900 dark:text-white">Approve Withdrawal Request (Step 1)</h3>
+                        <span class="text-xs text-zinc-500">Approve request and mark as Approved – Pending Disbursement</span>
                     </div>
                 </div>
                 <button type="button" @click="showApproveModal = false" class="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors cursor-pointer">
@@ -465,7 +580,7 @@
                         type="submit" 
                         class="flex-1 py-2.5 text-xs font-bold bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 rounded-xl shadow-xs transition-all active:scale-[0.98] cursor-pointer select-none"
                     >
-                        Confirm & Debit Savings
+                        Approve Request (Step 1)
                     </button>
                 </div>
             </form>
@@ -481,12 +596,20 @@
     >
         <div 
             @click.away="showRejectModal = false" 
-            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl max-w-md w-full p-6 flex flex-col gap-4 animate-scaleIn"
+            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl max-w-lg w-full p-6 flex flex-col gap-5 animate-scaleIn"
         >
             <div class="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
-                <h3 class="text-base font-bold text-zinc-900 dark:text-white">Reject Withdrawal Request</h3>
-                <button type="button" @click="showRejectModal = false" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50 flex items-center justify-center shrink-0">
+                        <i data-lucide="x-circle" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-zinc-900 dark:text-white">Reject Withdrawal Request</h3>
+                        <span class="text-xs text-zinc-500">Provide an official rejection reason</span>
+                    </div>
+                </div>
+                <button type="button" @click="showRejectModal = false" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer p-1 rounded-lg">
+                    <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
 
@@ -529,9 +652,22 @@
     >
         <div 
             @click.away="showFilterModal = false" 
-            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl max-w-sm w-full p-5 flex flex-col gap-4 animate-scaleIn"
+            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl max-w-lg w-full p-6 flex flex-col gap-5 animate-scaleIn"
         >
-            <h4 class="text-sm font-bold text-zinc-900 dark:text-white">Filter Withdrawal Requests</h4>
+            <div class="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white flex items-center justify-center border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
+                        <i data-lucide="filter" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-base font-bold text-zinc-900 dark:text-white">Filter Withdrawal Requests</h4>
+                        <span class="text-xs text-zinc-500">Filter list by status and member</span>
+                    </div>
+                </div>
+                <button type="button" @click="showFilterModal = false" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer p-1 rounded-lg">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
             <div class="flex flex-col gap-3">
                 <div class="flex flex-col gap-1">
                     <label class="text-xs font-bold text-zinc-600 dark:text-zinc-400">Status</label>
@@ -587,26 +723,26 @@
     >
         <div 
             @click.away="showRemarkModal = false"
-            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 max-w-md w-full shadow-2xl flex flex-col gap-4 animate-scaleUp"
+            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 max-w-lg w-full shadow-2xl flex flex-col gap-5 animate-scaleUp"
         >
-            <div class="flex items-start justify-between">
+            <div class="flex items-start justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
                 <div class="flex items-center gap-3">
                     <div 
-                        class="p-2.5 rounded-xl border flex items-center justify-center"
+                        class="w-9 h-9 rounded-xl border flex items-center justify-center shrink-0"
                         :class="activeRemark.status === 'rejected' ? 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50' : 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50'"
                     >
-                        <i data-lucide="message-square-text" class="w-5 h-5"></i>
+                        <i data-lucide="message-square-text" class="w-4 h-4"></i>
                     </div>
                     <div class="flex flex-col">
                         <div class="flex items-center gap-2">
-                            <h3 class="text-sm font-bold text-zinc-900 dark:text-white" x-text="activeRemark.title"></h3>
+                            <h3 class="text-base font-bold text-zinc-900 dark:text-white" x-text="activeRemark.title"></h3>
                             <span 
-                                class="px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider"
+                                class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
                                 :class="activeRemark.status === 'rejected' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'"
                                 x-text="activeRemark.status"
                             ></span>
                         </div>
-                        <span class="text-[11px] text-zinc-400 dark:text-zinc-500">
+                        <span class="text-xs text-zinc-400 dark:text-zinc-500">
                             Member: <strong class="text-zinc-700 dark:text-zinc-300" x-text="activeRemark.memberName"></strong> • <span class="font-mono" x-text="activeRemark.date"></span>
                         </span>
                     </div>
@@ -614,7 +750,7 @@
                 <button 
                     type="button" 
                     @click="showRemarkModal = false"
-                    class="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-lg cursor-pointer transition-colors"
+                    class="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-lg cursor-pointer transition-colors"
                 >
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
@@ -648,22 +784,22 @@
     >
         <div 
             @click.away="showPayoutModal = false"
-            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 max-w-md w-full shadow-2xl flex flex-col gap-4 animate-scaleUp"
+            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 max-w-lg w-full shadow-2xl flex flex-col gap-5 animate-scaleUp"
         >
-            <div class="flex items-start justify-between">
+            <div class="flex items-start justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
                 <div class="flex items-center gap-3">
-                    <div class="p-2.5 rounded-xl border bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-900/50 flex items-center justify-center">
-                        <i data-lucide="wallet" class="w-5 h-5"></i>
+                    <div class="w-9 h-9 rounded-xl border bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-900/50 flex items-center justify-center shrink-0">
+                        <i data-lucide="wallet" class="w-4 h-4"></i>
                     </div>
                     <div class="flex flex-col">
-                        <h3 class="text-sm font-bold text-zinc-900 dark:text-white">Payout Destination Details</h3>
-                        <span class="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium" x-text="activePayoutMethod"></span>
+                        <h3 class="text-base font-bold text-zinc-900 dark:text-white">Payout Destination Details</h3>
+                        <span class="text-xs text-zinc-500 dark:text-zinc-400 font-medium" x-text="activePayoutMethod"></span>
                     </div>
                 </div>
                 <button 
                     type="button" 
                     @click="showPayoutModal = false"
-                    class="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-lg cursor-pointer transition-colors"
+                    class="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-lg cursor-pointer transition-colors"
                 >
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
@@ -671,15 +807,15 @@
 
             <!-- Content Card -->
             <div class="p-3.5 rounded-xl border bg-zinc-50/50 dark:bg-zinc-950/40 border-zinc-200/80 dark:border-zinc-800/80 flex flex-col gap-2.5">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Destination Account / Address:</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Destination Account / Address:</span>
                 <template x-if="getPayoutPairs(activePayoutDetails).length > 0">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                         <template x-for="(pair, idx) in getPayoutPairs(activePayoutDetails)" :key="idx">
                             <div 
-                                class="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col gap-0.5 shadow-3xs"
+                                class="p-2.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col gap-0.5 shadow-3xs"
                                 :class="(pair.label.toLowerCase() === 'delivery' || pair.label.toLowerCase() === 'address' || getPayoutPairs(activePayoutDetails).length === 1) ? 'sm:col-span-2' : ''"
                             >
-                                <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500" x-text="pair.label || 'Detail'"></span>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500" x-text="pair.label || 'Detail'"></span>
                                 <span class="font-mono font-semibold text-zinc-900 dark:text-zinc-100 text-xs break-all" x-text="pair.value"></span>
                             </div>
                         </template>
@@ -690,7 +826,7 @@
                 </template>
             </div>
 
-            <div class="pt-2 flex items-center justify-between gap-2.5">
+            <div class="pt-2 flex items-center justify-between gap-3">
                 <button 
                     type="button" 
                     @click="navigator.clipboard.writeText(activePayoutDetails); copiedDetails = true; setTimeout(() => copiedDetails = false, 2000)"
@@ -703,6 +839,507 @@
                 <button 
                     type="button" 
                     @click="showPayoutModal = false"
+                    class="px-5 py-2 bg-zinc-950 hover:bg-zinc-900 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+                >
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- M1-003 & M1-004: Disburse Savings Payout Modal -->
+    <div 
+        x-show="showDisburseModal" 
+        x-cloak 
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-xs"
+        @keydown.escape.window="showDisburseModal = false"
+    >
+        <div 
+            @click.away="showDisburseModal = false"
+            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-lg w-full p-6 relative z-10 text-left flex flex-col gap-4 max-h-[90vh] overflow-y-auto animate-scaleIn"
+        >
+            <!-- Header -->
+            <div class="flex items-start justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white flex items-center justify-center border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
+                        <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-zinc-900 dark:text-white">Disburse Savings Payout</h3>
+                        <p class="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Record disbursement confirmation & upload payment receipt</p>
+                    </div>
+                </div>
+                <button type="button" @click="showDisburseModal = false" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer p-1 rounded-lg">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form :action="disburseActionUrl" method="POST" enctype="multipart/form-data" class="flex flex-col gap-3.5">
+                @csrf
+
+                <!-- Member & Amount Overview Card -->
+                <div class="p-3.5 px-4 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl flex items-center justify-between gap-3">
+                    <div class="flex flex-col min-w-0">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Recipient Member</span>
+                        <span class="text-sm font-bold text-zinc-900 dark:text-white truncate" x-text="disburseMemberName"></span>
+                        <div class="flex items-center gap-1.5 mt-0.5 text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+                            <span>Gross: $<span x-text="disburseGrossAmount"></span></span>
+                            <span>•</span>
+                            <span>Fee: -$<span x-text="disburseFeeAmount"></span></span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col text-right shrink-0">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Net Payout</span>
+                        <span class="text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                            $<span x-text="disburseNetAmount"></span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Payment Method with System Dropdown Component -->
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                            Disbursement Payment Method <span class="text-red-500">*</span>
+                        </label>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-500">Required</span>
+                    </div>
+                    <input type="hidden" name="disbursement_method" :value="disburseMethod" required>
+                    <x-dropdown align="left" width="w-full" contentClasses="p-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl flex flex-col gap-0.5">
+                        <x-slot name="trigger">
+                            <button 
+                                type="button" 
+                                class="w-full flex items-center justify-between bg-zinc-50/60 dark:bg-zinc-950/40 hover:bg-zinc-100/40 dark:hover:bg-zinc-900/40 text-zinc-900 dark:text-white px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-semibold focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all cursor-pointer text-left"
+                            >
+                                <span x-text="{
+                                    'zelle': 'Zelle Electronic Transfer',
+                                    'bank_transfer': 'Direct Bank Transfer / ACH',
+                                    'check': 'Paper Check',
+                                    'wire': 'Wire Transfer',
+                                    'cash': 'Cash Voucher',
+                                    'other': 'Other Official Method'
+                                }[disburseMethod] || 'Select Payment Method'"></span>
+                                <svg class="h-4 w-4 text-zinc-400 dark:text-zinc-500 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </x-slot>
+
+                        <x-slot name="content">
+                            <button 
+                                type="button" 
+                                @click="disburseMethod = 'zelle'" 
+                                class="w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer text-left select-none"
+                                :class="disburseMethod === 'zelle' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
+                            >
+                                <span>Zelle Electronic Transfer</span>
+                                <span x-show="disburseMethod === 'zelle'" class="text-zinc-900 dark:text-white text-xs font-bold">✓</span>
+                            </button>
+                            <button 
+                                type="button" 
+                                @click="disburseMethod = 'bank_transfer'" 
+                                class="w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer text-left select-none"
+                                :class="disburseMethod === 'bank_transfer' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
+                            >
+                                <span>Direct Bank Transfer / ACH</span>
+                                <span x-show="disburseMethod === 'bank_transfer'" class="text-zinc-900 dark:text-white text-xs font-bold">✓</span>
+                            </button>
+                            <button 
+                                type="button" 
+                                @click="disburseMethod = 'check'" 
+                                class="w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer text-left select-none"
+                                :class="disburseMethod === 'check' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
+                            >
+                                <span>Paper Check</span>
+                                <span x-show="disburseMethod === 'check'" class="text-zinc-900 dark:text-white text-xs font-bold">✓</span>
+                            </button>
+                            <button 
+                                type="button" 
+                                @click="disburseMethod = 'wire'" 
+                                class="w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer text-left select-none"
+                                :class="disburseMethod === 'wire' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
+                            >
+                                <span>Wire Transfer</span>
+                                <span x-show="disburseMethod === 'wire'" class="text-zinc-900 dark:text-white text-xs font-bold">✓</span>
+                            </button>
+                            <button 
+                                type="button" 
+                                @click="disburseMethod = 'cash'" 
+                                class="w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer text-left select-none"
+                                :class="disburseMethod === 'cash' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
+                            >
+                                <span>Cash Voucher</span>
+                                <span x-show="disburseMethod === 'cash'" class="text-zinc-900 dark:text-white text-xs font-bold">✓</span>
+                            </button>
+                            <button 
+                                type="button" 
+                                @click="disburseMethod = 'other'" 
+                                class="w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer text-left select-none"
+                                :class="disburseMethod === 'other' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
+                            >
+                                <span>Other Official Method</span>
+                                <span x-show="disburseMethod === 'other'" class="text-zinc-900 dark:text-white text-xs font-bold">✓</span>
+                            </button>
+                        </x-slot>
+                    </x-dropdown>
+                </div>
+
+                <!-- Recipient / Payout Destination Details - Elevated Structured Layout -->
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                            <i data-lucide="wallet" class="w-3.5 h-3.5 text-zinc-400"></i>
+                            <span>Payout Destination Details <span class="text-red-500">*</span></span>
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <button 
+                                type="button" 
+                                @click="navigator.clipboard.writeText(disburseDestination); disburseCopiedDestination = true; setTimeout(() => disburseCopiedDestination = false, 2000)"
+                                class="text-[11px] font-semibold text-zinc-500 hover:text-zinc-950 dark:hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                                title="Copy destination details"
+                            >
+                                <i data-lucide="copy" class="w-3 h-3" x-show="!disburseCopiedDestination"></i>
+                                <i data-lucide="check" class="w-3 h-3 text-emerald-500" x-show="disburseCopiedDestination" x-cloak></i>
+                                <span x-text="disburseCopiedDestination ? 'Copied' : 'Copy'"></span>
+                            </button>
+                            <span class="text-zinc-300 dark:text-zinc-700 text-xs">•</span>
+                            <button 
+                                type="button" 
+                                @click="disburseEditDestination = !disburseEditDestination; $nextTick(() => { if (window.lucide) { window.lucide.createIcons(); } })"
+                                class="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white underline cursor-pointer transition-colors"
+                                x-text="disburseEditDestination ? 'View Structured' : 'Edit Details'"
+                            ></button>
+                        </div>
+                    </div>
+
+                    <!-- Structured Cards View (Default) -->
+                    <div x-show="!disburseEditDestination" class="p-3 rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 bg-zinc-50/70 dark:bg-zinc-950/40 flex flex-col gap-2">
+                        <template x-if="getPayoutPairs(disburseDestination).length > 0">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                <template x-for="(pair, idx) in getPayoutPairs(disburseDestination)" :key="idx">
+                                    <div 
+                                        class="p-2.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col gap-0.5 shadow-3xs"
+                                        :class="(pair.label.toLowerCase() === 'delivery' || pair.label.toLowerCase() === 'address' || getPayoutPairs(disburseDestination).length === 1) ? 'sm:col-span-2' : ''"
+                                    >
+                                        <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500" x-text="pair.label || 'Destination'"></span>
+                                        <span class="font-mono font-semibold text-zinc-950 dark:text-zinc-100 text-xs break-all" x-text="pair.value"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                        <template x-if="getPayoutPairs(disburseDestination).length === 0">
+                            <span class="text-xs font-mono font-medium text-zinc-800 dark:text-zinc-200" x-text="disburseDestination || 'No destination specified'"></span>
+                        </template>
+                    </div>
+
+                    <!-- Hidden input to submit when in structured view -->
+                    <input 
+                        type="hidden" 
+                        name="disbursement_destination" 
+                        :value="disburseDestination" 
+                        :disabled="disburseEditDestination"
+                    />
+
+                    <!-- Raw Textarea Editor View (When Edit is clicked) -->
+                    <div x-show="disburseEditDestination" x-cloak class="flex flex-col gap-1">
+                        <textarea 
+                            name="disbursement_destination" 
+                            x-model="disburseDestination" 
+                            :disabled="!disburseEditDestination"
+                            required 
+                            rows="2"
+                            placeholder="Recipient legal name, phone number, email, bank account, routing number, check mailing address..."
+                            class="w-full px-3.5 py-2 text-xs rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all resize-none font-mono font-medium"
+                        ></textarea>
+                        <span class="text-xs text-zinc-500 dark:text-zinc-400">Edit or override the payout destination information above if needed.</span>
+                    </div>
+                </div>
+
+                <!-- 2-Column: Disbursement Date & Transaction Reference -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+                    <x-premium-datepicker 
+                        label="Disbursement Date" 
+                        labelClass="text-xs font-bold text-zinc-800 dark:text-zinc-200"
+                        name="disbursement_date" 
+                        required 
+                        value="{{ date('Y-m-d') }}"
+                    />
+                    <div class="flex flex-col w-full">
+                        <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center justify-between">
+                            <span>Transaction Ref / ID <span class="text-red-500" x-show="!disburseNoReference">*</span></span>
+                            <span class="text-[11px] text-zinc-400 font-normal lowercase" x-show="disburseNoReference">(bypassed)</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="disbursement_reference" 
+                            x-model="disburseReference" 
+                            :required="!disburseNoReference" 
+                            :disabled="disburseNoReference"
+                            :placeholder="disburseNoReference ? 'No reference provided by service' : 'e.g. ZEL-9481, ACH-8841...'"
+                            class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-900 dark:text-white px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-semibold focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all font-mono disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
+                    </div>
+                </div>
+
+                <!-- M1-004: Transaction Reference Exception Checkbox -->
+                <div class="flex flex-col gap-1.5 p-3 bg-zinc-50/70 dark:bg-zinc-950/40 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80">
+                    <label class="flex items-start gap-2 cursor-pointer select-none">
+                        <input 
+                            type="checkbox" 
+                            name="no_transaction_reference" 
+                            value="1" 
+                            x-model="disburseNoReference"
+                            @change="if (disburseNoReference) { disburseReference = ''; }"
+                            class="mt-0.5 size-4 rounded border-zinc-300 dark:border-zinc-700 text-zinc-950 dark:text-zinc-100 focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                        />
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-zinc-900 dark:text-white">
+                                No transaction reference provided by payment service.
+                            </span>
+                            <span class="text-xs text-zinc-500 dark:text-zinc-400 leading-tight">
+                                When selected, provide an explanation below. The payment receipt remains mandatory.
+                            </span>
+                        </div>
+                    </label>
+
+                    <div x-show="disburseNoReference" x-cloak class="mt-2 flex flex-col gap-1.5">
+                        <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center justify-between">
+                            <span>Explanation for Missing Reference <span class="text-red-500">*</span></span>
+                            <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wider">Required</span>
+                        </label>
+                        <textarea 
+                            name="disbursement_reference_reason" 
+                            x-model="disburseReferenceReason" 
+                            :required="disburseNoReference"
+                            rows="3"
+                            placeholder="State why no transaction ID was provided by payment service (e.g. In-person paper check, cash voucher, or direct teller release)..."
+                            class="w-full px-3.5 py-2.5 text-xs leading-relaxed rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all min-h-[76px] font-medium"
+                        ></textarea>
+                    </div>
+                </div>
+
+                <!-- Mandatory File Upload: Payment Confirmation Screenshot / Receipt -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1">
+                            <span>Payment Confirmation Receipt / Screenshot <span class="text-red-500">*</span></span>
+                        </label>
+                        <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wider">Required</span>
+                    </div>
+                    <div 
+                        x-data="{ isDragging: false }"
+                        class="relative border border-dashed rounded-xl p-3 text-center transition-all cursor-pointer bg-zinc-50/50 dark:bg-zinc-950/40 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/60"
+                        :class="isDragging ? 'border-zinc-950 dark:border-zinc-100 bg-zinc-100/30' : 'border-zinc-300 dark:border-zinc-800'"
+                        @dragover.prevent="isDragging = true"
+                        @dragleave.prevent="isDragging = false"
+                        @drop.prevent="
+                            isDragging = false;
+                            if ($event.dataTransfer.files.length > 0) {
+                                $refs.proofInput.files = $event.dataTransfer.files;
+                                disburseProofName = $event.dataTransfer.files[0].name;
+                            }
+                        "
+                        @click="$refs.proofInput.click()"
+                    >
+                        <input 
+                            type="file" 
+                            name="disbursement_proof" 
+                            x-ref="proofInput" 
+                            required
+                            accept="image/*,application/pdf"
+                            class="hidden"
+                            @change="disburseProofName = $event.target.files.length > 0 ? $event.target.files[0].name : ''"
+                        >
+                        <template x-if="!disburseProofName">
+                            <div class="flex items-center justify-center gap-2 pointer-events-none py-1">
+                                <i data-lucide="upload" class="w-4 h-4 text-zinc-500 shrink-0"></i>
+                                <div class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                                    Click or drop payment receipt document here <span class="text-red-500">*</span>
+                                    <span class="text-xs font-normal text-zinc-400 dark:text-zinc-500 ml-1">(JPG, PNG, PDF up to 5MB)</span>
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="disburseProofName">
+                            <div class="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700">
+                                <div class="flex items-center gap-2 truncate">
+                                    <i data-lucide="file-check" class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0"></i>
+                                    <span class="text-xs font-mono font-medium text-zinc-800 dark:text-zinc-200 truncate" x-text="disburseProofName"></span>
+                                </div>
+                                <span class="text-xs text-emerald-600 dark:text-emerald-400 font-bold shrink-0">Attached</span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Optional Details -->
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                        Disbursement Notes / Audit Memo
+                    </label>
+                    <textarea 
+                        name="disbursement_details" 
+                        x-model="disburseDetails" 
+                        rows="3"
+                        placeholder="Additional audit notes, memo, or payout comments..."
+                        class="w-full px-3.5 py-2.5 text-xs leading-relaxed rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all min-h-[76px] font-medium"
+                    ></textarea>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                    <button 
+                        type="button" 
+                        @click="showDisburseModal = false" 
+                        class="flex-1 py-2.5 text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all cursor-pointer select-none"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        type="submit" 
+                        class="flex-1 py-2.5 text-xs font-bold bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 rounded-xl shadow-xs transition-all active:scale-[0.98] cursor-pointer select-none"
+                    >
+                        Confirm Disbursement & Finalize
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- M1-003: View Disbursement Details & Receipt Modal -->
+    <div 
+        x-show="showDisbursementDetailsModal" 
+        x-cloak 
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-xs"
+        @keydown.escape.window="showDisbursementDetailsModal = false"
+    >
+        <div 
+            @click.away="showDisbursementDetailsModal = false"
+            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 max-w-lg w-full shadow-2xl flex flex-col gap-4 animate-scaleUp max-h-[90vh] overflow-y-auto"
+            x-show="activeDisbursementDetails"
+        >
+            <div class="flex items-start justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50 flex items-center justify-center shrink-0">
+                        <i data-lucide="receipt" class="w-4 h-4"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <h3 class="text-base font-bold text-zinc-900 dark:text-white">Disbursement Audit & Receipt</h3>
+                        <span class="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Verified payout execution record</span>
+                    </div>
+                </div>
+                <button 
+                    type="button" 
+                    @click="showDisbursementDetailsModal = false"
+                    class="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-lg cursor-pointer transition-colors"
+                >
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Details Content -->
+            <div class="flex flex-col gap-3" x-show="activeDisbursementDetails">
+                <!-- Member & Net Amount Card -->
+                <div class="p-3.5 px-4 bg-zinc-50 dark:bg-zinc-950/50 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between gap-3">
+                    <div class="flex flex-col min-w-0">
+                        <span class="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500 tracking-wider">Recipient Member</span>
+                        <span class="font-bold text-zinc-900 dark:text-white text-sm truncate" x-text="activeDisbursementDetails ? activeDisbursementDetails.memberName : ''"></span>
+                    </div>
+                    <div class="text-right flex flex-col shrink-0">
+                        <span class="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500 tracking-wider">Net Payout Sent</span>
+                        <span class="font-bold font-mono text-emerald-600 dark:text-emerald-400 text-xl">$<span x-text="activeDisbursementDetails ? activeDisbursementDetails.netAmount : ''"></span></span>
+                    </div>
+                </div>
+
+                <!-- 2-Col: Method & Date -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div class="p-2.5 rounded-lg border border-zinc-200/70 dark:border-zinc-800 bg-zinc-50/40 dark:bg-zinc-950/30 flex flex-col gap-0.5">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Payment Method</span>
+                        <span class="font-semibold text-xs text-zinc-900 dark:text-white" x-text="activeDisbursementDetails ? activeDisbursementDetails.method : ''"></span>
+                    </div>
+                    <div class="p-2.5 rounded-lg border border-zinc-200/70 dark:border-zinc-800 bg-zinc-50/40 dark:bg-zinc-950/30 flex flex-col gap-0.5">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Disbursed Date</span>
+                        <span class="font-mono font-semibold text-xs text-zinc-900 dark:text-white" x-text="activeDisbursementDetails ? activeDisbursementDetails.disbursedDate : ''"></span>
+                    </div>
+                </div>
+
+                <!-- Payout Destination Details (Parsed Structured Grid) -->
+                <div class="p-3 rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/40 flex flex-col gap-2" x-show="activeDisbursementDetails && activeDisbursementDetails.destination">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Payout Destination Details</span>
+                        <button 
+                            type="button" 
+                            @click="navigator.clipboard.writeText(activeDisbursementDetails.destination); copiedReceiptDest = true; setTimeout(() => copiedReceiptDest = false, 2000)"
+                            class="text-[11px] font-semibold text-zinc-500 hover:text-zinc-950 dark:hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                            title="Copy destination details"
+                        >
+                            <i data-lucide="copy" class="w-3 h-3" x-show="!copiedReceiptDest"></i>
+                            <i data-lucide="check" class="w-3 h-3 text-emerald-500" x-show="copiedReceiptDest" x-cloak></i>
+                            <span x-text="copiedReceiptDest ? 'Copied' : 'Copy'"></span>
+                        </button>
+                    </div>
+
+                    <template x-if="activeDisbursementDetails && getPayoutPairs(activeDisbursementDetails.destination).length > 0">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            <template x-for="(pair, idx) in getPayoutPairs(activeDisbursementDetails.destination)" :key="idx">
+                                <div 
+                                    class="p-2.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col gap-0.5 shadow-3xs"
+                                    :class="(pair.label.toLowerCase() === 'delivery' || pair.label.toLowerCase() === 'address' || getPayoutPairs(activeDisbursementDetails.destination).length === 1) ? 'sm:col-span-2' : ''"
+                                >
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500" x-text="pair.label || 'Destination'"></span>
+                                    <span class="font-mono font-semibold text-zinc-900 dark:text-zinc-100 text-xs break-all" x-text="pair.value"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                    <template x-if="activeDisbursementDetails && getPayoutPairs(activeDisbursementDetails.destination).length === 0">
+                        <span class="text-xs font-mono font-medium text-zinc-800 dark:text-zinc-200" x-text="activeDisbursementDetails.destination"></span>
+                    </template>
+                </div>
+
+                <!-- 2-Col: Transaction Reference / Status & Disbursing Officer -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div class="p-2.5 rounded-lg border border-zinc-200/70 dark:border-zinc-800 bg-zinc-50/40 dark:bg-zinc-950/30 flex flex-col gap-0.5">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Transaction Ref / Status</span>
+                        <template x-if="activeDisbursementDetails && activeDisbursementDetails.noTxnRef">
+                            <div class="flex flex-col">
+                                <span class="text-xs font-bold text-amber-700 dark:text-amber-400">Exception: No Ref</span>
+                                <span class="text-[11px] font-mono text-amber-800 dark:text-amber-300 italic truncate" x-text="activeDisbursementDetails.referenceReason || 'No reason'"></span>
+                            </div>
+                        </template>
+                        <template x-if="activeDisbursementDetails && !activeDisbursementDetails.noTxnRef">
+                            <span class="font-mono font-bold text-xs text-emerald-700 dark:text-emerald-400 truncate" x-text="activeDisbursementDetails.reference || '-'"></span>
+                        </template>
+                    </div>
+
+                    <div class="p-2.5 rounded-lg border border-zinc-200/70 dark:border-zinc-800 bg-zinc-50/40 dark:bg-zinc-950/30 flex flex-col gap-0.5">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Disbursing Officer</span>
+                        <span class="font-semibold text-xs text-zinc-900 dark:text-white truncate" x-text="activeDisbursementDetails ? activeDisbursementDetails.disbursedBy : ''"></span>
+                    </div>
+                </div>
+
+                <!-- Audit Notes (if recorded) -->
+                <div class="p-2.5 rounded-lg border border-zinc-200/70 dark:border-zinc-800 bg-zinc-50/40 dark:bg-zinc-950/30 flex flex-col gap-0.5" x-show="activeDisbursementDetails && activeDisbursementDetails.details">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Audit Notes</span>
+                    <span class="text-xs text-zinc-800 dark:text-zinc-200 italic font-medium" x-text="activeDisbursementDetails ? activeDisbursementDetails.details : ''"></span>
+                </div>
+
+                <!-- Proof Document Link Button -->
+                <div class="pt-0.5" x-show="activeDisbursementDetails && activeDisbursementDetails.proofUrl">
+                    <a 
+                        :href="activeDisbursementDetails ? activeDisbursementDetails.proofUrl : '#'" 
+                        target="_blank" 
+                        class="w-full py-2.5 px-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-750 text-zinc-950 dark:text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-zinc-300/80 dark:border-zinc-700 transition-all shadow-xs cursor-pointer select-none"
+                    >
+                        <i data-lucide="file-check" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                        <span>View / Download Payment Confirmation Receipt</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="pt-2 flex justify-end">
+                <button 
+                    type="button" 
+                    @click="showDisbursementDetailsModal = false"
                     class="px-5 py-2 bg-zinc-950 hover:bg-zinc-900 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
                 >
                     Close

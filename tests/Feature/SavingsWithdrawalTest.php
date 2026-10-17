@@ -203,7 +203,7 @@ test('withdrawal request requires valid payout method and details', function () 
     $responseMissing->assertSessionHasErrors(['payout_details']);
 });
 
-test('admin can approve pending withdrawal, debiting member savings atomically and logging fee', function () {
+test('admin can approve pending withdrawal, placing it in pending disbursement status and reserving ledger balance (M1-003)', function () {
     [$user, $member, $org] = createMemberWithUser(1000.00);
     $admin = createAdminUser();
     Setting::updateOrCreate([], ['savings_withdrawal_fee_percent' => 2.00]);
@@ -221,26 +221,171 @@ test('admin can approve pending withdrawal, debiting member savings atomically a
     ]);
 
     $response = $this->actingAs($admin)->post(route('savings.withdrawal-requests.approve', $req->id), [
-        'admin_notes' => 'Processed via Zelle confirmation #ZEL999',
+        'admin_notes' => 'Approved for payout processing',
     ]);
 
     $response->assertSessionHas('success');
 
-    // Assert withdrawal request status updated
-    expect($req->fresh()->status)->toEqual('approved')
-        ->and($req->fresh()->reviewed_by)->toEqual($admin->id)
-        ->and($req->fresh()->admin_notes)->toEqual('Processed via Zelle confirmation #ZEL999');
+    // Assert withdrawal request status is approved (pending disbursement)
+    $freshReq = $req->fresh();
+    expect($freshReq->status)->toEqual('approved')
+        ->and($freshReq->reviewed_by)->toEqual($admin->id)
+        ->and($freshReq->admin_notes)->toEqual('Approved for payout processing')
+        ->and($freshReq->savings_transaction_id)->not->toBeNull();
 
-    // Assert ledger debit transaction created
+    // Assert ledger pending transaction created to distinguish pending payout
     $this->assertDatabaseHas('savings_transactions', [
+        'id' => $freshReq->savings_transaction_id,
         'member_id' => $member->id,
         'amount' => 200.00,
         'type' => 'withdrawal',
+        'status' => 'pending',
+    ]);
+
+    // Available balance is reserved immediately ($800), settled balance remains $1000 until disbursed
+    expect((float)$member->fresh()->available_savings_balance)->toEqual(800.00)
+        ->and((float)$member->fresh()->savings_balance)->toEqual(1000.00);
+});
+
+test('treasurer can disburse approved savings withdrawal with mandatory proof and settled ledger debit (M1-003)', function () {
+    \Illuminate\Support\Facades\Storage::fake('public');
+
+    [$user, $member, $org] = createMemberWithUser(1000.00);
+    $treasurer = createAdminUser();
+
+    $req = SavingsWithdrawalRequest::create([
+        'member_id' => $member->id,
+        'organization_id' => $org->id,
+        'gross_amount' => 300.00,
+        'fee_rate' => 2.00,
+        'fee_amount' => 6.00,
+        'net_amount' => 294.00,
+        'payout_method' => 'zelle',
+        'payout_details' => 'zelle@member.com',
         'status' => 'approved',
     ]);
 
-    // Assert member fresh balance is debited
-    expect((float)$member->fresh()->savings_balance)->toEqual(800.00);
+    // Create linked pending ledger transaction
+    $txn = SavingsTransaction::create([
+        'member_id' => $member->id,
+        'organization_id' => $org->id,
+        'amount' => 300.00,
+        'type' => 'withdrawal',
+        'status' => 'pending',
+        'transaction_date' => now()->toDateString(),
+        'notes' => 'Savings withdrawal pending disbursement payout',
+    ]);
+    $req->update(['savings_transaction_id' => $txn->id]);
+
+    $file = \Illuminate\Http\UploadedFile::fake()->create('zelle_receipt.png', 150, 'image/png');
+
+    $response = $this->actingAs($treasurer)->post(route('savings.withdrawal-requests.disburse', $req->id), [
+        'disbursement_method' => 'zelle',
+        'disbursement_destination' => 'zelle@member.com',
+        'disbursement_reference' => 'ZEL-CONF-88712',
+        'disbursement_date' => now()->toDateString(),
+        'disbursement_details' => 'Sent from Chase Business Zelle account',
+        'disbursement_proof' => $file,
+    ]);
+
+    $response->assertRedirect(route('savings.withdrawal-requests'));
+    $response->assertSessionHas('success');
+
+    $freshReq = $req->fresh();
+    expect($freshReq->status)->toEqual('disbursed')
+        ->and($freshReq->disbursed_by_user_id)->toEqual($treasurer->id)
+        ->and($freshReq->disbursement_method)->toEqual('zelle')
+        ->and($freshReq->disbursement_reference)->toEqual('ZEL-CONF-88712')
+        ->and($freshReq->disbursed_date->toDateString())->toEqual(now()->toDateString())
+        ->and($freshReq->disbursement_proof)->not->toBeNull();
+
+    \Illuminate\Support\Facades\Storage::disk('public')->assertExists($freshReq->disbursement_proof);
+
+    // Assert linked ledger transaction is now approved/settled
+    expect($txn->fresh()->status)->toEqual('approved')
+        ->and((float)$member->fresh()->savings_balance)->toEqual(700.00)
+        ->and((float)$member->fresh()->available_savings_balance)->toEqual(700.00);
+});
+
+test('savings withdrawal disbursement requires mandatory receipt proof (M1-003)', function () {
+    [$user, $member, $org] = createMemberWithUser(1000.00);
+    $treasurer = createAdminUser();
+
+    $req = SavingsWithdrawalRequest::create([
+        'member_id' => $member->id,
+        'organization_id' => $org->id,
+        'gross_amount' => 200.00,
+        'fee_rate' => 2.00,
+        'fee_amount' => 4.00,
+        'net_amount' => 196.00,
+        'payout_method' => 'cash',
+        'payout_details' => 'Handover',
+        'status' => 'approved',
+    ]);
+
+    // Omit disbursement proof
+    $response = $this->actingAs($treasurer)->post(route('savings.withdrawal-requests.disburse', $req->id), [
+        'disbursement_method' => 'cash',
+        'disbursement_destination' => 'Office Desk',
+        'disbursement_reference' => 'CASH-991',
+        'disbursement_date' => now()->toDateString(),
+    ]);
+
+    $response->assertSessionHasErrors(['disbursement_proof']);
+    expect($req->fresh()->status)->toEqual('approved');
+});
+
+test('savings withdrawal disbursement supports M1-004 reference exception with mandatory reason', function () {
+    \Illuminate\Support\Facades\Storage::fake('public');
+
+    [$user, $member, $org] = createMemberWithUser(1000.00);
+    $treasurer = createAdminUser();
+
+    $req = SavingsWithdrawalRequest::create([
+        'member_id' => $member->id,
+        'organization_id' => $org->id,
+        'gross_amount' => 250.00,
+        'fee_rate' => 2.00,
+        'fee_amount' => 5.00,
+        'net_amount' => 245.00,
+        'payout_method' => 'cash',
+        'payout_details' => 'Handover in person',
+        'status' => 'approved',
+    ]);
+
+    $file = \Illuminate\Http\UploadedFile::fake()->create('signed_voucher.pdf', 100, 'application/pdf');
+
+    // Exception without reason should fail
+    $resFail = $this->actingAs($treasurer)->post(route('savings.withdrawal-requests.disburse', $req->id), [
+        'disbursement_method' => 'cash',
+        'disbursement_destination' => 'Cash envelope',
+        'no_transaction_reference' => '1',
+        'disbursement_reference' => '',
+        'disbursement_reference_reason' => '',
+        'disbursement_date' => now()->toDateString(),
+        'disbursement_proof' => $file,
+    ]);
+    $resFail->assertSessionHasErrors(['disbursement_reference_reason']);
+
+    // Exception with reason should succeed
+    $resSuccess = $this->actingAs($treasurer)->post(route('savings.withdrawal-requests.disburse', $req->id), [
+        'disbursement_method' => 'cash',
+        'disbursement_destination' => 'Cash envelope',
+        'no_transaction_reference' => '1',
+        'disbursement_reference' => '',
+        'disbursement_reference_reason' => 'Direct cash disbursement at general meeting; signed receipt attached.',
+        'disbursement_date' => now()->toDateString(),
+        'disbursement_proof' => $file,
+    ]);
+
+    $resSuccess->assertRedirect(route('savings.withdrawal-requests'));
+    $resSuccess->assertSessionHas('success');
+
+    $freshReq = $req->fresh();
+    expect($freshReq->status)->toEqual('disbursed')
+        ->and($freshReq->no_transaction_reference)->toBeTrue()
+        ->and($freshReq->disbursement_reference)->toBeNull()
+        ->and($freshReq->disbursement_reference_reason)->toEqual('Direct cash disbursement at general meeting; signed receipt attached.');
 });
 
 test('admin cannot approve an already approved or rejected withdrawal', function () {

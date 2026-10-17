@@ -129,6 +129,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
         ->name('savings.withdrawal-requests');
     Route::post('/savings/withdrawal-requests/{withdrawalRequest}/approve', [\App\Http\Controllers\SavingsController::class, 'approveWithdrawal'])
         ->name('savings.withdrawal-requests.approve');
+    Route::post('/savings/withdrawal-requests/{withdrawalRequest}/disburse', [\App\Http\Controllers\SavingsController::class, 'disburseWithdrawal'])
+        ->name('savings.withdrawal-requests.disburse');
     Route::post('/savings/withdrawal-requests/{withdrawalRequest}/reject', [\App\Http\Controllers\SavingsController::class, 'rejectWithdrawal'])
         ->name('savings.withdrawal-requests.reject');
 

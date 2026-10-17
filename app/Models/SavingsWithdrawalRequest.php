@@ -25,6 +25,16 @@ class SavingsWithdrawalRequest extends Model
         'reviewed_by',
         'reviewed_at',
         'disbursed_at',
+        'disbursed_by_user_id',
+        'disbursed_date',
+        'disbursement_method',
+        'disbursement_destination',
+        'disbursement_reference',
+        'no_transaction_reference',
+        'disbursement_reference_reason',
+        'disbursement_proof',
+        'disbursement_details',
+        'savings_transaction_id',
     ];
 
     protected $casts = [
@@ -34,6 +44,8 @@ class SavingsWithdrawalRequest extends Model
         'net_amount' => 'decimal:2',
         'reviewed_at' => 'datetime',
         'disbursed_at' => 'datetime',
+        'disbursed_date' => 'date',
+        'no_transaction_reference' => 'boolean',
     ];
 
     public function member()
@@ -49,6 +61,16 @@ class SavingsWithdrawalRequest extends Model
     public function reviewer()
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function disbursedBy()
+    {
+        return $this->belongsTo(User::class, 'disbursed_by_user_id');
+    }
+
+    public function savingsTransaction()
+    {
+        return $this->belongsTo(SavingsTransaction::class, 'savings_transaction_id');
     }
 
     /**

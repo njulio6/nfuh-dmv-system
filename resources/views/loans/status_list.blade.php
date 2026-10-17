@@ -37,7 +37,11 @@
         disburseRepaymentFrequency: '',
         disburseMethod: 'zelle',
         disburseDestination: '',
+        disburseEditDestination: false,
+        disburseCopiedDestination: false,
         disburseReference: '',
+        disburseNoReference: false,
+        disburseReferenceReason: '',
         disburseDate: '{{ date('Y-m-d') }}',
         disburseDetails: '',
         disburseProofName: '',
@@ -116,12 +120,32 @@
             }
             this.disburseMethod = mapped;
             this.disburseDestination = payoutDetails || '';
+            this.disburseEditDestination = false;
+            this.disburseCopiedDestination = false;
             this.disburseReference = '';
+            this.disburseNoReference = false;
+            this.disburseReferenceReason = '';
             this.disburseDate = '{{ date('Y-m-d') }}';
             this.disburseDetails = '';
             this.disburseProofName = '';
             this.showDisburseModal = true;
             this.$nextTick(() => { if (window.lucide) { window.lucide.createIcons(); } });
+        },
+        getPayoutPairs(raw) {
+            if (!raw) return [];
+            if (!raw.includes('|') && !raw.includes(':')) {
+                return [{ label: 'Details', value: raw }];
+            }
+            return raw.split('|').map(part => {
+                let idx = part.indexOf(':');
+                if (idx !== -1) {
+                    return {
+                        label: part.substring(0, idx).trim(),
+                        value: part.substring(idx + 1).trim()
+                    };
+                }
+                return { label: '', value: part.trim() };
+            }).filter(item => item.value && item.value.length > 0);
         }
     }"
     class="w-full"
@@ -227,6 +251,8 @@
                         'disbursed_by' => $loan->disbursedBy ? ($loan->disbursedBy->name . ' (' . ($loan->disbursedBy->email ?? '') . ')') : null,
                         'disbursement_method' => $loan->disbursement_method ? ucwords(str_replace('_', ' ', $loan->disbursement_method)) : null,
                         'disbursement_reference' => $loan->disbursement_reference ?? '',
+                        'no_transaction_reference' => (bool)$loan->no_transaction_reference,
+                        'disbursement_reference_reason' => $loan->disbursement_reference_reason ?? '',
                         'disbursement_destination' => $loan->disbursement_destination ?? '',
                         'disbursement_details' => $loan->disbursement_details ?? '',
                         'disbursement_proof' => $loan->disbursement_proof ? asset('storage/' . $loan->disbursement_proof) : null,
@@ -666,11 +692,11 @@
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
             x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-md w-full p-6 relative z-10 max-h-[90vh] overflow-y-auto"
+            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-lg w-full p-6 relative z-10 max-h-[90vh] overflow-y-auto flex flex-col gap-5"
         >
-            <div class="flex justify-between items-center pb-4 border-b border-zinc-100 dark:border-zinc-800 mb-5">
-                <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider">Log Manual Repayment</h3>
-                <button @click="showRepayModal = false" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+            <div class="flex justify-between items-center pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <h3 class="text-base font-bold text-zinc-900 dark:text-white">Log Manual Repayment</h3>
+                <button @click="showRepayModal = false" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer p-1">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
@@ -792,13 +818,13 @@
         <div @click="showReviewModal = false" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"></div>
 
         <div 
-            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-md w-full p-6 relative z-10 max-h-[90vh] overflow-y-auto"
+            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-lg w-full p-6 relative z-10 max-h-[90vh] overflow-y-auto flex flex-col gap-5"
             x-show="showReviewModal"
             x-transition
         >
-            <div class="flex justify-between items-center pb-4 border-b border-zinc-100 dark:border-zinc-800 mb-4">
-                <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider" x-text="reviewType === 'approve' ? 'Approve Loan Request' : 'Reject Loan Request'"></h3>
-                <button @click="showReviewModal = false" class="text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-200">
+            <div class="flex justify-between items-center pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <h3 class="text-base font-bold text-zinc-900 dark:text-white" x-text="reviewType === 'approve' ? 'Approve Loan Request' : 'Reject Loan Request'"></h3>
+                <button @click="showReviewModal = false" class="text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-200 cursor-pointer p-1">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
@@ -938,20 +964,20 @@
     <!-- Mark Defaulted Modal -->
     <div x-show="showDefaultModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;">
         <div @click="showDefaultModal = false" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"></div>
-        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-sm w-full p-6 relative z-10 text-center flex flex-col gap-4 max-h-[90vh] overflow-y-auto" x-show="showDefaultModal" x-transition>
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-lg w-full p-6 relative z-10 text-center flex flex-col gap-4 max-h-[90vh] overflow-y-auto" x-show="showDefaultModal" x-transition>
             <div class="mx-auto size-12 rounded-full bg-red-100 dark:bg-red-950/20 text-red-600 dark:text-red-400 flex items-center justify-center border border-red-200/50">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
             <div>
-                <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider mb-1">Mark as Defaulted?</h3>
-                <p class="text-xs text-zinc-400 dark:text-zinc-500 leading-normal">
-                    Are you sure you want to mark the active loan of <span class="font-bold text-zinc-800 dark:text-zinc-200" x-text="statusBorrower"></span> ($<span x-text="parseFloat(statusAmount).toFixed(2)"></span>) as <strong class="text-red-600 dark:text-red-400">Defaulted</strong>?
+                <h3 class="text-base font-bold text-zinc-900 dark:text-white mb-1">Mark Loan as Defaulted?</h3>
+                <p class="text-xs text-zinc-500 dark:text-zinc-400 leading-normal">
+                    Are you sure you want to mark the active loan of <span class="font-bold text-zinc-900 dark:text-white" x-text="statusBorrower"></span> ($<span x-text="parseFloat(statusAmount).toFixed(2)"></span>) as <strong class="text-red-600 dark:text-red-400">Defaulted</strong>?
                 </p>
             </div>
             <form :action="statusActionUrl" method="POST" class="flex gap-3 mt-2">
                 @csrf
-                <button type="button" class="flex-1 py-2 text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 select-none" @click="showDefaultModal = false">Cancel</button>
-                <button type="submit" class="flex-1 py-2 text-xs font-bold bg-red-600 hover:bg-red-500 text-white rounded-lg select-none">Yes, Default</button>
+                <button type="button" class="flex-1 py-2.5 text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 select-none cursor-pointer" @click="showDefaultModal = false">Cancel</button>
+                <button type="submit" class="flex-1 py-2.5 text-xs font-bold bg-red-600 hover:bg-red-500 text-white rounded-xl select-none cursor-pointer shadow-xs">Yes, Default</button>
             </form>
         </div>
     </div>
@@ -959,20 +985,20 @@
     <!-- Restore Active Modal -->
     <div x-show="showRestoreModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;">
         <div @click="showRestoreModal = false" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"></div>
-        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-sm w-full p-6 relative z-10 text-center flex flex-col gap-4 max-h-[90vh] overflow-y-auto" x-show="showRestoreModal" x-transition>
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-lg w-full p-6 relative z-10 text-center flex flex-col gap-4 max-h-[90vh] overflow-y-auto" x-show="showRestoreModal" x-transition>
             <div class="mx-auto size-12 rounded-full bg-emerald-100 dark:bg-emerald-950/20 text-emerald-650 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/50">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <div>
-                <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider mb-1">Restore Active Status?</h3>
-                <p class="text-xs text-zinc-400 dark:text-zinc-500 leading-normal">
-                    Are you sure you want to restore the defaulted loan of <span class="font-bold text-zinc-800 dark:text-zinc-200" x-text="statusBorrower"></span> ($<span x-text="parseFloat(statusAmount).toFixed(2)"></span>) back to <strong class="text-emerald-650 dark:text-emerald-400">Active</strong>?
+                <h3 class="text-base font-bold text-zinc-900 dark:text-white mb-1">Restore Active Status?</h3>
+                <p class="text-xs text-zinc-500 dark:text-zinc-400 leading-normal">
+                    Are you sure you want to restore the defaulted loan of <span class="font-bold text-zinc-900 dark:text-white" x-text="statusBorrower"></span> ($<span x-text="parseFloat(statusAmount).toFixed(2)"></span>) back to <strong class="text-emerald-600 dark:text-emerald-400">Active</strong>?
                 </p>
             </div>
             <form :action="statusActionUrl" method="POST" class="flex gap-3 mt-2">
                 @csrf
-                <button type="button" class="flex-1 py-2 text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 select-none" @click="showRestoreModal = false">Cancel</button>
-                <button type="submit" class="flex-1 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg select-none">Yes, Restore</button>
+                <button type="button" class="flex-1 py-2.5 text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 select-none cursor-pointer" @click="showRestoreModal = false">Cancel</button>
+                <button type="submit" class="flex-1 py-2.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl select-none cursor-pointer shadow-xs">Yes, Restore</button>
             </form>
         </div>
     </div>
@@ -980,71 +1006,72 @@
     <!-- Disburse Confirmation Modal -->
     <div x-show="showDisburseModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;">
         <div @click="showDisburseModal = false" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"></div>
-        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-lg w-full p-6 relative z-10 text-left flex flex-col gap-4 max-h-[90vh] overflow-y-auto" x-show="showDisburseModal" x-transition>
-            
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-lg w-full p-6 relative z-10 text-left flex flex-col gap-4 max-h-[90vh] overflow-y-auto animate-scaleIn" x-show="showDisburseModal" x-transition>
             <!-- Header -->
             <div class="flex items-start justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
                 <div class="flex items-center gap-3">
-                    <div class="size-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white flex items-center justify-center border border-zinc-200 dark:border-zinc-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <div class="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white flex items-center justify-center border border-zinc-200 dark:border-zinc-700 shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                     </div>
                     <div>
-                        <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider">Disburse Loan Funds</h3>
-                        <p class="text-[11px] text-zinc-400 dark:text-zinc-500">Confirm release and record disbursement documentation</p>
+                        <h3 class="text-base font-bold text-zinc-900 dark:text-white">Disburse Loan Funds</h3>
+                        <p class="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Confirm release and record disbursement documentation</p>
                     </div>
                 </div>
-                <button type="button" @click="showDisburseModal = false" class="text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-250 cursor-pointer p-1">
+                <button type="button" @click="showDisburseModal = false" class="text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-250 cursor-pointer p-1 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
 
-            <form :action="disburseActionUrl" method="POST" enctype="multipart/form-data" class="flex flex-col gap-4">
+            <form :action="disburseActionUrl" method="POST" enctype="multipart/form-data" class="flex flex-col gap-3.5">
                 @csrf
 
                 <!-- Borrower & Amount Overview Card -->
-                <div class="p-3.5 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl flex items-center justify-between gap-4">
-                    <div class="flex flex-col">
+                <div class="p-3.5 px-4 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl flex items-center justify-between gap-3">
+                    <div class="flex flex-col min-w-0">
                         <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Borrower</span>
-                        <span class="text-sm font-extrabold text-zinc-900 dark:text-white" x-text="disburseBorrower"></span>
-                        <div class="flex items-center gap-1.5 mt-0.5" x-show="disburseRepaymentFrequency">
-                            <span class="text-[10px] text-zinc-500 font-medium" x-show="disburseDurationMonths" x-text="disburseDurationMonths + ' Months'"></span>
-                            <span class="text-zinc-300 dark:text-zinc-700 text-xs" x-show="disburseDurationMonths">•</span>
-                            <span class="text-[10px] font-semibold text-zinc-600 dark:text-zinc-400" x-text="disburseRepaymentFrequency + ' Repayment'"></span>
+                        <span class="text-sm font-bold text-zinc-900 dark:text-white truncate" x-text="disburseBorrower"></span>
+                        <div class="flex items-center gap-1.5 mt-0.5 text-xs text-zinc-500 dark:text-zinc-400 font-medium" x-show="disburseRepaymentFrequency">
+                            <span x-show="disburseDurationMonths" x-text="disburseDurationMonths + ' Months'"></span>
+                            <span class="text-zinc-300 dark:text-zinc-700" x-show="disburseDurationMonths">•</span>
+                            <span x-text="disburseRepaymentFrequency + ' Repayment'"></span>
                         </div>
                     </div>
-                    <div class="flex flex-col text-right">
+                    <div class="flex flex-col text-right shrink-0">
                         <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Disbursement Amount</span>
-                        <span class="text-sm font-black text-zinc-950 dark:text-white font-mono">
+                        <span class="text-xl font-bold text-zinc-900 dark:text-white font-mono">
                             $<span x-text="parseFloat(disburseAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
                         </span>
                     </div>
                 </div>
 
                 <!-- Borrower Requested Payout Destination Reference -->
-                <div class="p-3.5 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-800/40 rounded-xl flex flex-col gap-1.5">
+                <div class="p-2.5 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-800/40 rounded-xl flex flex-col gap-1">
                     <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                             Member Requested Destination
                         </span>
-                        <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-white dark:bg-zinc-900 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-3xs" x-text="disbursePayoutMethod || 'Standard'"></span>
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-white dark:bg-zinc-900 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-3xs" x-text="disbursePayoutMethod || 'Standard'"></span>
                     </div>
                     <div class="text-xs font-mono text-zinc-800 dark:text-zinc-200 font-medium break-all" x-show="disbursePayoutDetails" x-text="disbursePayoutDetails"></div>
                     <div class="text-[11px] text-zinc-500 italic" x-show="!disbursePayoutDetails">No specific payout instructions provided by member.</div>
                 </div>
 
                 <!-- Mandatory Payment Method with Dropdown Component -->
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center justify-between">
-                        <span>Disbursement Payment Method <span class="text-red-500">*</span></span>
-                        <span class="text-[10px] font-medium uppercase tracking-wider text-red-500">Required</span>
-                    </label>
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                            Disbursement Payment Method <span class="text-red-500">*</span>
+                        </label>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-500">Required</span>
+                    </div>
                     <input type="hidden" name="disbursement_method" :value="disburseMethod" required>
                     <x-dropdown align="left" width="w-full" contentClasses="p-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl flex flex-col gap-0.5">
                         <x-slot name="trigger">
                             <button 
                                 type="button" 
-                                class="w-full flex items-center justify-between bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-semibold focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all cursor-pointer text-left shadow-2xs"
+                                class="w-full flex items-center justify-between bg-zinc-50/60 dark:bg-zinc-950/40 hover:bg-zinc-100/40 dark:hover:bg-zinc-900/40 text-zinc-900 dark:text-white px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-semibold focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all cursor-pointer text-left"
                             >
                                 <span x-text="{
                                     'zelle': 'Zelle Electronic Transfer',
@@ -1064,7 +1091,7 @@
                             <button 
                                 type="button" 
                                 @click="disburseMethod = 'zelle'" 
-                                class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left select-none"
+                                class="w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer text-left select-none"
                                 :class="disburseMethod === 'zelle' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
                             >
                                 <span>Zelle Electronic Transfer</span>
@@ -1073,7 +1100,7 @@
                             <button 
                                 type="button" 
                                 @click="disburseMethod = 'bank_transfer'" 
-                                class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left select-none"
+                                class="w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer text-left select-none"
                                 :class="disburseMethod === 'bank_transfer' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
                             >
                                 <span>Direct Bank Transfer / ACH</span>
@@ -1082,7 +1109,7 @@
                             <button 
                                 type="button" 
                                 @click="disburseMethod = 'check'" 
-                                class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left select-none"
+                                class="w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer text-left select-none"
                                 :class="disburseMethod === 'check' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
                             >
                                 <span>Paper Check</span>
@@ -1091,7 +1118,7 @@
                             <button 
                                 type="button" 
                                 @click="disburseMethod = 'wire'" 
-                                class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left select-none"
+                                class="w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer text-left select-none"
                                 :class="disburseMethod === 'wire' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
                             >
                                 <span>Wire Transfer</span>
@@ -1100,7 +1127,7 @@
                             <button 
                                 type="button" 
                                 @click="disburseMethod = 'cash'" 
-                                class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left select-none"
+                                class="w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer text-left select-none"
                                 :class="disburseMethod === 'cash' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
                             >
                                 <span>Cash Voucher</span>
@@ -1109,7 +1136,7 @@
                             <button 
                                 type="button" 
                                 @click="disburseMethod = 'other'" 
-                                class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left select-none"
+                                class="w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer text-left select-none"
                                 :class="disburseMethod === 'other' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
                             >
                                 <span>Other Official Method</span>
@@ -1119,57 +1146,153 @@
                     </x-dropdown>
                 </div>
 
-                <!-- Mandatory Recipient / Payout Destination Details -->
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center justify-between">
-                        <span>Recipient / Payout Destination Details <span class="text-red-500">*</span></span>
-                        <span class="text-[10px] font-medium uppercase tracking-wider text-red-500">Required</span>
-                    </label>
-                    <textarea 
+                <!-- Mandatory Recipient / Payout Destination Details - Elevated Structured Layout -->
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                            <i data-lucide="wallet" class="w-3.5 h-3.5 text-zinc-400"></i>
+                            <span>Recipient / Payout Destination Details <span class="text-red-500">*</span></span>
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <button 
+                                type="button" 
+                                @click="navigator.clipboard.writeText(disburseDestination); disburseCopiedDestination = true; setTimeout(() => disburseCopiedDestination = false, 2000)"
+                                class="text-[11px] font-semibold text-zinc-500 hover:text-zinc-950 dark:hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                                title="Copy destination details"
+                            >
+                                <i data-lucide="copy" class="w-3 h-3" x-show="!disburseCopiedDestination"></i>
+                                <i data-lucide="check" class="w-3 h-3 text-emerald-500" x-show="disburseCopiedDestination" x-cloak></i>
+                                <span x-text="disburseCopiedDestination ? 'Copied' : 'Copy'"></span>
+                            </button>
+                            <span class="text-zinc-300 dark:text-zinc-700 text-xs">•</span>
+                            <button 
+                                type="button" 
+                                @click="disburseEditDestination = !disburseEditDestination; $nextTick(() => { if (window.lucide) { window.lucide.createIcons(); } })"
+                                class="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white underline cursor-pointer transition-colors"
+                                x-text="disburseEditDestination ? 'View Structured' : 'Edit Details'"
+                            ></button>
+                        </div>
+                    </div>
+
+                    <!-- Structured Cards View (Default) -->
+                    <div x-show="!disburseEditDestination" class="p-2.5 rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 bg-zinc-50/70 dark:bg-zinc-950/40 flex flex-col gap-1.5">
+                        <template x-if="getPayoutPairs(disburseDestination).length > 0">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
+                                <template x-for="(pair, idx) in getPayoutPairs(disburseDestination)" :key="idx">
+                                    <div 
+                                        class="p-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col gap-0.5 shadow-3xs"
+                                        :class="(pair.label.toLowerCase() === 'delivery' || pair.label.toLowerCase() === 'address' || getPayoutPairs(disburseDestination).length === 1) ? 'sm:col-span-2' : ''"
+                                    >
+                                        <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500" x-text="pair.label || 'Destination'"></span>
+                                        <span class="font-mono font-semibold text-zinc-950 dark:text-zinc-100 text-xs break-all" x-text="pair.value"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                        <template x-if="getPayoutPairs(disburseDestination).length === 0">
+                            <span class="text-xs font-mono font-medium text-zinc-800 dark:text-zinc-200" x-text="disburseDestination || 'No destination specified'"></span>
+                        </template>
+                    </div>
+
+                    <!-- Hidden input to submit when in structured view -->
+                    <input 
+                        type="hidden" 
                         name="disbursement_destination" 
-                        x-model="disburseDestination" 
-                        required 
-                        rows="2"
-                        placeholder="Recipient full name, phone number, email, bank account/routing, check delivery address, or receipt voucher details..."
-                        class="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all resize-none"
-                    ></textarea>
+                        :value="disburseDestination" 
+                        :disabled="disburseEditDestination"
+                    />
+
+                    <!-- Raw Textarea Editor View (When Edit is clicked) -->
+                    <div x-show="disburseEditDestination" x-cloak class="flex flex-col gap-1">
+                        <textarea 
+                            name="disbursement_destination" 
+                            x-model="disburseDestination" 
+                            :disabled="!disburseEditDestination"
+                            required 
+                            rows="2"
+                            placeholder="Recipient full name, phone number, email, bank account/routing, check delivery address, or receipt voucher details..."
+                            class="w-full px-3 py-1.5 text-xs rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all resize-none font-mono font-medium"
+                        ></textarea>
+                        <span class="text-[11px] text-zinc-500 dark:text-zinc-400">Edit or override the payout destination information above if needed.</span>
+                    </div>
                 </div>
 
                 <!-- Mandatory 2-Column: Disbursement Date & Reference Number -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-start">
                     <x-premium-datepicker 
                         label="Disbursement Date" 
+                        labelClass="text-xs font-bold text-zinc-800 dark:text-zinc-200"
                         name="disbursement_date" 
                         required 
                         value="{{ date('Y-m-d') }}"
                     />
                     <div class="flex flex-col w-full">
-                        <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-                            Transaction Reference / ID <span class="text-red-500">*</span>
+                        <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center justify-between">
+                            <span>Transaction Reference / ID <span class="text-red-500" x-show="!disburseNoReference">*</span></span>
+                            <span class="text-[11px] text-zinc-400 font-normal lowercase" x-show="disburseNoReference">(bypassed)</span>
                         </label>
                         <input 
                             type="text" 
                             name="disbursement_reference" 
                             x-model="disburseReference" 
-                            required 
-                            placeholder="e.g. TXN-83921, Wire Ref..."
-                            class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-white px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all font-mono"
+                            :required="!disburseNoReference" 
+                            :disabled="disburseNoReference"
+                            :placeholder="disburseNoReference ? 'No reference provided by service' : 'e.g. TXN-83921, Wire Ref...'"
+                            class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-900 dark:text-white px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-semibold focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all font-mono disabled:opacity-50 disabled:cursor-not-allowed"
                         />
+                    </div>
+                </div>
+
+                <!-- M1-004: Transaction Reference Exception Checkbox -->
+                <div class="flex flex-col gap-1.5 p-2.5 bg-zinc-50/70 dark:bg-zinc-950/40 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80">
+                    <label class="flex items-start gap-2 cursor-pointer select-none">
+                        <input 
+                            type="checkbox" 
+                            name="no_transaction_reference" 
+                            value="1" 
+                            x-model="disburseNoReference"
+                            @change="if (disburseNoReference) { disburseReference = ''; }"
+                            class="mt-0.5 size-3.5 rounded border-zinc-300 dark:border-zinc-700 text-zinc-950 dark:text-zinc-100 focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                        />
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-zinc-900 dark:text-white">
+                                No transaction reference provided by payment service.
+                            </span>
+                            <span class="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight">
+                                When selected, provide an explanation below. The payment receipt remains mandatory.
+                            </span>
+                        </div>
+                    </label>
+
+                    <!-- Explanation field required when exception is checked -->
+                    <div x-show="disburseNoReference" x-cloak class="mt-2 flex flex-col gap-1.5">
+                        <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center justify-between">
+                            <span>Explanation for Missing Reference <span class="text-red-500">*</span></span>
+                            <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wider">Required</span>
+                        </label>
+                        <textarea 
+                            name="disbursement_reference_reason" 
+                            x-model="disburseReferenceReason" 
+                            :required="disburseNoReference"
+                            rows="3"
+                            placeholder="State why no transaction ID was provided by payment service (e.g. In-person paper check, cash voucher, or direct teller release)..."
+                            class="w-full px-3.5 py-2.5 text-xs leading-relaxed rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all min-h-[76px] font-medium"
+                        ></textarea>
                     </div>
                 </div>
 
                 <!-- Mandatory File Upload: Proof / Receipt -->
                 <div>
-                    <div class="flex items-center justify-between mb-1.5">
+                    <div class="flex items-center justify-between mb-1">
                         <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1">
                             <span>Disbursement Proof / Receipt Document <span class="text-red-500">*</span></span>
                         </label>
-                        <span class="text-[10px] text-red-500 font-medium uppercase tracking-wider">Required Document</span>
+                        <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wider">Required</span>
                     </div>
                     <div 
                         x-data="{ isDragging: false }"
-                        class="relative border-2 border-dashed rounded-xl p-3.5 text-center transition-all cursor-pointer bg-zinc-50/50 dark:bg-zinc-950/40 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/60"
-                        :class="isDragging ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20' : 'border-zinc-250 dark:border-zinc-800'"
+                        class="relative border border-dashed rounded-xl p-2.5 text-center transition-all cursor-pointer bg-zinc-50/50 dark:bg-zinc-950/40 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/60"
+                        :class="isDragging ? 'border-zinc-950 dark:border-zinc-100 bg-zinc-100/30' : 'border-zinc-300 dark:border-zinc-800'"
                         @dragover.prevent="isDragging = true"
                         @dragleave.prevent="isDragging = false"
                         @drop.prevent="
@@ -1191,23 +1314,19 @@
                             @change="disburseProofName = $event.target.files.length > 0 ? $event.target.files[0].name : ''"
                         >
                         <template x-if="!disburseProofName">
-                            <div class="flex flex-col items-center gap-1.5 pointer-events-none">
-                                <div class="size-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                                </div>
-                                <div class="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
-                                    Click or drop verified payment receipt / transfer slip here <span class="text-red-500">*</span>
-                                </div>
-                                <div class="text-[10px] text-zinc-400 dark:text-zinc-500">
-                                    Mandatory: JPG, PNG, WEBP, or PDF up to 5MB
+                            <div class="flex items-center justify-center gap-2 pointer-events-none py-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-500 shrink-0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                <div class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                                    Click or drop payment receipt document here <span class="text-red-500">*</span>
+                                    <span class="text-[10px] font-normal text-zinc-400 dark:text-zinc-500 ml-1">(JPG, PNG, PDF up to 5MB)</span>
                                 </div>
                             </div>
                         </template>
                         <template x-if="disburseProofName">
-                            <div class="flex items-center justify-between gap-2 p-1" @click.stop>
-                                <div class="flex items-center gap-2 min-w-0">
+                            <div class="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700" @click.stop>
+                                <div class="flex items-center gap-2 truncate min-w-0">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500 shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                    <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200 truncate" x-text="disburseProofName"></span>
+                                    <span class="text-xs font-mono font-medium text-zinc-800 dark:text-zinc-200 truncate" x-text="disburseProofName"></span>
                                 </div>
                                 <button 
                                     type="button" 
@@ -1223,25 +1342,22 @@
                 </div>
 
                 <!-- Optional Details / Notes Field -->
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label for="disbursement_details_input" class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                            Additional Internal Notes / Audit Remarks
-                        </label>
-                        <span class="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium uppercase tracking-wider">Optional</span>
-                    </div>
+                <div class="flex flex-col gap-1">
+                    <label for="disbursement_details_input" class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                        Additional Internal Notes / Audit Remarks
+                    </label>
                     <textarea 
                         id="disbursement_details_input"
                         name="disbursement_details" 
                         x-model="disburseDetails"
-                        rows="2"
+                        rows="3"
                         placeholder="Optional internal bank notes or executive approval summary..." 
-                        class="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all resize-none"
+                        class="w-full px-3.5 py-2.5 text-xs leading-relaxed rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all min-h-[76px] font-medium"
                     ></textarea>
                 </div>
 
                 <!-- Authenticated Officer Audit Trail Stamp -->
-                <div class="p-3 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200/60 dark:border-zinc-800/60 rounded-xl flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400">
+                <div class="p-2 px-2.5 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200/60 dark:border-zinc-800/60 rounded-xl flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400">
                     <span class="flex items-center gap-1.5 font-medium">
                         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-700 dark:text-zinc-300"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                         Audited Disbursing Officer:
@@ -1252,7 +1368,7 @@
                 </div>
 
                 <!-- Footer buttons -->
-                <div class="flex gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                <div class="flex gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
                     <button type="button" class="flex-1 py-2.5 text-xs font-bold border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 select-none cursor-pointer" @click="showDisburseModal = false">Cancel</button>
                     <button type="submit" class="flex-1 py-2.5 text-xs font-bold bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 rounded-xl shadow-xs select-none cursor-pointer transition-all active:scale-[0.98]">Confirm & Disburse Funds</button>
                 </div>
@@ -1282,7 +1398,7 @@
 
         <!-- Modal Content Container -->
         <div 
-            class="relative w-full max-w-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-10 p-6 flex flex-col gap-4 transition-transform duration-300 max-h-[90vh] overflow-y-auto"
+            class="relative w-full max-w-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-10 p-6 flex flex-col gap-4 transition-transform duration-300 max-h-[90vh] overflow-y-auto"
             x-show="showDetailsModal"
             x-transition:enter="ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
@@ -1292,116 +1408,136 @@
             x-transition:leave-end="opacity-0 scale-95 translate-y-4"
         >
             <!-- Header -->
-            <div class="flex justify-between items-center pb-4 border-b border-zinc-100 dark:border-zinc-800/80 mb-1">
+            <div class="flex justify-between items-center pb-3 border-b border-zinc-100 dark:border-zinc-800">
                 <div class="flex items-center gap-3">
-                    <div class="size-9 rounded-xl bg-zinc-100 dark:bg-zinc-850 text-zinc-900 dark:text-white flex items-center justify-center border border-zinc-200/60 dark:border-zinc-700/60">
+                    <div class="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white flex items-center justify-center border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                     </div>
                     <div>
-                        <h3 class="text-sm font-black text-zinc-950 dark:text-white uppercase tracking-wider">Loan & Disbursement Details</h3>
-                        <p class="text-[11px] text-zinc-400 dark:text-zinc-500" x-show="activeLoanDetails" x-text="'Loan #' + (activeLoanDetails?.id || '') + ' • ' + (activeLoanDetails?.borrower_name || '')"></p>
+                        <h3 class="text-base font-bold text-zinc-900 dark:text-white">Loan & Disbursement Details</h3>
+                        <p class="text-xs text-zinc-500 dark:text-zinc-400" x-show="activeLoanDetails" x-text="'Loan #' + (activeLoanDetails?.id || '') + ' • ' + (activeLoanDetails?.borrower_name || '')"></p>
                     </div>
                 </div>
-                <button @click="showDetailsModal = false" class="text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-250 cursor-pointer p-1">
+                <button @click="showDetailsModal = false" class="text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-250 cursor-pointer p-1 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
 
-            <div class="flex flex-col gap-4 overflow-y-auto max-h-[70vh] pr-1">
+            <div class="flex flex-col gap-3.5 overflow-y-auto max-h-[75vh] pr-1">
 
                 <template x-if="activeLoanDetails">
                     <div class="flex flex-col gap-3">
                         <!-- Borrower & Principal Overview -->
-                        <div class="p-3.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-xl flex items-center justify-between">
-                            <div class="flex flex-col">
+                        <div class="p-3.5 px-4 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800 rounded-xl flex items-center justify-between gap-3">
+                            <div class="flex flex-col min-w-0">
                                 <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Borrower</span>
-                                <span class="text-sm font-extrabold text-zinc-900 dark:text-white" x-text="activeLoanDetails.borrower_name"></span>
-                                <span class="font-mono text-[10px] text-zinc-400 font-bold" x-text="activeLoanDetails.borrower_code"></span>
+                                <span class="text-sm font-bold text-zinc-900 dark:text-white truncate" x-text="activeLoanDetails.borrower_name"></span>
+                                <span class="font-mono text-xs text-zinc-400 font-bold" x-text="activeLoanDetails.borrower_code"></span>
                             </div>
-                            <div class="flex flex-col text-right">
+                            <div class="flex flex-col text-right shrink-0">
                                 <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Principal</span>
-                                <span class="text-base font-black text-zinc-950 dark:text-white font-mono" x-text="'$' + parseFloat(activeLoanDetails.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
+                                <span class="text-xl font-bold text-zinc-900 dark:text-white font-mono" x-text="'$' + parseFloat(activeLoanDetails.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
                             </div>
                         </div>
 
                         <!-- Terms & Member Requested Payout Details -->
-                        <div class="p-3.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-xl flex flex-col gap-2.5">
-                            <span class="text-[11px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Terms & Payout Details</span>
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Repayment Frequency</span>
+                        <div class="p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-xl flex flex-col gap-2">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Terms & Payout Details</span>
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-zinc-500 dark:text-zinc-400 font-medium">Repayment Frequency</span>
                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 shadow-3xs" x-text="activeLoanDetails.repayment_frequency || 'Monthly'"></span>
                             </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Loan Duration</span>
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-zinc-500 dark:text-zinc-400 font-medium">Loan Duration</span>
                                 <span class="font-bold text-xs text-zinc-800 dark:text-zinc-200" x-text="(activeLoanDetails.duration_months || 0) + ' Months'"></span>
                             </div>
-                            <div class="flex items-center justify-between pt-1 border-t border-zinc-200/50 dark:border-zinc-800">
-                                <span class="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Payout Method</span>
+                            <div class="flex items-center justify-between pt-1 border-t border-zinc-200/50 dark:border-zinc-800 text-xs">
+                                <span class="text-zinc-500 dark:text-zinc-400 font-medium">Payout Method</span>
                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 shadow-3xs" x-text="activeLoanDetails.payout_method || 'Standard'"></span>
                             </div>
                             <div class="flex flex-col gap-1" x-show="activeLoanDetails.payout_details">
                                 <span class="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">Destination Details</span>
-                                <span class="text-xs font-mono font-semibold text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-950 p-2.5 rounded-lg border border-zinc-200/50 dark:border-zinc-800 break-all" x-text="activeLoanDetails.payout_details"></span>
+                                <span class="text-xs font-mono font-semibold text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-950 p-2 rounded-lg border border-zinc-200/50 dark:border-zinc-800 break-all" x-text="activeLoanDetails.payout_details"></span>
                             </div>
                         </div>
 
                         <!-- Purpose (if provided) -->
-                        <div class="p-3.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-xl flex flex-col gap-1.5" x-show="activeLoanDetails.purpose">
-                            <span class="text-[11px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Loan Purpose</span>
+                        <div class="p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-xl flex flex-col gap-1" x-show="activeLoanDetails.purpose">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Loan Purpose</span>
                             <p class="text-xs text-zinc-700 dark:text-zinc-300 italic" x-text="'&quot;' + activeLoanDetails.purpose + '&quot;'"></p>
                         </div>
 
                         <!-- Verified Disbursement Record (Disbursement Details & Proof File) -->
-                        <div x-show="activeLoanDetails.disbursed_at || activeLoanDetails.disbursement_details || activeLoanDetails.disbursement_proof" class="p-3.5 bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 rounded-xl flex flex-col gap-2.5">
+                        <div x-show="activeLoanDetails.disbursed_at || activeLoanDetails.disbursement_details || activeLoanDetails.disbursement_proof" class="p-3 bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 rounded-xl flex flex-col gap-2">
                             <div class="flex items-center justify-between">
-                                <span class="text-[11px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                                     Official Disbursement Record
                                 </span>
-                                <span class="text-[11px] font-mono font-bold text-emerald-700 dark:text-emerald-300" x-text="activeLoanDetails.disbursed_at || 'Disbursed'"></span>
+                                <span class="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-300" x-text="activeLoanDetails.disbursed_at || 'Disbursed'"></span>
                             </div>
 
                             <!-- Disbursing Officer Audit Badge -->
-                            <div x-show="activeLoanDetails.disbursed_by" class="flex items-center justify-between py-1 border-b border-emerald-200/40 dark:border-emerald-900/40 text-xs">
-                                <span class="text-emerald-800/80 dark:text-emerald-400/80 font-bold text-[10px] uppercase tracking-wider">Disbursing Officer:</span>
-                                <span class="font-bold text-zinc-900 dark:text-white font-mono text-[11px]" x-text="activeLoanDetails.disbursed_by"></span>
+                            <div x-show="activeLoanDetails.disbursed_by" class="flex items-center justify-between py-1.5 border-b border-emerald-200/40 dark:border-emerald-900/40 text-xs">
+                                <span class="text-emerald-800/90 dark:text-emerald-400 font-semibold text-[10px] uppercase tracking-wider">Disbursing Officer:</span>
+                                <span class="font-bold text-zinc-900 dark:text-white text-xs" x-text="activeLoanDetails.disbursed_by"></span>
                             </div>
 
                             <!-- Payment Method & Reference -->
-                            <div x-show="activeLoanDetails.disbursement_method || activeLoanDetails.disbursement_reference" class="grid grid-cols-2 gap-2 text-xs py-1 border-b border-emerald-200/40 dark:border-emerald-900/40">
-                                <div>
-                                    <span class="text-[10px] text-emerald-800/80 dark:text-emerald-400/80 font-bold uppercase tracking-wider block">Payment Method</span>
-                                    <span class="font-bold text-zinc-900 dark:text-white" x-text="activeLoanDetails.disbursement_method || '-'"></span>
+                            <div x-show="activeLoanDetails.disbursement_method || activeLoanDetails.disbursement_reference || activeLoanDetails.no_transaction_reference" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs py-1.5 border-b border-emerald-200/40 dark:border-emerald-900/40">
+                                <div class="flex flex-col gap-0.5">
+                                    <span class="text-[10px] text-emerald-800/90 dark:text-emerald-400 font-semibold uppercase tracking-wider block">Payment Method</span>
+                                    <span class="font-bold text-xs text-zinc-900 dark:text-white" x-text="activeLoanDetails.disbursement_method || '-'"></span>
                                 </div>
-                                <div>
-                                    <span class="text-[10px] text-emerald-800/80 dark:text-emerald-400/80 font-bold uppercase tracking-wider block">Transaction Ref / ID</span>
-                                    <span class="font-mono font-bold text-emerald-700 dark:text-emerald-300" x-text="activeLoanDetails.disbursement_reference || '-'"></span>
+                                <div class="flex flex-col gap-0.5">
+                                    <span class="text-[10px] text-emerald-800/90 dark:text-emerald-400 font-semibold uppercase tracking-wider block">Transaction Ref / ID</span>
+                                    <template x-if="activeLoanDetails.no_transaction_reference">
+                                        <span class="font-mono text-amber-700 dark:text-amber-400 text-xs font-semibold" x-text="'No Ref (' + (activeLoanDetails.disbursement_reference_reason || 'N/A') + ')'"></span>
+                                    </template>
+                                    <template x-if="!activeLoanDetails.no_transaction_reference">
+                                        <span class="font-mono font-bold text-xs text-emerald-700 dark:text-emerald-300" x-text="activeLoanDetails.disbursement_reference || '-'"></span>
+                                    </template>
                                 </div>
                             </div>
 
-                            <!-- Payout Destination -->
-                            <div x-show="activeLoanDetails.disbursement_destination" class="flex flex-col gap-1">
-                                <span class="text-[10px] text-emerald-800/80 dark:text-emerald-400/80 font-bold uppercase tracking-wider">Disbursed Destination</span>
-                                <p class="text-xs text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-950 p-2.5 rounded-lg border border-emerald-200/40 dark:border-emerald-900/40 font-mono text-[11px] break-all" x-text="activeLoanDetails.disbursement_destination"></p>
+                            <!-- Payout Destination (Structured Grid) -->
+                            <div x-show="activeLoanDetails.disbursement_destination" class="flex flex-col gap-1 py-1">
+                                <span class="text-[10px] text-emerald-800/90 dark:text-emerald-400 font-semibold uppercase tracking-wider">Disbursed Destination</span>
+                                <template x-if="activeLoanDetails && getPayoutPairs(activeLoanDetails.disbursement_destination).length > 0">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                        <template x-for="(pair, idx) in getPayoutPairs(activeLoanDetails.disbursement_destination)" :key="idx">
+                                            <div 
+                                                class="p-2 rounded-lg bg-white dark:bg-zinc-950 border border-emerald-200/50 dark:border-emerald-900/40 flex flex-col gap-0.5 shadow-3xs"
+                                                :class="(pair.label.toLowerCase() === 'delivery' || pair.label.toLowerCase() === 'address' || getPayoutPairs(activeLoanDetails.disbursement_destination).length === 1) ? 'sm:col-span-2' : ''"
+                                            >
+                                                <span class="text-[9px] font-bold uppercase tracking-wider text-emerald-800/80 dark:text-emerald-400/80" x-text="pair.label || 'Destination'"></span>
+                                                <span class="font-mono font-bold text-zinc-900 dark:text-zinc-100 text-xs break-all" x-text="pair.value"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template x-if="activeLoanDetails && getPayoutPairs(activeLoanDetails.disbursement_destination).length === 0">
+                                    <p class="text-xs font-mono text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-950 p-2 rounded-lg border border-emerald-200/40 dark:border-emerald-900/40 break-all" x-text="activeLoanDetails.disbursement_destination"></p>
+                                </template>
                             </div>
 
-                            <div x-show="activeLoanDetails.disbursement_details" class="flex flex-col gap-1">
-                                <span class="text-[10px] text-emerald-800/80 dark:text-emerald-400/80 font-bold uppercase tracking-wider">Audit Remarks / Notes</span>
-                                <p class="text-xs text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-950 p-2.5 rounded-lg border border-emerald-200/40 dark:border-emerald-900/40 italic font-medium" x-text="activeLoanDetails.disbursement_details"></p>
+                            <div x-show="activeLoanDetails.disbursement_details" class="flex flex-col gap-0.5 py-1">
+                                <span class="text-[10px] text-emerald-800/90 dark:text-emerald-400 font-semibold uppercase tracking-wider">Audit Remarks / Notes</span>
+                                <p class="text-xs text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-950 p-2 rounded-lg border border-emerald-200/40 dark:border-emerald-900/40 italic font-medium" x-text="activeLoanDetails.disbursement_details"></p>
                             </div>
 
                             <div x-show="activeLoanDetails.disbursement_proof" class="pt-1">
                                 <a 
                                     :href="activeLoanDetails.disbursement_proof" 
                                     target="_blank" 
-                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-zinc-900 text-emerald-700 dark:text-emerald-400 border border-emerald-300/60 dark:border-emerald-800/60 shadow-3xs hover:bg-emerald-50 dark:hover:bg-zinc-800 transition-all select-none cursor-pointer"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-zinc-900 text-emerald-700 dark:text-emerald-400 border border-emerald-300/60 dark:border-emerald-800/60 shadow-3xs hover:bg-emerald-50 dark:hover:bg-zinc-800 transition-all select-none cursor-pointer"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                    <span>View Official Disbursement Receipt / Proof Document</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                    <span>View Disbursement Receipt Document</span>
                                 </a>
                             </div>
 
-                            <div x-show="!activeLoanDetails.disbursement_details && !activeLoanDetails.disbursement_proof" class="text-[11px] text-zinc-500 italic">
+                            <div x-show="!activeLoanDetails.disbursement_details && !activeLoanDetails.disbursement_proof" class="text-xs text-zinc-500 italic">
                                 No custom disbursement details or receipt uploaded.
                             </div>
                         </div>
@@ -1410,44 +1546,44 @@
 
                 <!-- Admin Decision / Rejection Note -->
                 <div x-show="activeAdminNote && activeAdminNote.trim() !== ''">
-                    <p class="text-[11px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2">Decision / Rejection Note</p>
-                    <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 rounded-xl px-4 py-3">
-                        <p class="text-xs text-amber-800 dark:text-amber-300 italic font-semibold" x-text="'&quot;' + activeAdminNote + '&quot;'"></p>
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">Decision / Rejection Note</p>
+                    <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 rounded-xl px-3 py-2">
+                        <p class="text-xs text-amber-800 dark:text-amber-300 italic font-medium" x-text="'&quot;' + activeAdminNote + '&quot;'"></p>
                     </div>
                 </div>
 
                 <!-- Guarantors Section -->
                 <div>
-                    <p class="text-[11px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2">Guarantor Signatures</p>
-                    <div class="flex flex-col gap-2.5">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">Guarantor Signatures</p>
+                    <div class="flex flex-col gap-2">
                         <template x-if="activeGuarantors.length === 0">
                             <p class="text-xs text-zinc-400 dark:text-zinc-600 italic">No guarantors assigned to this application.</p>
                         </template>
                         <template x-for="(g, index) in activeGuarantors" :key="index">
-                            <div class="p-3.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl flex flex-col gap-2">
+                            <div class="p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl flex flex-col gap-1.5">
                                 <div class="flex justify-between items-start">
                                     <div class="flex flex-col min-w-0">
                                         <span class="font-bold text-zinc-900 dark:text-zinc-100 text-xs truncate" x-text="g.name"></span>
                                         <span class="font-mono text-[10px] text-zinc-400 dark:text-zinc-500 font-bold" x-text="g.code"></span>
                                     </div>
                                     <template x-if="g.status === 'approved'">
-                                        <span class="inline-flex items-center text-[9px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">Approved</span>
+                                        <span class="inline-flex items-center text-[9px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">Approved</span>
                                     </template>
                                     <template x-if="g.status === 'declined'">
-                                        <span class="inline-flex items-center text-[9px] font-black uppercase tracking-wider text-red-650 dark:text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/20">Declined</span>
+                                        <span class="inline-flex items-center text-[9px] font-bold uppercase tracking-wider text-red-650 dark:text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/20">Declined</span>
                                     </template>
                                     <template x-if="g.status === 'pending'">
-                                        <span class="inline-flex items-center text-[9px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400 bg-zinc-500/10 dark:bg-zinc-800/80 px-2 py-0.5 rounded-full border border-zinc-200/60 dark:border-zinc-700/60">Pending</span>
+                                        <span class="inline-flex items-center text-[9px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 bg-zinc-500/10 dark:bg-zinc-800/80 px-2 py-0.5 rounded-full border border-zinc-200/60 dark:border-zinc-700/60">Pending</span>
                                     </template>
                                 </div>
-                                <div class="text-[11px] text-zinc-500 dark:text-zinc-400 border-t border-zinc-200/30 dark:border-zinc-800/20 pt-1.5 flex flex-col gap-1" x-show="g.responded_at || g.notes">
+                                <div class="text-[11px] text-zinc-500 dark:text-zinc-400 border-t border-zinc-200/30 dark:border-zinc-800/20 pt-1 flex flex-col gap-1" x-show="g.responded_at || g.notes">
                                     <div class="flex justify-between text-[10px]" x-show="g.responded_at">
                                         <span>Responded At:</span>
                                         <span class="font-mono font-bold" x-text="g.responded_at"></span>
                                     </div>
-                                    <div class="flex flex-col gap-1" x-show="g.notes">
+                                    <div class="flex flex-col gap-0.5" x-show="g.notes">
                                         <span class="font-bold text-[10px]">Notes:</span>
-                                        <p class="text-[11px] bg-white dark:bg-zinc-950 p-2 rounded-lg border border-zinc-200/40 dark:border-zinc-850 text-zinc-700 dark:text-zinc-300 italic" x-text="g.notes"></p>
+                                        <p class="text-[11px] bg-white dark:bg-zinc-950 p-1.5 rounded-lg border border-zinc-200/40 dark:border-zinc-850 text-zinc-700 dark:text-zinc-300 italic" x-text="g.notes"></p>
                                     </div>
                                 </div>
                             </div>
@@ -1457,8 +1593,8 @@
 
             </div>
 
-            <div class="pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
-                <button type="button" class="w-full py-2.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-xs active:scale-95 text-center select-none" @click="showDetailsModal = false">
+            <div class="pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                <button type="button" class="w-full py-2.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs active:scale-[0.98] text-center select-none" @click="showDetailsModal = false">
                     Close
                 </button>
             </div>

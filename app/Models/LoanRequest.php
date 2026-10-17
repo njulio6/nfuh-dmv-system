@@ -30,6 +30,8 @@ class LoanRequest extends Model
         'disbursed_by_user_id',
         'disbursement_method',
         'disbursement_reference',
+        'no_transaction_reference',
+        'disbursement_reference_reason',
         'disbursement_destination',
         'disbursed_date',
     ];
@@ -42,6 +44,7 @@ class LoanRequest extends Model
         'repayment_due_date' => 'date',
         'interest_rate' => 'float',
         'interest_type' => 'string',
+        'no_transaction_reference' => 'boolean',
     ];
 
     public function disbursedBy(): BelongsTo

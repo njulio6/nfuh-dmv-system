@@ -100,8 +100,8 @@ class Member extends Model
 
     public function getAvailableSavingsBalanceAttribute(): float
     {
-        $pendingWithdrawals = $this->savingsWithdrawalRequests()->where('status', 'pending')->sum('gross_amount');
-        return (float) max(0, $this->savings_balance - $pendingWithdrawals);
+        $reservedWithdrawals = $this->savingsWithdrawalRequests()->whereIn('status', ['pending', 'approved'])->sum('gross_amount');
+        return (float) max(0, $this->savings_balance - $reservedWithdrawals);
     }
 
     public function getNameAttribute(): string

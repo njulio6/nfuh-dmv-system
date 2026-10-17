@@ -207,9 +207,9 @@ class SavingsController extends Controller
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
         }
 
-        // Approved active ledger transactions
+        // Approved active ledger transactions and pending withdrawal payouts
         $transactions = SavingsTransaction::where('member_id', $member->id)
-            ->where('status', 'approved')
+            ->whereIn('status', ['approved', 'pending'])
             ->orderBy('transaction_date', 'desc')
             ->orderBy('id', 'desc')
             ->paginate(15);
@@ -579,15 +579,16 @@ class SavingsController extends Controller
             $perPage = 10;
         }
 
-        $requests = $query->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
+        $requests = $query->orderByRaw("CASE WHEN status = 'pending' THEN 0 WHEN status = 'approved' THEN 1 ELSE 2 END")
             ->orderBy('created_at', 'desc')
             ->orderBy('id', 'desc')
             ->paginate($perPage);
 
         $pendingCount = SavingsWithdrawalRequest::where('status', 'pending')->count();
+        $pendingDisbursementCount = SavingsWithdrawalRequest::where('status', 'approved')->count();
         $allMembers = Member::orderBy('first_name')->orderBy('last_name')->get();
 
-        return view('savings.admin_withdrawal_requests', compact('requests', 'pendingCount', 'allMembers'));
+        return view('savings.admin_withdrawal_requests', compact('requests', 'pendingCount', 'pendingDisbursementCount', 'allMembers'));
     }
 
     /**
@@ -600,30 +601,137 @@ class SavingsController extends Controller
         }
 
         $member = $withdrawalRequest->member;
-        if ($member->savings_balance < (float) $withdrawalRequest->gross_amount) {
-            return redirect()->back()->with('error', 'Member does not have sufficient savings balance ($' . number_format($member->savings_balance, 2) . ') to disburse this withdrawal.');
+        if ($member->available_savings_balance < (float) $withdrawalRequest->gross_amount) {
+            return redirect()->back()->with('error', 'Member does not have sufficient available savings balance ($' . number_format($member->available_savings_balance, 2) . ') to approve this withdrawal.');
         }
 
         DB::transaction(function () use ($withdrawalRequest, $member, $request) {
-            SavingsTransaction::create([
+            // Create pending ledger transaction to distinguish pending payouts from completed withdrawals
+            $transaction = SavingsTransaction::create([
                 'member_id' => $member->id,
                 'organization_id' => $member->organization_id,
                 'amount' => $withdrawalRequest->gross_amount,
                 'type' => 'withdrawal',
-                'status' => 'approved',
+                'status' => 'pending', // Pending payout until disbursed!
                 'transaction_date' => now()->toDateString(),
-                'notes' => "Member withdrawal payout ($" . number_format($withdrawalRequest->net_amount, 2) . ") + " . number_format($withdrawalRequest->fee_rate, 2) . "% Admin Fee ($" . number_format($withdrawalRequest->fee_amount, 2) . ") via " . ucfirst(str_replace('_', ' ', $withdrawalRequest->payout_method)),
+                'notes' => "Member withdrawal payout ($" . number_format($withdrawalRequest->net_amount, 2) . ") + " . number_format($withdrawalRequest->fee_rate, 2) . "% Admin Fee ($" . number_format($withdrawalRequest->fee_amount, 2) . ") via " . ucfirst(str_replace('_', ' ', $withdrawalRequest->payout_method)) . " (Pending Disbursement)",
             ]);
 
             $withdrawalRequest->update([
-                'status' => 'approved',
+                'status' => 'approved', // Approved – Pending Disbursement
                 'reviewed_by' => Auth::id(),
                 'reviewed_at' => now(),
                 'admin_notes' => $request->input('admin_notes'),
+                'savings_transaction_id' => $transaction->id,
             ]);
         });
 
-        return redirect()->back()->with('success', 'Savings withdrawal request approved and member savings balance debited successfully.');
+        return redirect()->back()->with('success', 'Savings withdrawal request approved and is now pending disbursement.');
+    }
+
+    /**
+     * Confirm disbursement for an approved savings withdrawal (Treasurer / Admin only - M1-003 & M1-004).
+     */
+    public function disburseWithdrawal(Request $request, SavingsWithdrawalRequest $withdrawalRequest)
+    {
+        if ($withdrawalRequest->status !== 'approved') {
+            return redirect()->back()->with('error', 'Withdrawal request must be approved before disbursement.');
+        }
+
+        $noTxnRef = $request->boolean('no_transaction_reference');
+
+        $rules = [
+            'disbursement_method' => ['required', 'string', 'max:50'],
+            'disbursement_destination' => ['required', 'string', 'min:3', 'max:1000'],
+            'disbursement_date' => ['required', 'date', 'before_or_equal:today'],
+            'disbursement_proof' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf,webp', 'max:5120'],
+            'disbursement_details' => ['nullable', 'string', 'max:2000'],
+            'no_transaction_reference' => ['nullable', 'boolean'],
+        ];
+
+        if ($noTxnRef) {
+            $rules['disbursement_reference_reason'] = ['required', 'string', 'min:3', 'max:1000'];
+            $rules['disbursement_reference'] = ['nullable', 'string', 'max:255'];
+        } else {
+            $rules['disbursement_reference'] = ['required', 'string', 'min:2', 'max:255'];
+            $rules['disbursement_reference_reason'] = ['nullable', 'string', 'max:1000'];
+        }
+
+        $messages = [
+            'disbursement_method.required' => 'A payment method is mandatory to confirm disbursement.',
+            'disbursement_destination.required' => 'Recipient / payout destination details are mandatory.',
+            'disbursement_date.required' => 'Disbursement date is mandatory.',
+            'disbursement_date.before_or_equal' => 'Disbursement date cannot be a future date.',
+            'disbursement_reference.required' => 'A transaction reference or check number is mandatory unless the exception is checked.',
+            'disbursement_reference_reason.required' => 'Please provide an explanation why no transaction reference was provided.',
+            'disbursement_proof.required' => 'Supporting payment receipt or transfer screenshot is mandatory.',
+            'disbursement_proof.mimes' => 'Receipt proof document must be a JPG, PNG, WEBP, or PDF file.',
+            'disbursement_proof.max' => 'Receipt proof document cannot exceed 5MB.',
+        ];
+
+        $validated = $request->validate($rules, $messages);
+
+        $proofPath = $request->file('disbursement_proof')->store('savings_disbursements', 'public');
+
+        $disbursedDate = \Carbon\Carbon::parse($validated['disbursement_date']);
+        $disbursedAt = $disbursedDate->isToday() 
+            ? now() 
+            : $disbursedDate->copy()->setTime(now()->hour, now()->minute, now()->second);
+
+        DB::transaction(function () use ($withdrawalRequest, $validated, $proofPath, $disbursedDate, $disbursedAt, $noTxnRef) {
+            $refNote = $noTxnRef 
+                ? " (No TXN Ref: {$validated['disbursement_reference_reason']})"
+                : " (Ref: {$validated['disbursement_reference']})";
+
+            $notes = "Member withdrawal payout ($" . number_format($withdrawalRequest->net_amount, 2) . ") + " . number_format($withdrawalRequest->fee_rate, 2) . "% Admin Fee ($" . number_format($withdrawalRequest->fee_amount, 2) . ") via " . ucfirst(str_replace('_', ' ', $validated['disbursement_method'])) . $refNote;
+
+            // Update or create linked SavingsTransaction and mark as approved (completed withdrawal)
+            if ($withdrawalRequest->savings_transaction_id) {
+                $transaction = SavingsTransaction::find($withdrawalRequest->savings_transaction_id);
+                if ($transaction) {
+                    $transaction->update([
+                        'status' => 'approved',
+                        'screenshot_path' => $proofPath,
+                        'transaction_date' => $validated['disbursement_date'],
+                        'notes' => $notes,
+                        'reviewed_by' => Auth::id(),
+                        'reviewed_at' => now(),
+                    ]);
+                }
+            } else {
+                $transaction = SavingsTransaction::create([
+                    'member_id' => $withdrawalRequest->member_id,
+                    'organization_id' => $withdrawalRequest->organization_id,
+                    'amount' => $withdrawalRequest->gross_amount,
+                    'type' => 'withdrawal',
+                    'status' => 'approved',
+                    'screenshot_path' => $proofPath,
+                    'transaction_date' => $validated['disbursement_date'],
+                    'notes' => $notes,
+                    'reviewed_by' => Auth::id(),
+                    'reviewed_at' => now(),
+                ]);
+                $withdrawalRequest->savings_transaction_id = $transaction->id;
+            }
+
+            $withdrawalRequest->update([
+                'status' => 'disbursed',
+                'disbursed_at' => $disbursedAt,
+                'disbursed_date' => $validated['disbursement_date'],
+                'disbursed_by_user_id' => Auth::id(),
+                'disbursement_method' => $validated['disbursement_method'],
+                'disbursement_destination' => $validated['disbursement_destination'],
+                'disbursement_reference' => $noTxnRef ? null : ($validated['disbursement_reference'] ?? null),
+                'no_transaction_reference' => $noTxnRef,
+                'disbursement_reference_reason' => $noTxnRef ? $validated['disbursement_reference_reason'] : null,
+                'disbursement_proof' => $proofPath,
+                'disbursement_details' => $validated['disbursement_details'] ?? null,
+            ]);
+        });
+
+        return redirect()
+            ->route('savings.withdrawal-requests')
+            ->with('success', 'Savings withdrawal marked as Disbursed / Completed with verified payment receipt.');
     }
 
     /**
@@ -631,21 +739,28 @@ class SavingsController extends Controller
      */
     public function rejectWithdrawal(Request $request, SavingsWithdrawalRequest $withdrawalRequest)
     {
-        if ($withdrawalRequest->status !== 'pending') {
-            return redirect()->back()->with('error', 'This withdrawal request is not pending.');
+        if (!in_array($withdrawalRequest->status, ['pending', 'approved'])) {
+            return redirect()->back()->with('error', 'Cannot reject request at this stage.');
         }
 
         $validated = $request->validate([
             'rejection_reason' => ['required', 'string', 'min:3', 'max:1000'],
         ]);
 
-        $withdrawalRequest->update([
-            'status' => 'rejected',
-            'rejection_reason' => $validated['rejection_reason'],
-            'admin_notes' => $validated['rejection_reason'],
-            'reviewed_by' => Auth::id(),
-            'reviewed_at' => now(),
-        ]);
+        DB::transaction(function () use ($withdrawalRequest, $validated) {
+            // Delete or reject pending ledger transaction if one was created
+            if ($withdrawalRequest->savings_transaction_id) {
+                SavingsTransaction::where('id', $withdrawalRequest->savings_transaction_id)->delete();
+            }
+
+            $withdrawalRequest->update([
+                'status' => 'rejected',
+                'rejection_reason' => $validated['rejection_reason'],
+                'admin_notes' => $validated['rejection_reason'],
+                'reviewed_by' => Auth::id(),
+                'reviewed_at' => now(),
+            ]);
+        });
 
         return redirect()->back()->with('success', 'Savings withdrawal request rejected.');
     }

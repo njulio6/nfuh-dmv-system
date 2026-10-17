@@ -91,9 +91,16 @@
                                 Deposit
                             </span>
                         @elseif($t->type === 'withdrawal')
-                            <span class="inline-block px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-red-50 text-red-750 dark:bg-red-950/20 dark:text-red-400 border border-red-200/60 dark:border-red-800/40">
-                                Withdrawal
-                            </span>
+                            @if($t->status === 'pending')
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                    Pending Payout
+                                </span>
+                            @else
+                                <span class="inline-block px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-red-50 text-red-750 dark:bg-red-950/20 dark:text-red-400 border border-red-200/60 dark:border-red-800/40">
+                                    Withdrawal
+                                </span>
+                            @endif
                         @else
                             <span class="inline-block px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-zinc-100 text-zinc-650 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700/60">
                                 Adjustment
@@ -105,15 +112,21 @@
                     </td>
                     <td class="py-3 px-3 text-right font-bold text-sm">
                         @if($t->type === 'deposit')
-                            <span class="text-emerald-600 dark:text-emerald-400">
+                            <span class="text-emerald-600 dark:text-emerald-400 font-mono">
                                 +${{ number_format($t->amount, 2) }}
                             </span>
                         @elseif($t->type === 'withdrawal')
-                            <span class="text-red-650 dark:text-red-400">
-                                -${{ number_format($t->amount, 2) }}
-                            </span>
+                            @if($t->status === 'pending')
+                                <span class="text-amber-600 dark:text-amber-400 font-mono" title="Pending Disbursement Confirmation">
+                                    -${{ number_format($t->amount, 2) }}
+                                </span>
+                            @else
+                                <span class="text-red-650 dark:text-red-400 font-mono">
+                                    -${{ number_format($t->amount, 2) }}
+                                </span>
+                            @endif
                         @else
-                            <span class="text-zinc-800 dark:text-zinc-200">
+                            <span class="text-zinc-800 dark:text-zinc-200 font-mono">
                                 ${{ number_format($t->amount, 2) }}
                             </span>
                         @endif

@@ -522,10 +522,13 @@
             x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
-            class="bg-white dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-md relative z-50 animate-fadeIn max-h-[90vh] overflow-y-auto"
+            class="bg-white dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl shadow-xl w-full max-w-lg relative z-50 animate-fadeIn max-h-[90vh] overflow-y-auto"
         >
             <div class="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between">
-                <h3 class="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Post Savings Transaction</h3>
+                <div>
+                    <h3 class="text-base font-bold text-zinc-900 dark:text-white">Post Savings Transaction</h3>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">Post an administrative deposit or adjustment to a member's savings account.</p>
+                </div>
                 <button @click="showModal = false" class="text-zinc-400 hover:text-zinc-650 dark:hover:text-white transition-colors cursor-pointer select-none">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
