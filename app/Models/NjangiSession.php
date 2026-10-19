@@ -52,4 +52,22 @@ class NjangiSession extends Model
     {
         return $this->hasMany(NjangiDisbursement::class);
     }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(MeetingAttendance::class);
+    }
+
+    public function attendanceStats(): array
+    {
+        $attendances = $this->attendances;
+        return [
+            'total_rsvps' => $attendances->where('rsvp_status', 'attending')->count(),
+            'total_not_attending' => $attendances->where('rsvp_status', 'not_attending')->count(),
+            'total_present' => $attendances->where('attendance_status', 'present')->count(),
+            'total_absent' => $attendances->where('attendance_status', 'absent')->count(),
+            'total_excused' => $attendances->where('attendance_status', 'excused')->count(),
+            'total_verified' => $attendances->whereNotNull('attendance_status')->count(),
+        ];
+    }
 }

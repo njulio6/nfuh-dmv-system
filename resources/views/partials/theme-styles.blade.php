@@ -61,6 +61,15 @@
         opacity: 0.95;
     }
 
+    input[type="checkbox"],
+    input[type="radio"] {
+        accent-color: var(--brand-primary) !important;
+    }
+    input[type="checkbox"]:focus,
+    input[type="radio"]:focus {
+        --tw-ring-color: var(--brand-primary) !important;
+    }
+
     /* Secondary Theme Utilities */
     .bg-brand-secondary {
         background-color: var(--brand-secondary) !important;

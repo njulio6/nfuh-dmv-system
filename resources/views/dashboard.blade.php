@@ -1,476 +1,1104 @@
 @extends('layouts.app')
 
 @section('content')
+<div x-data="{ 
+    receiptModalOpen: false, 
+    receiptUrl: '',
+    chartMetric: 'all',
+    activeFeedTab: 'submissions'
+}" class="flex flex-col gap-6 w-full pb-12 select-none">
 
-    @php
-        // Calculate monthly submissions and contributions for current year
-        $selectedYear = date('Y');
-        $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        $chartData = [];
-        foreach ($months as $idx => $mName) {
-            $mNum = $idx + 1;
-            // Contributions count in that month
-            $contributionsCount = \App\Models\NjangiContribution::whereYear('created_at', $selectedYear)
-                ->whereMonth('created_at', $mNum)
-                ->count();
-            // Submissions count in that month
-            $submissionsCount = \App\Models\NjangiPaymentSubmission::whereYear('created_at', $selectedYear)
-                ->whereMonth('created_at', $mNum)
-                ->count();
-                
-            $chartData[] = [
-                'month' => $mName,
-                'contributions' => $contributionsCount,
-                'submissions' => $submissionsCount,
-            ];
-        }
-        $maxVal = max(collect($chartData)->map(fn($d) => max($d['contributions'], $d['submissions']))->toArray());
-        
-        // Ensure yAxisMax is a multiple of 4 to have clean, distinct whole integer steps
-        if ($maxVal == 0) {
-            $yAxisMax = 4;
-        } else {
-            $yAxisMax = (int)ceil($maxVal / 4) * 4;
-        }
-        
-        $yAxisStep = $yAxisMax / 4;
-        $yLabels = [
-            $yAxisMax, 
-            $yAxisStep * 3, 
-            $yAxisStep * 2, 
-            $yAxisStep, 
-            0
-        ];
-
-        // Recent Activity: Submissions (latest 5)
-        $recentSubmissions = \App\Models\NjangiPaymentSubmission::with('member')
-            ->latest()
-            ->take(5)
-            ->get();
-            
-        // Recent Activity: Registered Members (latest 5)
-        $recentMembers = \App\Models\Member::latest()
-            ->take(5)
-            ->get();
-    @endphp
-
-<div x-data="{ receiptModalOpen: false, receiptUrl: '' }" class="flex flex-col gap-6 w-full relative">
-    <!-- Welcome Greeting Row -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div class="flex flex-col gap-1">
-            <div class="flex items-center gap-2.5">
-                <!-- Dynamic Time-of-Day Icon -->
-                <span class="text-zinc-900 dark:text-zinc-100 shrink-0">
-                    <i id="welcome-greeting-icon" data-lucide="sun" class="w-6 h-6 text-brand-primary"></i>
-                </span>
-                <h1 class="text-2xl font-bold text-zinc-950 dark:text-white tracking-tight flex items-center gap-2 font-display">
-                    <span id="welcome-greeting-text">Good Afternoon</span>, {{ explode(' ', Auth::user()->name)[0] }}
-                    <!-- Sparkles pulse icon -->
-                    <i data-lucide="sparkles" class="w-4 h-4 text-brand-primary animate-pulse hidden sm:inline"></i>
-                </h1>
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- 1. EXECUTIVE HEADER & ACTIONS                                       -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-5 w-full max-w-full overflow-hidden">
+        <div class="flex items-center gap-3.5 sm:gap-4 min-w-0">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-brand-primary border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-center shrink-0 shadow-2xs">
+                <i data-lucide="layout-dashboard" class="w-6 h-6 sm:w-7 sm:h-7"></i>
             </div>
-            <p class="text-xs text-zinc-500 dark:text-zinc-400">
-                Here's what's happening across the {{ !empty($appSettings->app_name) ? $appSettings->app_name : 'NFUH DMV' }} Membership System today.
-            </p>
+            <div class="flex flex-col gap-0.5 min-w-0">
+                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <h1 class="text-lg sm:text-2xl font-bold text-zinc-950 dark:text-white tracking-tight flex items-center font-display leading-tight">
+                        <span id="welcome-greeting-text">Good Afternoon</span><span>,&nbsp;</span><span class="truncate">{{ Auth::user()->name }}</span>
+                    </h1>
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-primary/10 text-brand-primary border border-brand-primary/20 shrink-0">
+                        {{ Auth::user()->roles->first()?->name ?? 'Executive Officer' }}
+                    </span>
+                </div>
+                <p class="text-xs text-zinc-500 dark:text-zinc-400 truncate sm:whitespace-normal">
+                    Executive oversight and operational governance for {{ !empty($appSettings->app_name) ? $appSettings->app_name : 'NFUH DMV' }}.
+                </p>
+            </div>
         </div>
-        
+
         <script>
             (function() {
                 try {
                     const hour = new Date().getHours();
                     let greeting = 'Good Evening';
-                    let iconName = 'moon';
-                    if (hour < 12) {
-                        greeting = 'Good Morning';
-                        iconName = 'sunrise';
-                    } else if (hour < 18) {
-                        greeting = 'Good Afternoon';
-                        iconName = 'sun';
-                    }
-                    document.getElementById('welcome-greeting-text').textContent = greeting;
-                    document.getElementById('welcome-greeting-icon').setAttribute('data-lucide', iconName);
+                    if (hour < 12) greeting = 'Good Morning';
+                    else if (hour < 18) greeting = 'Good Afternoon';
+                    const el = document.getElementById('welcome-greeting-text');
+                    if (el) el.textContent = greeting;
                 } catch(e) {}
             })();
         </script>
-        
-        <div class="flex items-center gap-2.5">
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:flex md:items-center gap-2 w-full md:w-auto pt-3 md:pt-0 border-t border-zinc-100 dark:border-zinc-800/80 md:border-0 shrink-0">
             <button 
                 onclick="window.location.reload()"
-                class="glass-button p-2 text-zinc-600 dark:text-zinc-300 rounded-xl flex items-center justify-center cursor-pointer disabled:opacity-50"
+                class="px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs select-none active:scale-95"
                 title="Refresh Analytics"
             >
-                <i data-lucide="refresh-cw" class="w-[15px] h-[15px]"></i>
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <span>Refresh</span>
             </button>
-            
-            @if(Auth::user() && Auth::user()->hasRole('admin'))
-                <a
-                    href="{{ route('admin.tools') }}"
-                    class="glass-button px-4 py-2 text-zinc-700 dark:text-zinc-200 rounded-xl flex items-center justify-center cursor-pointer"
-                    title="System Tools"
+
+            @if(Auth::user()->hasRole('admin'))
+                <a 
+                    href="{{ route('admin.tools') }}" 
+                    class="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-2xs select-none active:scale-95"
                 >
-                    <i data-lucide="terminal" class="w-[15px] h-[15px] mr-2 text-brand-primary"></i>
-                    <span class="text-sm font-semibold">System Tools</span>
+                    <i data-lucide="terminal" class="w-3.5 h-3.5 text-brand-primary"></i>
+                    <span>System Tools</span>
                 </a>
             @endif
 
             <button 
                 onclick="window.print()"
-                class="px-4 py-2 bg-brand-primary text-brand-primary-text rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                class="col-span-2 sm:col-span-1 md:col-span-auto px-3.5 py-2 bg-brand-primary text-brand-primary-text rounded-xl text-xs font-bold hover:opacity-95 transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95"
             >
-                <i data-lucide="download" class="w-[14px] h-[14px]"></i>
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
                 <span>Export Report</span>
             </button>
         </div>
     </div>
 
-    <!-- Quick Stats Grid (Aeroco Frosted Glass Gradient System) -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- 2. OFFICER QUEUES & URGENT ATTENTION (PERMISSION FILTERED)          -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- 3. COMPREHENSIVE 8-PILLAR KPI OVERVIEW (PERMISSION CONTROLLED)       -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Stat 1: Total Members -->
-        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group cursor-default">
-            <div class="flex items-center gap-3">
-                <div class="stat-icon-badge p-2.5 shrink-0">
-                    <i data-lucide="users" class="w-4 h-4"></i>
+        <!-- Pillar 1: Civic & Membership -->
+        <!-- Pillar 1: Civic & Membership -->
+        @if($canViewMembers)
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 flex flex-col justify-between gap-3.5 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all group">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center min-w-0">
+                        <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate">Active Membership</span>
+                        <x-info-tooltip 
+                            title="Active Membership"
+                            description="Total union members who are currently registered and in active standing."
+                            formula="Total Active Members in Registry"
+                            source="Official Union Membership Roster"
+                            color="blue"
+                        />
+                    </div>
+                    <span class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                        <i data-lucide="users" class="w-4 h-4"></i>
+                    </span>
                 </div>
-                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Total Members</span>
+                <div class="my-1">
+                    <div class="text-2xl sm:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
+                        {{ number_format($totalMembersCount) }}
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] font-semibold">
+                    <span class="text-emerald-600 dark:text-emerald-400 font-bold inline-flex items-center gap-1">
+                        <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> {{ $activeMembersCount }} Active
+                    </span>
+                    <a href="{{ route('members.index') }}" class="text-zinc-400 group-hover:text-brand-primary transition-colors flex items-center gap-1">
+                        <span>Registry</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </a>
+                </div>
             </div>
-            <div class="flex flex-col gap-1">
-                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
-                    {{ \App\Models\Member::count() }}
+        @endif
+
+        <!-- Pillar 2: Njangi Rotational Rounds -->
+        @if($canViewNjangi)
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 flex flex-col justify-between gap-3.5 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all group">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center min-w-0">
+                        <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate">Njangi Volume</span>
+                        <x-info-tooltip 
+                            title="Njangi Rotational Volume"
+                            description="Total money contributed into rotational rounds across all active and past sessions."
+                            formula="Sum of all member rotational contributions"
+                            source="Njangi Rotational Sessions"
+                            color="amber"
+                        />
+                    </div>
+                    <span class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                        <i data-lucide="repeat" class="w-4 h-4"></i>
+                    </span>
+                </div>
+                <div class="my-1">
+                    <div class="text-2xl sm:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
+                        ${{ number_format($totalContributionsVolume, 0) }}
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] font-semibold">
+                    <span class="text-amber-600 dark:text-amber-400 font-bold">
+                        {{ $activeCyclesCount }} Active {{ Str::plural('Cycle', $activeCyclesCount) }}
+                    </span>
+                    <a href="{{ route('njangi-cycles.index') }}" class="text-zinc-400 group-hover:text-brand-primary transition-colors flex items-center gap-1">
+                        <span>Rounds</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </a>
+                </div>
+            </div>
+        @endif
+
+        <!-- Pillar 3: Savings Vault (Nkap) -->
+        @if($canViewSavings)
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 flex flex-col justify-between gap-3.5 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all group">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center min-w-0">
+                        <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate">Savings Vault (Nkap)</span>
+                        <x-info-tooltip 
+                            title="Savings Vault (Nkap)"
+                            description="The total cash currently stored in member savings accounts."
+                            formula="Total Money Deposited − Total Money Withdrawn"
+                            source="Union Savings Vault"
+                            color="emerald"
+                        />
+                    </div>
+                    <span class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <i data-lucide="wallet" class="w-4 h-4"></i>
+                    </span>
+                </div>
+                <div class="my-1">
+                    <div class="text-2xl sm:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
+                        ${{ number_format($totalSavingsBalance, 2) }}
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] font-semibold">
+                    <span class="text-emerald-600 dark:text-emerald-400 font-bold">
+                        +${{ number_format($savingsDepositsThisMonth, 0) }}/mo
+                    </span>
+                    <a href="{{ route('savings.index') }}" class="text-zinc-400 group-hover:text-brand-primary transition-colors flex items-center gap-1">
+                        <span>Ledger</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </a>
+                </div>
+            </div>
+        @endif
+
+        <!-- Pillar 4: Credit & Lending Desk -->
+        @if($canViewLoans)
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 flex flex-col justify-between gap-3.5 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all group">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center min-w-0">
+                        <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate">Loan Portfolio Active</span>
+                        <x-info-tooltip 
+                            title="Loan Portfolio Active"
+                            description="Total loan money that members are currently repaying back to the union."
+                            formula="Remaining balance owed across all ongoing loans"
+                            source="Active Member Loans"
+                            color="purple"
+                        />
+                    </div>
+                    <span class="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                        <i data-lucide="landmark" class="w-4 h-4"></i>
+                    </span>
+                </div>
+                <div class="my-1">
+                    <div class="text-2xl sm:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
+                        ${{ number_format($activeLoansRemainingBalance, 2) }}
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] font-semibold">
+                    <span class="text-purple-600 dark:text-purple-400 font-bold">
+                        {{ $activeLoansCount }} Active {{ Str::plural('Loan', $activeLoansCount) }}
+                    </span>
+                    <a href="{{ route('loans.index') }}" class="text-zinc-400 group-hover:text-brand-primary transition-colors flex items-center gap-1">
+                        <span>Lending</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </a>
+                </div>
+            </div>
+        @endif
+
+        <!-- Pillar 5: Vault Liquid Reserves -->
+        @if($canViewSavings)
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 flex flex-col justify-between gap-3.5 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all group">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center min-w-0">
+                        <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate">Vault Liquid Reserves</span>
+                        <x-info-tooltip 
+                            title="Vault Liquid Reserves"
+                            description="Free cash sitting in the vault right now, ready for immediate withdrawals or new loans."
+                            formula="Total Savings Vault − Pending Withdrawal Requests"
+                            source="Union Treasury Balance"
+                            color="teal"
+                        />
+                    </div>
+                    <span class="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    </span>
+                </div>
+                <div class="my-1">
+                    <div class="text-2xl sm:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
+                        ${{ number_format($totalAvailableSavings, 2) }}
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] font-semibold">
+                    <span class="text-teal-600 dark:text-teal-400 font-bold inline-flex items-center gap-1">
+                        <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Unencumbered Cash
+                    </span>
+                    <a href="{{ route('savings.index') }}" class="text-zinc-400 group-hover:text-brand-primary transition-colors flex items-center gap-1">
+                        <span>Reserves</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </a>
+                </div>
+            </div>
+        @endif
+
+        <!-- Pillar 6: Cumulative Loan Recovery -->
+        @if($canViewLoans)
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 flex flex-col justify-between gap-3.5 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all group">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center min-w-0">
+                        <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate">Cumulative Recovery</span>
+                        <x-info-tooltip 
+                            title="Cumulative Loan Recovery"
+                            description="Total loan money collected back from borrowers so far, and the recovery percentage."
+                            formula="(Total Amount Repaid ÷ Total Loans Issued) × 100"
+                            source="Loan Payment History"
+                            color="indigo"
+                        />
+                    </div>
+                    <span class="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                        <i data-lucide="badge-check" class="w-4 h-4"></i>
+                    </span>
+                </div>
+                <div class="my-1">
+                    <div class="text-2xl sm:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
+                        ${{ number_format($totalLoansRepaid, 2) }}
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] font-semibold">
+                    <span class="text-indigo-600 dark:text-indigo-400 font-bold">
+                        {{ $loanRepaymentRate }}% Recovery Rate
+                    </span>
+                    <a href="{{ route('loans.index') }}" class="text-zinc-400 group-hover:text-brand-primary transition-colors flex items-center gap-1">
+                        <span>Disbursed</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </a>
+                </div>
+            </div>
+        @endif
+
+        <!-- Pillar 7: Monthly Inflow Velocity -->
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 flex flex-col justify-between gap-3.5 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all group">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center min-w-0">
+                    <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate">Monthly Cash Inflow</span>
+                    <x-info-tooltip 
+                        title="Monthly Cash Inflow"
+                        description="Total cash that entered the union this month from savings deposits and Njangi contributions."
+                        formula="Savings Deposited This Month + Njangi Contributed This Month"
+                        source="Monthly Banking & Intake Records"
+                        color="rose"
+                    />
+                </div>
+                <span class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                    <i data-lucide="trending-up" class="w-4 h-4"></i>
                 </span>
-                <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
-                    Registered DMV members
+            </div>
+            <div class="my-1">
+                <div class="text-2xl sm:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
+                    ${{ number_format($monthlyInflowTotal, 2) }}
+                </div>
+            </div>
+            <div class="pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] font-semibold">
+                <span class="text-rose-600 dark:text-rose-400 font-bold">
+                    ${{ number_format($savingsDepositsThisMonth, 0) }} Nkap • ${{ number_format($contributionsThisMonth, 0) }} Njangi
                 </span>
+                <a href="{{ route('savings.index') }}" class="text-zinc-400 group-hover:text-brand-primary transition-colors flex items-center gap-1">
+                    <span>Inflows</span>
+                    <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </a>
             </div>
         </div>
 
-        <!-- Stat 2: Active Cycles -->
-        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
-            <div class="flex items-center gap-3">
-                <div class="stat-icon-badge p-2 shrink-0">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        <!-- Pillar 8: Gross Capital Assets (AUM) -->
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 flex flex-col justify-between gap-3.5 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all group">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center min-w-0">
+                    <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate">Total Managed Capital</span>
+                    <x-info-tooltip 
+                        title="Total Managed Capital"
+                        description="Combined total value of all financial funds currently managed by the union."
+                        formula="Total Njangi Funds + Total Savings Deposits"
+                        source="Unified Union Treasury"
+                        color="cyan"
+                    />
                 </div>
-                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Active Cycles</span>
-            </div>
-            <div class="flex flex-col gap-1">
-                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
-                    {{ \App\Models\NjangiCycle::where('status', 'active')->count() }}
-                </span>
-                <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
-                    Ongoing rotational rounds
+                <span class="w-9 h-9 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+                    <i data-lucide="layers" class="w-4 h-4"></i>
                 </span>
             </div>
-        </div>
-
-        <!-- Stat 3: Pending Payments -->
-        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
-            <div class="flex items-center gap-3">
-                <div class="stat-icon-badge p-2 shrink-0">
-                    <i data-lucide="receipt" class="w-4 h-4"></i>
+            <div class="my-1">
+                <div class="text-2xl sm:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
+                    ${{ number_format($totalManagedCapital, 2) }}
                 </div>
-                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Pending Payments</span>
             </div>
-            <div class="flex flex-col gap-1">
-                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
-                    {{ \App\Models\NjangiPaymentSubmission::where('status', 'pending')->count() }}
+            <div class="pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] font-semibold">
+                <span class="text-cyan-600 dark:text-cyan-400 font-bold">
+                    Combined Njangi & Nkap Pool
                 </span>
-                <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
-                    Submissions awaiting review
-                </span>
-            </div>
-        </div>
-
-        <!-- Stat 4: Total Volume -->
-        <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
-            <div class="flex items-center gap-3">
-                <div class="stat-icon-badge p-2 shrink-0">
-                    <i data-lucide="wallet" class="w-4 h-4"></i>
-                </div>
-                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Total Contributions</span>
-            </div>
-            <div class="flex flex-col gap-1">
-                <span class="text-2xl lg:text-3xl font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight font-display">
-                    ${{ number_format(\App\Models\NjangiContribution::sum('amount'), 2) }}
-                </span>
-                <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
-                    Aggregated ledger volume
-                </span>
+                <a href="{{ route('savings.index') }}" class="text-zinc-400 group-hover:text-brand-primary transition-colors flex items-center gap-1">
+                    <span>Treasury</span>
+                    <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </a>
             </div>
         </div>
     </div>
 
-    <!-- Overview Analytics Chart + Tabbed Activity Feed -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-        
-        <!-- Left: Frosted Glass Chart Card -->
-        <div class="lg:col-span-7 glass-surface rounded-2xl p-6 shadow-xl flex flex-col gap-3 h-full">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-zinc-200/50 dark:border-white/10 pb-4">
-                <div class="flex flex-col gap-0.5">
-                    <h3 class="text-base font-bold text-zinc-900 dark:text-white">Monthly Activity</h3>
-                    <p class="text-xs text-zinc-500 dark:text-zinc-400">Contributions & payment submissions per month</p>
-                </div>
-                
-                <div class="flex items-center gap-4 flex-shrink-0">
-                    <!-- Legend -->
-                    <div class="flex items-center gap-3">
-                        <div class="flex items-center gap-1.5">
-                            <div class="w-3 h-3 rounded-sm shadow-xs" style="background-color: var(--brand-primary);"></div>
-                            <span class="text-[11px] font-medium text-zinc-600 dark:text-zinc-300">Contributions</span>
-                        </div>
-                        <div class="flex items-center gap-1.5">
-                            <div class="w-3 h-3 rounded-sm shadow-xs" style="background-color: var(--brand-secondary);"></div>
-                            <span class="text-[11px] font-medium text-zinc-600 dark:text-zinc-300">Submissions</span>
-                        </div>
-                    </div>
-                    <!-- Year display -->
-                    <div class="text-xs font-semibold text-zinc-900 dark:text-zinc-100 glass-button rounded-lg px-2.5 py-1.5">
-                        {{ $selectedYear }}
-                    </div>
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- 4. CAPITAL FLOWS BAR/LINE CHART (INTERACTIVE 12-MONTH TIMELINE)    -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 shadow-xs">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+            <div class="flex items-center gap-3">
+                <span class="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                </span>
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-white">
+                        Financial Flows & Capital Turnover
+                    </h3>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400">
+                        Monthly transaction volume across Njangi contributions, Savings deposits, and Loan repayments ({{ date('Y') }}).
+                    </p>
                 </div>
             </div>
 
-            <div class="w-full overflow-x-auto pb-1">
-                <div class="relative w-full min-w-[400px] flex-1 min-h-[270px]">
-                    <!-- Y-axis labels -->
-                    <div class="absolute left-0 top-12 bottom-6 flex flex-col justify-between text-[11px] text-zinc-400 dark:text-zinc-500 pointer-events-none select-none z-10 w-8 text-right pr-1.5">
-                        @foreach ($yLabels as $label)
-                            <span>{{ $label }}</span>
-                        @endforeach
-                    </div>
+            <!-- Chart Filter Controls -->
+            <div class="flex items-center gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl self-start sm:self-auto">
+                <button 
+                    type="button"
+                    @click="chartMetric = 'all'; updateAdminChart('all')" 
+                    :class="chartMetric === 'all' ? 'bg-white dark:bg-zinc-900 shadow-2xs text-zinc-900 dark:text-white font-bold' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 font-medium'"
+                    class="px-2.5 py-1 text-xs rounded-lg transition-all cursor-pointer"
+                >
+                    Combined
+                </button>
+                <button 
+                    type="button"
+                    @click="chartMetric = 'njangi'; updateAdminChart('njangi')" 
+                    :class="chartMetric === 'njangi' ? 'bg-white dark:bg-zinc-900 shadow-2xs text-amber-600 dark:text-amber-400 font-bold' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 font-medium'"
+                    class="px-2.5 py-1 text-xs rounded-lg transition-all cursor-pointer"
+                >
+                    Njangi
+                </button>
+                <button 
+                    type="button"
+                    @click="chartMetric = 'savings'; updateAdminChart('savings')" 
+                    :class="chartMetric === 'savings' ? 'bg-white dark:bg-zinc-900 shadow-2xs text-emerald-600 dark:text-emerald-400 font-bold' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 font-medium'"
+                    class="px-2.5 py-1 text-xs rounded-lg transition-all cursor-pointer"
+                >
+                    Savings
+                </button>
+                <button 
+                    type="button"
+                    @click="chartMetric = 'loans'; updateAdminChart('loans')" 
+                    :class="chartMetric === 'loans' ? 'bg-white dark:bg-zinc-900 shadow-2xs text-purple-600 dark:text-purple-400 font-bold' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 font-medium'"
+                    class="px-2.5 py-1 text-xs rounded-lg transition-all cursor-pointer"
+                >
+                    Loans
+                </button>
+            </div>
+        </div>
 
-                    <!-- Guide lines -->
-                    <div class="absolute left-8 right-0 top-12 bottom-6 flex flex-col justify-between pointer-events-none">
-                        @for ($i = 0; $i < 4; $i++)
-                            <div class="w-full border-t border-dashed border-zinc-200/50 dark:border-white/5 h-0"></div>
-                        @endfor
-                        <div class="w-full border-t border-zinc-200 dark:border-white/10 h-0"></div>
-                    </div>
+        <div class="relative w-full h-64 sm:h-72 mt-4">
+            <canvas id="adminFlowsChart"></canvas>
+        </div>
+    </div>
 
-                    <!-- Bars -->
-                    <div class="absolute left-8 right-0 top-12 bottom-6 flex items-end justify-between gap-0.5">
-                        @foreach ($chartData as $data)
-                            @php
-                                $contribPct = $yAxisMax > 0 ? ($data['contributions'] / $yAxisMax) * 100 : 0;
-                                $subPct = $yAxisMax > 0 ? ($data['submissions'] / $yAxisMax) * 100 : 0;
-                            @endphp
-                            <div class="flex-1 flex items-end justify-center gap-0.5 group relative h-full">
-                                <!-- Tooltip on hover -->
-                                <div class="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 z-30 pointer-events-none bg-zinc-950/90 dark:bg-zinc-900/90 backdrop-blur-md text-zinc-100 text-[11px] font-medium p-2.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap border border-white/10">
-                                    <div class="font-bold text-[11px] mb-0.5 text-white">{{ $data['month'] }} {{ $selectedYear }}</div>
-                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm" style="background-color: var(--brand-primary);"></div> Contributions: <b>{{ $data['contributions'] }}</b></div>
-                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-sm" style="background-color: var(--brand-secondary);"></div> Submissions: <b>{{ $data['submissions'] }}</b></div>
-                                </div>
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- 5. SUITE OF EXECUTIVE PIE & DONUT BREAKDOWN CHARTS                  -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <!-- Donut 1: Capital Allocation Composition -->
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+            <div class="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <div class="flex items-center gap-2">
+                    <span class="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400">
+                        <i data-lucide="pie-chart" class="w-3.5 h-3.5"></i>
+                    </span>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">Capital Allocation</h3>
+                    <x-info-tooltip 
+                        title="Capital Allocation Ratio"
+                        description="How total capital is split between the rotational Njangi pool, the savings vault, and active loans."
+                        formula="Njangi Pool vs Savings Deposits vs Active Loans"
+                        source="Union Financial Programs"
+                        color="emerald"
+                    />
+                </div>
+            </div>
 
-                                <!-- Contribution Bar -->
-                                <div 
-                                    class="w-[35%] max-w-[18px] min-w-[6px] shrink-0 rounded-t-sm transition-all duration-300 ease-out group-hover:opacity-80 shadow-xs" 
-                                    style="height: {{ $contribPct }}%; min-height: {{ $data['contributions'] > 0 ? '3px' : '0' }}; background: linear-gradient(to top, var(--brand-primary), rgba(var(--brand-primary-rgb), 0.72));"
-                                ></div>
-                                <!-- Submission Bar -->
-                                <div 
-                                    class="w-[35%] max-w-[18px] min-w-[6px] shrink-0 rounded-t-sm transition-all duration-300 ease-out group-hover:opacity-80 shadow-xs" 
-                                    style="height: {{ $subPct }}%; min-height: {{ $data['submissions'] > 0 ? '3px' : '0' }}; background: linear-gradient(to top, var(--brand-secondary), rgba(var(--brand-secondary-rgb), 0.65));"
-                                ></div>
-                            </div>
-                        @endforeach
-                    </div>
+            <div class="relative py-3 flex items-center justify-center">
+                <div class="w-52 h-52">
+                    <canvas id="adminCapitalPieChart"></canvas>
+                </div>
+            </div>
 
-                    <!-- Month labels -->
-                    <div class="absolute left-8 right-0 bottom-0 h-5 flex justify-between">
-                        @foreach ($chartData as $data)
-                            <div class="flex-1 text-center">
-                                <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">{{ $data['month'] }}</span>
-                            </div>
-                        @endforeach
-                    </div>
+            <div class="space-y-1.5 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs">
+                <div class="flex items-center justify-between text-zinc-600 dark:text-zinc-300">
+                    <span class="flex items-center gap-1.5 text-[11px]"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Njangi Volume</span>
+                    <span class="font-mono font-bold">${{ number_format($capitalComposition['njangi'] ?? 0, 0) }}</span>
+                </div>
+                <div class="flex items-center justify-between text-zinc-600 dark:text-zinc-300">
+                    <span class="flex items-center gap-1.5 text-[11px]"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Savings Vault</span>
+                    <span class="font-mono font-bold">${{ number_format($capitalComposition['savings'] ?? 0, 0) }}</span>
+                </div>
+                <div class="flex items-center justify-between text-zinc-600 dark:text-zinc-300">
+                    <span class="flex items-center gap-1.5 text-[11px]"><span class="w-2 h-2 rounded-full bg-purple-500"></span> Active Loans</span>
+                    <span class="font-mono font-bold">${{ number_format($capitalComposition['loans'] ?? 0, 0) }}</span>
                 </div>
             </div>
         </div>
 
-        <!-- Right: Frosted Glass Tabbed Activities -->
-        <div 
-            x-data="{ activeTab: 'submissions' }"
-            class="lg:col-span-5 glass-surface rounded-2xl shadow-xl overflow-hidden flex flex-col h-full"
-        >
-            <!-- Tab selectors with glassy backing -->
-            <div class="flex border-b border-zinc-200/50 dark:border-white/10 bg-white/40 dark:bg-white/[0.03] px-3 backdrop-blur-md">
+        <!-- Donut 2: Loan Portfolio Status Distribution -->
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+            <div class="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <div class="flex items-center gap-2">
+                    <span class="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400">
+                        <i data-lucide="scale" class="w-3.5 h-3.5"></i>
+                    </span>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">Loan Portfolio</h3>
+                    <x-info-tooltip 
+                        title="Loan Portfolio Risk"
+                        description="The current status of all loans: actively paying, fully cleared, under review, or overdue."
+                        formula="Active vs Fully Repaid vs In Review vs Defaulted"
+                        source="Lending Records"
+                        color="purple"
+                    />
+                </div>
+                <span class="text-[10px] font-bold text-zinc-400 uppercase">Risk Status</span>
+            </div>
+
+            <div class="relative py-3 flex items-center justify-center">
+                <div class="w-52 h-52">
+                    <canvas id="adminLoansPieChart"></canvas>
+                </div>
+            </div>
+
+            <div class="space-y-1.5 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs">
+                <div class="flex items-center justify-between text-zinc-600 dark:text-zinc-300">
+                    <span class="flex items-center gap-1.5 text-[11px]"><span class="w-2 h-2 rounded-full bg-purple-500"></span> Active</span>
+                    <span class="font-mono font-bold">{{ $loanStatusDistribution['active'] ?? 0 }}</span>
+                </div>
+                <div class="flex items-center justify-between text-zinc-600 dark:text-zinc-300">
+                    <span class="flex items-center gap-1.5 text-[11px]"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Repaid</span>
+                    <span class="font-mono font-bold">{{ $loanStatusDistribution['repaid'] ?? 0 }}</span>
+                </div>
+                <div class="flex items-center justify-between text-zinc-600 dark:text-zinc-300">
+                    <span class="flex items-center gap-1.5 text-[11px]"><span class="w-2 h-2 rounded-full bg-amber-500"></span> In Review</span>
+                    <span class="font-mono font-bold">{{ $loanStatusDistribution['pending'] ?? 0 }}</span>
+                </div>
+                <div class="flex items-center justify-between text-zinc-600 dark:text-zinc-300">
+                    <span class="flex items-center gap-1.5 text-[11px]"><span class="w-2 h-2 rounded-full bg-rose-500"></span> Defaulted</span>
+                    <span class="font-mono font-bold">{{ $loanStatusDistribution['defaulted'] ?? 0 }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Donut 3: Membership Roster Distribution -->
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+            <div class="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <div class="flex items-center gap-2">
+                    <span class="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                        <i data-lucide="users" class="w-3.5 h-3.5"></i>
+                    </span>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">Member Status</h3>
+                    <x-info-tooltip 
+                        title="Membership Registry Status"
+                        description="Breakdown of member standing: active accounts, inactive accounts, and new members joined this month."
+                        formula="Active Members vs Inactive Accounts"
+                        source="Membership Registry"
+                        color="blue"
+                    />
+                </div>
+                <span class="text-[10px] font-bold text-zinc-400 uppercase">Registry</span>
+            </div>
+
+            <div class="relative py-3 flex items-center justify-center">
+                <div class="w-52 h-52">
+                    <canvas id="adminMemberPieChart"></canvas>
+                </div>
+            </div>
+
+            <div class="space-y-1.5 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs">
+                <div class="flex items-center justify-between text-zinc-600 dark:text-zinc-300">
+                    <span class="flex items-center gap-1.5 text-[11px]"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Active Standing</span>
+                    <span class="font-mono font-bold">{{ $memberStatusDistribution['active'] ?? 0 }}</span>
+                </div>
+                <div class="flex items-center justify-between text-zinc-600 dark:text-zinc-300">
+                    <span class="flex items-center gap-1.5 text-[11px]"><span class="w-2 h-2 rounded-full bg-zinc-400"></span> Inactive / Pending</span>
+                    <span class="font-mono font-bold">{{ $memberStatusDistribution['inactive'] ?? 0 }}</span>
+                </div>
+                <div class="flex items-center justify-between text-zinc-600 dark:text-zinc-300">
+                    <span class="flex items-center gap-1.5 text-[11px]"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Joined This Month</span>
+                    <span class="font-mono font-bold">+{{ $newMembersThisMonth ?? 0 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js Script for Admin Suite -->
+    <script>
+        let adminFlowsChartInstance = null;
+        const monthlyData = @json($monthlyTrends ?? []);
+
+        function updateAdminChart(mode) {
+            if (!adminFlowsChartInstance) return;
+
+            const labels = monthlyData.map(d => d.month);
+            let datasets = [];
+
+            if (mode === 'all') {
+                datasets = [
+                    {
+                        label: 'Njangi ($)',
+                        data: monthlyData.map(d => d.njangi),
+                        backgroundColor: 'rgba(245, 158, 11, 0.85)',
+                        borderRadius: 6,
+                    },
+                    {
+                        label: 'Savings ($)',
+                        data: monthlyData.map(d => d.savings),
+                        backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                        borderRadius: 6,
+                    },
+                    {
+                        label: 'Loan Repayments ($)',
+                        data: monthlyData.map(d => d.loans),
+                        backgroundColor: 'rgba(168, 85, 247, 0.85)',
+                        borderRadius: 6,
+                    }
+                ];
+            } else if (mode === 'njangi') {
+                datasets = [{
+                    label: 'Njangi Plays ($)',
+                    data: monthlyData.map(d => d.njangi),
+                    backgroundColor: 'rgba(245, 158, 11, 0.9)',
+                    borderRadius: 6,
+                }];
+            } else if (mode === 'savings') {
+                datasets = [{
+                    label: 'Savings Deposits ($)',
+                    data: monthlyData.map(d => d.savings),
+                    backgroundColor: 'rgba(16, 185, 129, 0.9)',
+                    borderRadius: 6,
+                }];
+            } else if (mode === 'loans') {
+                datasets = [{
+                    label: 'Loan Repayments ($)',
+                    data: monthlyData.map(d => d.loans),
+                    backgroundColor: 'rgba(168, 85, 247, 0.9)',
+                    borderRadius: 6,
+                }];
+            }
+
+            adminFlowsChartInstance.data.labels = labels;
+            adminFlowsChartInstance.data.datasets = datasets;
+            adminFlowsChartInstance.update();
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof Chart === 'undefined') return;
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
+            const textColor = isDark ? '#a1a1aa' : '#71717a';
+
+            // 1. Financial Flows Bar Chart
+            const flowCtx = document.getElementById('adminFlowsChart');
+            if (flowCtx) {
+                adminFlowsChartInstance = new Chart(flowCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: monthlyData.map(d => d.month),
+                        datasets: [
+                            {
+                                label: 'Njangi ($)',
+                                data: monthlyData.map(d => d.njangi),
+                                backgroundColor: 'rgba(245, 158, 11, 0.85)',
+                                borderRadius: 6,
+                            },
+                            {
+                                label: 'Savings ($)',
+                                data: monthlyData.map(d => d.savings),
+                                backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                                borderRadius: 6,
+                            },
+                            {
+                                label: 'Loan Repayments ($)',
+                                data: monthlyData.map(d => d.loans),
+                                backgroundColor: 'rgba(168, 85, 247, 0.85)',
+                                borderRadius: 6,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: { color: textColor, font: { size: 11, weight: 'bold' } }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(ctx) {
+                                        return ctx.dataset.label + ': $' + Number(ctx.raw).toLocaleString();
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: textColor, font: { size: 11 } }
+                            },
+                            y: {
+                                grid: { color: gridColor },
+                                ticks: {
+                                    color: textColor,
+                                    font: { size: 10 },
+                                    callback: function(val) { return '$' + Number(val).toLocaleString(); }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 2. Capital Donut
+            const capCtx = document.getElementById('adminCapitalPieChart');
+            if (capCtx) {
+                const njangi = {{ (float) ($capitalComposition['njangi'] ?? 0) }};
+                const savings = {{ (float) ($capitalComposition['savings'] ?? 0) }};
+                const loans = {{ (float) ($capitalComposition['loans'] ?? 0) }};
+                const hasCap = (njangi + savings + loans) > 0;
+
+                new Chart(capCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Njangi', 'Savings', 'Loans'],
+                        datasets: [{
+                            data: hasCap ? [njangi, savings, loans] : [1, 0, 0],
+                            backgroundColor: hasCap ? ['#f59e0b', '#10b981', '#a855f7'] : ['#e4e4e7'],
+                            borderWidth: 2,
+                            borderColor: isDark ? '#18181b' : '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        cutout: '68%'
+                    }
+                });
+            }
+
+            // 3. Loans Donut
+            const loanCtx = document.getElementById('adminLoansPieChart');
+            if (loanCtx) {
+                const act = {{ (int) ($loanStatusDistribution['active'] ?? 0) }};
+                const rep = {{ (int) ($loanStatusDistribution['repaid'] ?? 0) }};
+                const pnd = {{ (int) ($loanStatusDistribution['pending'] ?? 0) }};
+                const def = {{ (int) ($loanStatusDistribution['defaulted'] ?? 0) }};
+                const hasLoans = (act + rep + pnd + def) > 0;
+
+                new Chart(loanCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Active', 'Repaid', 'Pending', 'Defaulted'],
+                        datasets: [{
+                            data: hasLoans ? [act, rep, pnd, def] : [1, 0, 0, 0],
+                            backgroundColor: hasLoans ? ['#a855f7', '#10b981', '#f59e0b', '#ef4444'] : ['#e4e4e7'],
+                            borderWidth: 2,
+                            borderColor: isDark ? '#18181b' : '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        cutout: '68%'
+                    }
+                });
+            }
+
+            // 4. Member Status Donut
+            const memCtx = document.getElementById('adminMemberPieChart');
+            if (memCtx) {
+                const act = {{ (int) ($memberStatusDistribution['active'] ?? 0) }};
+                const inact = {{ (int) ($memberStatusDistribution['inactive'] ?? 0) }};
+                const hasMem = (act + inact) > 0;
+
+                new Chart(memCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Active', 'Inactive/Pending'],
+                        datasets: [{
+                            data: hasMem ? [act, inact] : [1, 0],
+                            backgroundColor: hasMem ? ['#10b981', '#a1a1aa'] : ['#e4e4e7'],
+                            borderWidth: 2,
+                            borderColor: isDark ? '#18181b' : '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        cutout: '68%'
+                    }
+                });
+            }
+        });
+    </script>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- 6. OPERATIONAL ACTIVITY DESK (MULTI-TAB DATA TABLES)                -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-6 shadow-xs w-full max-w-full overflow-hidden">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 pb-4 border-b border-zinc-100 dark:border-zinc-800 w-full">
+            <div class="flex items-center gap-3 min-w-0">
+                <span class="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 shrink-0">
+                    <i data-lucide="layers" class="w-5 h-5"></i>
+                </span>
+                <div class="min-w-0">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-white">
+                        Operational Stream
+                    </h3>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400 truncate sm:whitespace-normal">
+                        Real-time audit trail of payment submissions, credit applications, and member entries.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Tab Buttons (Clean horizontal swipe on mobile without breaking card bounds) -->
+            <div class="flex items-center gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl w-full lg:w-auto overflow-x-auto scrollbar-none shrink-0">
                 <button 
-                    @click="activeTab = 'submissions'"
-                    class="px-4 py-3 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer"
-                    :class="activeTab === 'submissions' ? 'border-brand-primary text-brand-primary font-bold' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'"
+                    type="button"
+                    @click="activeFeedTab = 'submissions'" 
+                    :class="activeFeedTab === 'submissions' ? 'bg-white dark:bg-zinc-900 shadow-2xs text-zinc-900 dark:text-white font-bold' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 font-medium'"
+                    class="px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0"
                 >
                     Submissions ({{ $recentSubmissions->count() }})
                 </button>
                 <button 
-                    @click="activeTab = 'members'"
-                    class="px-4 py-3 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer"
-                    :class="activeTab === 'members' ? 'border-brand-primary text-brand-primary font-bold' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'"
+                    type="button"
+                    @click="activeFeedTab = 'loans'" 
+                    :class="activeFeedTab === 'loans' ? 'bg-white dark:bg-zinc-900 shadow-2xs text-zinc-900 dark:text-white font-bold' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 font-medium'"
+                    class="px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0"
                 >
-                    Members ({{ $recentMembers->count() }})
+                    Loan Desk ({{ $recentLoanRequests->count() }})
                 </button>
-            </div>
-
-            <!-- Tab panels -->
-            <div class="p-4 flex flex-col flex-1 overflow-y-auto">
-                <!-- Submissions panel -->
-                <div x-show="activeTab === 'submissions'" class="flex flex-col gap-1 w-full">
-                    @if ($recentSubmissions->isEmpty())
-                        <div class="flex-grow flex flex-col items-center justify-center text-center p-8 gap-3">
-                            <div class="p-4 bg-white/40 dark:bg-white/5 rounded-full text-zinc-400 dark:text-zinc-500 border border-white/20">
-                                <i data-lucide="inbox" class="w-8 h-8"></i>
-                            </div>
-                            <span class="text-xs text-zinc-500 font-medium">No submissions found.</span>
-                        </div>
-                    @else
-                        @foreach ($recentSubmissions as $sub)
-                            @php
-                                $subInitials = collect(explode(' ', $sub->member->name ?? 'User'))->map(fn($n) => mb_substr($n, 0, 1))->take(2)->join('');
-                            @endphp
-                            <div class="flex items-center justify-between p-3 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.05] transition-all duration-200 border-b border-zinc-100/60 dark:border-white/[0.04] last:border-0">
-                                <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-8 h-8 rounded-full bg-white/60 dark:bg-white/10 border border-white/40 dark:border-white/10 flex items-center justify-center font-bold text-xs text-zinc-800 dark:text-zinc-200 flex-shrink-0 shadow-2xs">
-                                        {{ $subInitials }}
-                                    </div>
-                                    <div class="flex flex-col min-w-0">
-                                        <div class="flex items-center gap-1.5 min-w-0">
-                                            <span class="text-sm font-semibold text-zinc-900 dark:text-white truncate">
-                                                {{ $sub->member->name ?? 'Unknown Member' }}
-                                            </span>
-                                            <span class="text-[10px] text-zinc-400 dark:text-zinc-500">•</span>
-                                            <span class="text-xs text-zinc-600 dark:text-zinc-300 font-semibold truncate">
-                                                ${{ number_format($sub->amount, 2) }}
-                                            </span>
-                                        </div>
-                                        <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium truncate leading-relaxed">
-                                            {{ $sub->session->title ?? 'Session' }} • <span class="font-semibold text-brand-primary">{{ ucfirst($sub->status) }}</span>
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-1 flex-shrink-0 ml-3">
-                                    @if ($sub->screenshot_path)
-                                        <button 
-                                            @click="receiptUrl = '{{ asset('storage/' . $sub->screenshot_path) }}'; receiptModalOpen = true"
-                                            class="glass-button p-1.5 rounded-lg text-zinc-600 dark:text-zinc-300 flex items-center justify-center cursor-pointer"
-                                            title="View Receipt"
-                                        >
-                                            <i data-lucide="eye" class="w-3.5 h-3.5"></i>
-                                        </button>
-                                    @endif
-                                    <a 
-                                        href="{{ route('njangi-submissions.index') }}"
-                                        class="glass-button p-1.5 rounded-lg text-zinc-700 dark:text-zinc-200 flex items-center justify-center"
-                                        title="View Submissions"
-                                    >
-                                        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        @endforeach
-                    @endif
-                </div>
-
-                <!-- Members panel -->
-                <div x-show="activeTab === 'members'" class="flex flex-col gap-1 w-full" x-cloak>
-                    @if ($recentMembers->isEmpty())
-                        <div class="flex-grow flex flex-col items-center justify-center text-center p-8 gap-3">
-                            <div class="p-4 bg-white/40 dark:bg-white/5 rounded-full text-zinc-400 dark:text-zinc-500 border border-white/20">
-                                <i data-lucide="users" class="w-8 h-8"></i>
-                            </div>
-                            <span class="text-xs text-zinc-500 font-medium">No members found.</span>
-                        </div>
-                    @else
-                        @foreach ($recentMembers as $mb)
-                            @php
-                                $mbInitials = collect(explode(' ', $mb->name ?? 'User'))->map(fn($n) => mb_substr($n, 0, 1))->take(2)->join('');
-                            @endphp
-                            <div class="flex items-center justify-between p-3 rounded-xl hover:bg-white/60 dark:hover:bg-white/[0.05] transition-all duration-200 border-b border-zinc-100/60 dark:border-white/[0.04] last:border-0">
-                                <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-8 h-8 rounded-full bg-white/60 dark:bg-white/10 border border-white/40 dark:border-white/10 flex items-center justify-center font-bold text-xs text-zinc-800 dark:text-zinc-200 flex-shrink-0 shadow-2xs">
-                                        {{ $mbInitials }}
-                                    </div>
-                                    <div class="flex flex-col min-w-0">
-                                        <div class="flex items-center gap-1.5 min-w-0">
-                                            <span class="text-sm font-semibold text-zinc-900 dark:text-white truncate">
-                                                {{ $mb->name }}
-                                            </span>
-                                            <span class="text-[10px] text-zinc-400 dark:text-zinc-500">•</span>
-                                            <span class="text-xs text-zinc-600 dark:text-zinc-300 font-semibold truncate">
-                                                {{ $mb->member_code }}
-                                            </span>
-                                        </div>
-                                        <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium truncate leading-relaxed">
-                                            Joined {{ $mb->join_date ? \Carbon\Carbon::parse($mb->join_date)->format('M d, Y') : 'N/A' }}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-2 flex-shrink-0 ml-3">
-                                    <a 
-                                        href="{{ route('members.show', $mb->id) }}"
-                                        class="glass-button p-1.5 rounded-lg text-zinc-700 dark:text-zinc-200 flex items-center justify-center"
-                                        title="View Member Profile"
-                                    >
-                                        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        @endforeach
-                    @endif
-                </div>
+                <button 
+                    type="button"
+                    @click="activeFeedTab = 'savings'" 
+                    :class="activeFeedTab === 'savings' ? 'bg-white dark:bg-zinc-900 shadow-2xs text-zinc-900 dark:text-white font-bold' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 font-medium'"
+                    class="px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0"
+                >
+                    Savings Requests ({{ $recentSavingsRequests->count() }})
+                </button>
+                <button 
+                    type="button"
+                    @click="activeFeedTab = 'members'" 
+                    :class="activeFeedTab === 'members' ? 'bg-white dark:bg-zinc-900 shadow-2xs text-zinc-900 dark:text-white font-bold' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 font-medium'"
+                    class="px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0"
+                >
+                    New Members ({{ $recentMembers->count() }})
+                </button>
             </div>
         </div>
 
-    </div>
-</div>
+        <!-- Tab 1: Submissions -->
+        <div x-show="activeFeedTab === 'submissions'" class="mt-4">
+            <div class="overflow-x-auto scrollbar-thin w-full max-w-full">
+                <table class="w-full text-xs text-left whitespace-nowrap min-w-[620px]">
+                    <thead class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 border-b border-zinc-100 dark:border-zinc-800">
+                        <tr>
+                            <th class="py-2.5 px-3">Member</th>
+                            <th class="py-2.5 px-3">Session</th>
+                            <th class="py-2.5 px-3">Amount</th>
+                            <th class="py-2.5 px-3">Method</th>
+                            <th class="py-2.5 px-3">Date</th>
+                            <th class="py-2.5 px-3">Status</th>
+                            <th class="py-2.5 px-3 text-right">Proof</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60 font-medium">
+                        @forelse($recentSubmissions as $sub)
+                            <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-colors">
+                                <td class="py-3 px-3 font-bold text-zinc-900 dark:text-white">
+                                    {{ $sub->member->first_name ?? 'N/A' }} {{ $sub->member->last_name ?? '' }}
+                                    <span class="block text-[10px] text-zinc-400 font-mono font-normal">#{{ $sub->member->member_code ?? '-' }}</span>
+                                </td>
+                                <td class="py-3 px-3 text-zinc-600 dark:text-zinc-300">
+                                    {{ $sub->session->title ?? 'Session #' . ($sub->session->session_number ?? '-') }}
+                                </td>
+                                <td class="py-3 px-3 font-mono font-bold text-zinc-900 dark:text-white">
+                                    ${{ number_format($sub->amount, 2) }}
+                                </td>
+                                <td class="py-3 px-3 text-zinc-600 dark:text-zinc-400">
+                                    {{ ucfirst(str_replace('_', ' ', $sub->payment_method)) }}
+                                </td>
+                                <td class="py-3 px-3 font-mono text-zinc-500">
+                                    {{ $sub->payment_date ? \Carbon\Carbon::parse($sub->payment_date)->format('M d, Y') : $sub->created_at->format('M d, Y') }}
+                                </td>
+                                <td class="py-3 px-3">
+                                    <span class="inline-block px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider {{ $sub->status === 'approved' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' : ($sub->status === 'rejected' ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400') }}">
+                                        {{ ucfirst($sub->status) }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-3 text-right">
+                                    @if($sub->proof_image_path)
+                                        <button 
+                                            type="button"
+                                            @click="receiptUrl = '{{ asset('storage/' . $sub->proof_image_path) }}'; receiptModalOpen = true"
+                                            class="inline-flex items-center gap-1 text-[11px] font-bold text-brand-primary hover:underline cursor-pointer"
+                                        >
+                                            <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                                            <span>View</span>
+                                        </button>
+                                    @else
+                                        <span class="text-zinc-400 text-[10px]">No Proof</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="py-6 text-center text-zinc-400">No recent submissions found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-    <!-- Frosted Glass Receipt Modal -->
+        <!-- Tab 2: Loan Applications -->
+        <div x-show="activeFeedTab === 'loans'" class="mt-4" style="display: none;">
+            <div class="overflow-x-auto scrollbar-thin w-full max-w-full">
+                <table class="w-full text-xs text-left whitespace-nowrap min-w-[620px]">
+                    <thead class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 border-b border-zinc-100 dark:border-zinc-800">
+                        <tr>
+                            <th class="py-2.5 px-3">Applicant</th>
+                            <th class="py-2.5 px-3">Requested Principal</th>
+                            <th class="py-2.5 px-3">Term</th>
+                            <th class="py-2.5 px-3">Date Applied</th>
+                            <th class="py-2.5 px-3">Status</th>
+                            <th class="py-2.5 px-3 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60 font-medium">
+                        @forelse($recentLoanRequests as $loan)
+                            <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-colors">
+                                <td class="py-3 px-3 font-bold text-zinc-900 dark:text-white">
+                                    {{ $loan->member->first_name ?? 'N/A' }} {{ $loan->member->last_name ?? '' }}
+                                    <span class="block text-[10px] text-zinc-400 font-mono font-normal">#{{ $loan->member->member_code ?? '-' }}</span>
+                                </td>
+                                <td class="py-3 px-3 font-mono font-bold text-zinc-900 dark:text-white">
+                                    ${{ number_format($loan->amount, 2) }}
+                                </td>
+                                <td class="py-3 px-3 text-zinc-600 dark:text-zinc-300">
+                                    {{ $loan->duration_months }} Months
+                                </td>
+                                <td class="py-3 px-3 font-mono text-zinc-500">
+                                    {{ $loan->created_at->format('M d, Y') }}
+                                </td>
+                                <td class="py-3 px-3">
+                                    <span class="inline-block px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider {{ $loan->status === 'active' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' : ($loan->status === 'pending_committee' ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400') }}">
+                                        {{ str_replace('_', ' ', ucfirst($loan->status)) }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-3 text-right">
+                                    <a href="{{ route('loans.index') }}" class="text-brand-primary font-bold hover:underline inline-flex items-center gap-1">
+                                        <span>Desk</span>
+                                        <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="py-6 text-center text-zinc-400">No recent loan applications.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 3: Savings Requests -->
+        <div x-show="activeFeedTab === 'savings'" class="mt-4" style="display: none;">
+            <div class="overflow-x-auto scrollbar-thin w-full max-w-full">
+                <table class="w-full text-xs text-left whitespace-nowrap min-w-[620px]">
+                    <thead class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 border-b border-zinc-100 dark:border-zinc-800">
+                        <tr>
+                            <th class="py-2.5 px-3">Member</th>
+                            <th class="py-2.5 px-3">Deposit Amount</th>
+                            <th class="py-2.5 px-3">Method</th>
+                            <th class="py-2.5 px-3">Date</th>
+                            <th class="py-2.5 px-3">Status</th>
+                            <th class="py-2.5 px-3 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60 font-medium">
+                        @forelse($recentSavingsRequests as $sr)
+                            <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-colors">
+                                <td class="py-3 px-3 font-bold text-zinc-900 dark:text-white">
+                                    {{ $sr->member->first_name ?? 'N/A' }} {{ $sr->member->last_name ?? '' }}
+                                    <span class="block text-[10px] text-zinc-400 font-mono font-normal">#{{ $sr->member->member_code ?? '-' }}</span>
+                                </td>
+                                <td class="py-3 px-3 font-mono font-bold text-zinc-900 dark:text-white">
+                                    ${{ number_format($sr->amount, 2) }}
+                                </td>
+                                <td class="py-3 px-3 text-zinc-600 dark:text-zinc-400">
+                                    {{ ucfirst(str_replace('_', ' ', $sr->payment_method)) }}
+                                </td>
+                                <td class="py-3 px-3 font-mono text-zinc-500">
+                                    {{ $sr->created_at->format('M d, Y') }}
+                                </td>
+                                <td class="py-3 px-3">
+                                    <span class="inline-block px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider {{ $sr->status === 'approved' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400' }}">
+                                        {{ ucfirst($sr->status) }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-3 text-right">
+                                    <a href="{{ route('savings.requests') }}" class="text-brand-primary font-bold hover:underline inline-flex items-center gap-1">
+                                        <span>Review</span>
+                                        <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="py-6 text-center text-zinc-400">No pending savings requests.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 4: Members -->
+        <div x-show="activeFeedTab === 'members'" class="mt-4" style="display: none;">
+            <div class="overflow-x-auto scrollbar-thin w-full max-w-full">
+                <table class="w-full text-xs text-left whitespace-nowrap min-w-[620px]">
+                    <thead class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 border-b border-zinc-100 dark:border-zinc-800">
+                        <tr>
+                            <th class="py-2.5 px-3">Member</th>
+                            <th class="py-2.5 px-3">Rank / Role</th>
+                            <th class="py-2.5 px-3">Contact</th>
+                            <th class="py-2.5 px-3">Join Date</th>
+                            <th class="py-2.5 px-3">Status</th>
+                            <th class="py-2.5 px-3 text-right">Profile</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60 font-medium">
+                        @forelse($recentMembers as $rm)
+                            <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-colors">
+                                <td class="py-3 px-3 font-bold text-zinc-900 dark:text-white">
+                                    {{ $rm->first_name }} {{ $rm->last_name }}
+                                    <span class="block text-[10px] text-zinc-400 font-mono font-normal">#{{ $rm->member_code }}</span>
+                                </td>
+                                <td class="py-3 px-3 text-zinc-700 dark:text-zinc-300">
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200">
+                                        <i data-lucide="shield" class="w-3 h-3 text-brand-primary"></i>
+                                        {{ $rm->rank->name ?? 'Warrior' }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-3 font-mono text-zinc-500">
+                                    {{ $rm->phone ?: 'N/A' }}
+                                </td>
+                                <td class="py-3 px-3 font-mono text-zinc-500">
+                                    {{ $rm->join_date ? $rm->join_date->format('M d, Y') : $rm->created_at->format('M d, Y') }}
+                                </td>
+                                <td class="py-3 px-3">
+                                    <span class="inline-block px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider {{ $rm->status === 'active' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400' }}">
+                                        {{ ucfirst($rm->status) }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-3 text-right">
+                                    <a href="{{ route('members.show', $rm->id) }}" class="text-brand-primary font-bold hover:underline inline-flex items-center gap-1">
+                                        <span>View</span>
+                                        <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="py-6 text-center text-zinc-400">No member records found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- 7. RECEIPT PROOF PREVIEW MODAL                                      -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
     <div 
         x-show="receiptModalOpen" 
-        x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 font-sans"
+        x-transition:enter="transition ease-out duration-150"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-100"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+        style="display: none;"
     >
-        <!-- Backdrop -->
         <div 
-            x-show="receiptModalOpen"
-            x-transition:enter="transition-opacity ease-out duration-300"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="transition-opacity ease-in duration-200"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            @click="receiptModalOpen = false"
-            class="fixed inset-0 bg-slate-950/60 backdrop-blur-md"
-        ></div>
-
-        <!-- Modal Content with Glass Surface -->
-        <div 
-            x-show="receiptModalOpen"
-            x-transition:enter="transition ease-out duration-300 transform"
-            x-transition:enter-start="opacity-0 scale-95"
-            x-transition:enter-end="opacity-100 scale-100"
-            x-transition:leave="transition ease-in duration-200 transform"
-            x-transition:leave-start="opacity-100 scale-100"
-            x-transition:leave-end="opacity-0 scale-95"
-            class="relative max-w-2xl w-full glass-surface rounded-2xl p-5 shadow-2xl flex flex-col gap-4 max-h-[90vh]"
+            @click.away="receiptModalOpen = false"
+            class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl flex flex-col gap-4"
         >
-            <div class="flex items-center justify-between border-b border-zinc-200/50 dark:border-white/10 pb-3">
-                <h3 class="font-bold text-zinc-900 dark:text-white text-sm">Receipt Image Preview</h3>
+            <div class="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <h3 class="text-sm font-bold text-zinc-950 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="receipt" class="w-4 h-4 text-brand-primary"></i>
+                    <span>Payment Receipt Proof</span>
+                </h3>
                 <button 
                     @click="receiptModalOpen = false"
-                    class="glass-button p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 cursor-pointer flex items-center justify-center"
+                    class="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            
-            <div class="flex-grow overflow-auto flex items-center justify-center bg-white/30 dark:bg-black/30 backdrop-blur-sm rounded-xl border border-zinc-200/40 dark:border-white/10 p-2 min-h-[300px]">
-                <img :src="receiptUrl" alt="Receipt Upload" class="max-w-full max-h-[60vh] object-contain rounded-lg shadow-sm">
+
+            <div class="rounded-2xl overflow-hidden bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center min-h-[260px] max-h-[460px]">
+                <img :src="receiptUrl" alt="Receipt Proof" class="object-contain max-h-[440px] w-full">
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <a 
+                    :href="receiptUrl" 
+                    target="_blank" 
+                    class="px-3.5 py-2 bg-brand-primary text-brand-primary-text rounded-xl text-xs font-bold hover:opacity-95 transition-all shadow-xs flex items-center gap-1.5"
+                >
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                    <span>Open Full Image</span>
+                </a>
+                <button 
+                    type="button" 
+                    @click="receiptModalOpen = false"
+                    class="px-3.5 py-2 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 rounded-xl text-xs font-bold transition-all"
+                >
+                    Close
+                </button>
             </div>
         </div>
     </div>
-
-<!-- Auto-instantiation of Lucide Icons -->
-<script>
-    lucide.createIcons();
-</script>
+</div>
 @endsection

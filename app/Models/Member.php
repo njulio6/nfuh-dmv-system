@@ -128,4 +128,19 @@ class Member extends Model
         }
         return (float) $balance;
     }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(MeetingAttendance::class);
+    }
+
+    public function attendanceRate(): float
+    {
+        $verifiedCount = $this->attendances()->whereNotNull('attendance_status')->count();
+        if ($verifiedCount === 0) {
+            return 0.0;
+        }
+        $presentCount = $this->attendances()->where('attendance_status', 'present')->count();
+        return round(($presentCount / $verifiedCount) * 100, 1);
+    }
 }

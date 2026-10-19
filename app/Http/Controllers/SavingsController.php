@@ -596,6 +596,11 @@ class SavingsController extends Controller
      */
     public function approveWithdrawal(Request $request, SavingsWithdrawalRequest $withdrawalRequest)
     {
+        $user = Auth::user();
+        if (!$user || (!$user->hasRole('admin') && !$user->can('savings.approve_withdrawal') && !$user->hasRole('Financial Secretary'))) {
+            abort(403, 'Unauthorized action. Only authorized officers can approve savings withdrawals.');
+        }
+
         if ($withdrawalRequest->status !== 'pending') {
             return redirect()->back()->with('error', 'This withdrawal request is not pending.');
         }
@@ -634,6 +639,11 @@ class SavingsController extends Controller
      */
     public function disburseWithdrawal(Request $request, SavingsWithdrawalRequest $withdrawalRequest)
     {
+        $user = Auth::user();
+        if (!$user || (!$user->hasRole('admin') && !$user->can('savings.disburse_withdrawal') && !$user->hasRole('Treasurer'))) {
+            abort(403, 'Unauthorized action. Only the Treasurer or Administrator can disburse savings withdrawals.');
+        }
+
         if ($withdrawalRequest->status !== 'approved') {
             return redirect()->back()->with('error', 'Withdrawal request must be approved before disbursement.');
         }
@@ -727,6 +737,11 @@ class SavingsController extends Controller
      */
     public function rejectWithdrawal(Request $request, SavingsWithdrawalRequest $withdrawalRequest)
     {
+        $user = Auth::user();
+        if (!$user || (!$user->hasRole('admin') && !$user->can('savings.approve_withdrawal') && !$user->hasRole('Financial Secretary'))) {
+            abort(403, 'Unauthorized action. Only authorized officers can reject savings withdrawals.');
+        }
+
         if (!in_array($withdrawalRequest->status, ['pending', 'approved'])) {
             return redirect()->back()->with('error', 'Cannot reject request at this stage.');
         }

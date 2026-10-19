@@ -130,6 +130,11 @@ class LoanController extends Controller
      */
     public function approve(Request $request, LoanRequest $loan)
     {
+        $user = Auth::user();
+        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.approve') && !$user->hasRole('Loan Committee'))) {
+            abort(403, 'Unauthorized action. Only the Loan Committee or Administrator can approve loans.');
+        }
+
         if ($loan->status !== 'pending_committee') {
             return redirect()->back()->with('error', 'Loan is not in pending committee review status.');
         }
@@ -162,6 +167,11 @@ class LoanController extends Controller
      */
     public function disburse(Request $request, LoanRequest $loan)
     {
+        $user = Auth::user();
+        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.disburse') && !$user->hasRole('Treasurer'))) {
+            abort(403, 'Unauthorized action. Only the Treasurer or Administrator can disburse loan funds.');
+        }
+
         if ($loan->status !== 'approved') {
             return redirect()->back()->with('error', 'Loan must be approved before disbursement.');
         }
@@ -217,6 +227,11 @@ class LoanController extends Controller
      */
     public function reject(Request $request, LoanRequest $loan)
     {
+        $user = Auth::user();
+        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.reject') && !$user->can('loans.approve') && !$user->hasRole('Loan Committee'))) {
+            abort(403, 'Unauthorized action. Only the Loan Committee or Administrator can reject loans.');
+        }
+
         if (!in_array($loan->status, ['pending_guarantors', 'pending_committee', 'approved'])) {
             return redirect()->back()->with('error', 'Cannot reject loan at this stage.');
         }
@@ -671,6 +686,11 @@ class LoanController extends Controller
      */
     public function markAsDefaulted(LoanRequest $loan)
     {
+        $user = Auth::user();
+        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.manage_sub_statuses') && !$user->hasRole('Loan Committee'))) {
+            abort(403, 'Unauthorized action. Only authorized committee officers can mark loans as defaulted.');
+        }
+
         if ($loan->status !== 'active') {
             return redirect()->back()->with('error', 'Only active loans can be marked as defaulted.');
         }
@@ -687,6 +707,11 @@ class LoanController extends Controller
      */
     public function markAsActive(LoanRequest $loan)
     {
+        $user = Auth::user();
+        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.manage_sub_statuses') && !$user->hasRole('Loan Committee'))) {
+            abort(403, 'Unauthorized action. Only authorized committee officers can restore defaulted loans.');
+        }
+
         if ($loan->status !== 'defaulted') {
             return redirect()->back()->with('error', 'Only defaulted loans can be marked as active.');
         }

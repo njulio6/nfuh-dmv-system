@@ -21,12 +21,13 @@ class EnsureUserIsAdmin
             return redirect()->route('login');
         }
 
-        $isAdmin = $user->hasRole('admin');
+        $officerRoles = ['admin', 'Treasurer', 'Financial Secretary', 'Loan Committee', 'General Secretary'];
+        $isAdmin = $user->hasAnyRole($officerRoles);
         
         if (!$isAdmin) {
             $member = MemberResolver::fromUser($user);
             if ($member) {
-                $adminRoles = ['Secretary', 'Treasurer', 'Financial Secretary', 'Loan Officer', 'Lead Nformi'];
+                $adminRoles = ['Secretary', 'Treasurer', 'Financial Secretary', 'Loan Officer', 'Lead Nformi', 'Loan Committee', 'General Secretary'];
                 $isAdmin = $member->roles()->whereIn('name', $adminRoles)->exists();
             }
         }

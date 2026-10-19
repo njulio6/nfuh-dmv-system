@@ -55,6 +55,12 @@ Route::middleware(['auth'])->group(function () {
         ->name('member.loans.repayment-requests');
     Route::post('/member/loans/{loan}/repay-request', [\App\Http\Controllers\LoanController::class, 'requestRepayment'])
         ->name('member.loans.repay-request');
+
+    // Member Attendance & RSVP Routes
+    Route::get('/member/attendance', [\App\Http\Controllers\AttendanceController::class, 'myAttendance'])
+        ->name('member.attendance');
+    Route::post('/member/attendance/rsvp', [\App\Http\Controllers\AttendanceController::class, 'submitRsvp'])
+        ->name('member.attendance.rsvp');
 });
 
 Route::middleware('auth')->group(function () {
@@ -194,6 +200,23 @@ Route::middleware(['auth', 'admin'])->group(function () {
         ->name('admin.tools.clear-cache');
     Route::post('/admin/tools/storage-link', [\App\Http\Controllers\SystemToolsController::class, 'storageLink'])
         ->name('admin.tools.storage-link');
+    // Officer Attendance Desk Routes
+    Route::get('/admin/attendance/desk', [\App\Http\Controllers\AttendanceController::class, 'desk'])
+        ->name('attendance.desk');
+    Route::post('/admin/attendance/mark', [\App\Http\Controllers\AttendanceController::class, 'mark'])
+        ->name('attendance.mark');
+    Route::post('/admin/attendance/bulk-mark-rsvps', [\App\Http\Controllers\AttendanceController::class, 'bulkMarkRsvps'])
+        ->name('attendance.bulk-mark-rsvps');
+
+    // Roles, Permissions & Segregation of Duties Routes
+    Route::get('/admin/roles', [\App\Http\Controllers\RolePermissionController::class, 'index'])
+        ->name('admin.roles.index');
+    Route::post('/admin/roles/sync-defaults', [\App\Http\Controllers\RolePermissionController::class, 'syncDefaultRolesAndPermissions'])
+        ->name('admin.roles.sync-defaults');
+    Route::put('/admin/roles/{role}/permissions', [\App\Http\Controllers\RolePermissionController::class, 'updateRolePermissions'])
+        ->name('admin.roles.update-permissions');
+    Route::put('/admin/users/{user}/roles', [\App\Http\Controllers\RolePermissionController::class, 'assignUserRoles'])
+        ->name('admin.users.assign-roles');
 
 });
 
