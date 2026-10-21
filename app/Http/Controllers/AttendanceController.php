@@ -330,6 +330,9 @@ class AttendanceController extends Controller
                     $isAlreadyCheckedIn = true;
                 }
             }
+        } else {
+            // Remember check-in URL as intended destination after login
+            session(['url.intended' => route('attendance.checkin.show', $token)]);
         }
 
         // Active members roster for the "Who invited you?" guest dropdown

@@ -5,6 +5,12 @@
     <form method="POST" action="{{ route('login') }}" class="flex flex-col gap-5" x-data="{ loading: false }" @submit="loading = true">
         @csrf
 
+        @if(request('redirect'))
+            <input type="hidden" name="redirect" value="{{ request('redirect') }}">
+        @elseif(session('url.intended'))
+            <input type="hidden" name="redirect" value="{{ session('url.intended') }}">
+        @endif
+
         <!-- Email Address -->
         <div class="flex flex-col gap-1.5">
             <x-premium-input 

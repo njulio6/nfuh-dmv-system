@@ -39,3 +39,29 @@ test('users can logout', function () {
     $this->assertGuest();
     $response->assertRedirect('/');
 });
+
+test('users are redirected to redirect parameter after login', function () {
+    $user = User::factory()->create();
+
+    $targetUrl = '/some/custom/target-page';
+
+    $response = $this->post('/login', [
+        'email' => $user->email,
+        'password' => 'password',
+        'redirect' => $targetUrl,
+    ]);
+
+    $this->assertAuthenticated();
+    $response->assertRedirect($targetUrl);
+});
+
+test('login screen preserves redirect query param in form', function () {
+    $targetUrl = 'http://localhost/attendance/check-in/sample-qr-token';
+
+    $response = $this->get('/login?redirect=' . urlencode($targetUrl));
+
+    $response->assertStatus(200);
+    $response->assertSee('name="redirect"', false);
+    $response->assertSee(e($targetUrl), false);
+});
+

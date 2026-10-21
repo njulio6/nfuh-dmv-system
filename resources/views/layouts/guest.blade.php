@@ -88,7 +88,40 @@
             [x-cloak] { display: none !important; }
         </style>
     </head>
-    <body class="font-sans antialiased bg-zinc-50 dark:bg-darkBg text-zinc-900 dark:text-zinc-100 min-h-screen flex items-center justify-center p-4 relative transition-colors duration-200">
+    <body class="font-sans antialiased bg-zinc-50 dark:bg-[#090a0b] text-zinc-900 dark:text-zinc-100 min-h-screen flex items-center justify-center p-4 relative overflow-x-hidden transition-colors duration-300">
+
+        <!-- Modern Blurred Ambient Mesh & Glow System (Linear / Vercel Style) -->
+        <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10 select-none">
+            <!-- Top Hero Radial Aura -->
+            <div 
+                class="absolute -top-[12%] left-1/2 -translate-x-1/2 w-[130%] max-w-[1200px] h-[680px] opacity-45 dark:opacity-65 blur-[110px]"
+                style="background: radial-gradient(ellipse 65% 55% at 50% 18%, rgba(var(--brand-primary-rgb), 0.42), rgba(var(--brand-secondary-rgb), 0.22) 48%, transparent 75%);"
+            ></div>
+
+            <!-- Floating Brand Primary Orb (Left) -->
+            <div 
+                class="absolute top-[12%] -left-[10%] w-[540px] h-[540px] rounded-full blur-[140px] opacity-25 dark:opacity-35"
+                style="background: radial-gradient(circle, rgba(var(--brand-primary-rgb), 0.35) 0%, transparent 70%);"
+            ></div>
+
+            <!-- Floating Brand Secondary Orb (Right) -->
+            <div 
+                class="absolute top-[28%] -right-[10%] w-[480px] h-[480px] rounded-full blur-[140px] opacity-20 dark:opacity-30"
+                style="background: radial-gradient(circle, rgba(var(--brand-secondary-rgb), 0.35) 0%, transparent 70%);"
+            ></div>
+
+            <!-- Bottom Center Subtle Mesh Glow -->
+            <div 
+                class="absolute bottom-[5%] left-[25%] w-[620px] h-[460px] rounded-full blur-[160px] opacity-15 dark:opacity-25"
+                style="background: radial-gradient(circle, rgba(var(--brand-primary-rgb), 0.25) 0%, rgba(var(--brand-secondary-rgb), 0.15) 50%, transparent 70%);"
+            ></div>
+
+            <!-- Subtle Radial Dot Matrix Grid Pattern Overlay -->
+            <div 
+                class="absolute inset-0 opacity-15 dark:opacity-25"
+                style="background-image: radial-gradient(rgba(var(--brand-primary-rgb), 0.22) 1px, transparent 1px); background-size: 28px 28px; mask-image: radial-gradient(ellipse 70% 55% at 50% 30%, #000 20%, transparent 80%); -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 30%, #000 20%, transparent 80%);"
+            ></div>
+        </div>
         
         <!-- Alpine-powered Theme Toggler -->
         <div x-data="{ 
@@ -116,7 +149,7 @@
             </button>
         </div>
 
-        <div class="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200/85 dark:border-zinc-800/85 rounded-2xl shadow-xl dark:shadow-zinc-950/40 p-6 md:p-8 flex flex-col gap-6 relative overflow-hidden transition-all duration-300 max-h-[90vh] overflow-y-auto">
+        <div class="w-full max-w-md bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl shadow-2xl dark:shadow-black/40 p-6 md:p-8 flex flex-col gap-6 relative overflow-hidden transition-all duration-300 max-h-[90vh] overflow-y-auto">
             <!-- Branding Header -->
             <div class="flex flex-col items-center text-center">
                 <a href="/" class="flex flex-col items-center group">

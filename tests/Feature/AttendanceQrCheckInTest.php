@@ -357,3 +357,22 @@ test('strict cycle restriction setting blocks check-in for members not enrolled 
     Carbon::setTestNow();
 });
 
+test('unauthenticated visit to check-in sets intended url and redirects back to check-in page upon login', function () {
+    [$org, $cycle, $session, $user] = createQrTestContext();
+
+    // 1. Guest visits check-in page without logging in
+    $response = $this->get(route('attendance.checkin.show', $session->qr_token));
+    $response->assertStatus(200);
+    $response->assertSessionHas('url.intended', route('attendance.checkin.show', $session->qr_token));
+
+    // 2. Member logs in using credentials
+    $loginResponse = $this->post('/login', [
+        'email' => $user->email,
+        'password' => 'password',
+    ]);
+
+    // 3. User is redirected directly back to check-in page instead of dashboard
+    $loginResponse->assertRedirect(route('attendance.checkin.show', $session->qr_token));
+});
+
+

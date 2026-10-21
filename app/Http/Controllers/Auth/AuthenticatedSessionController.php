@@ -14,8 +14,12 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(): View
+    public function create(Request $request): View
     {
+        if ($request->filled('redirect')) {
+            session(['url.intended' => $request->input('redirect')]);
+        }
+
         return view('auth.login');
     }
 
@@ -26,7 +30,18 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        $redirectUrl = $request->input('redirect') ?: session()->get('url.intended');
+
         $request->session()->regenerate();
+
+        if ($redirectUrl) {
+            $parsed = parse_url($redirectUrl);
+            $isLocal = empty($parsed['host']) || $parsed['host'] === $request->getHost();
+            if ($isLocal) {
+                session()->forget('url.intended');
+                return redirect()->to($redirectUrl);
+            }
+        }
 
         return redirect()->intended(route('dashboard', absolute: false));
     }
