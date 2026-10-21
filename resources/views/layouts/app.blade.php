@@ -426,7 +426,7 @@
             elseif ($routeName === 'admin.tools') $pageTitle = 'System Tools';
             elseif ($routeName === 'attendance.desk') $pageTitle = 'Attendance Desk';
             elseif ($routeName === 'admin.roles.index') $pageTitle = 'Roles & Segregation of Duties';
-            elseif ($routeName === 'member.attendance') $pageTitle = 'My Attendance & RSVP';
+            elseif ($routeName === 'member.attendance') $pageTitle = 'Meeting Attendance';
         }
     @endphp
 
@@ -776,16 +776,16 @@
                                 <i data-lucide="file-text" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('member.njangi-report') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
                                 <span x-show="!sidebarCollapsed" class="truncate">Njangi Report</span>
                             </a>
-                            <!-- Attendance & RSVP -->
+                            <!-- Meeting Attendance -->
                             <a 
                                 href="{{ route('member.attendance') }}" 
                                 class="group flex items-center gap-2 overflow-hidden rounded-[10px] text-sm outline-none transition-all duration-200 relative select-none cursor-pointer {{ Route::is('member.attendance') ? 'bg-zinc-100 dark:bg-zinc-800 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}"
                                 :class="sidebarCollapsed ? 'size-8 p-2 justify-center' : 'h-7 px-2 w-full'"
-                                title="Attendance & RSVP"
-                                x-show="!searchQuery || 'attendance rsvp meeting'.includes(searchQuery.toLowerCase())"
+                                title="Meeting Attendance"
+                                x-show="!searchQuery || 'attendance checkin meeting'.includes(searchQuery.toLowerCase())"
                             >
                                 <i data-lucide="calendar-check" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('member.attendance') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
-                                <span x-show="!sidebarCollapsed" class="truncate">Attendance & RSVP</span>
+                                <span x-show="!sidebarCollapsed" class="truncate">Meeting Attendance</span>
                             </a>
                         </div>
                     </div>
@@ -1017,7 +1017,7 @@
                             </a>
                             <a href="{{ route('member.attendance') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.attendance') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="calendar-check" class="w-[18px] h-[18px] shrink-0"></i>
-                                <span>Attendance & RSVP</span>
+                                <span>Meeting Attendance</span>
                             </a>
                         </div>
 
@@ -1551,6 +1551,85 @@
                     return today.getDate() === dateObj.day &&
                            today.getMonth() === dateObj.month &&
                            today.getFullYear() === dateObj.year;
+                }
+            }));
+
+            // Register timepicker component globally
+            Alpine.data('timepicker', (config) => ({
+                value: config.value || '',
+                name: config.name || '',
+                required: config.required || false,
+                open: false,
+                hour12: 5,
+                minute: '00',
+                period: 'PM',
+                hours: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                minutes: ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'],
+
+                init() {
+                    this.parseValue(this.value);
+                    this.$watch('value', (val) => {
+                        this.parseValue(val);
+                    });
+                },
+
+                parseValue(val) {
+                    if (!val) {
+                        this.hour12 = 5;
+                        this.minute = '00';
+                        this.period = 'PM';
+                        return;
+                    }
+                    const parts = String(val).trim().split(':');
+                    if (parts.length >= 2) {
+                        let h = parseInt(parts[0], 10);
+                        let m = parseInt(parts[1], 10);
+                        if (isNaN(h)) h = 12;
+                        if (isNaN(m)) m = 0;
+
+                        this.period = h >= 12 ? 'PM' : 'AM';
+                        this.hour12 = h % 12 === 0 ? 12 : h % 12;
+                        this.minute = String(m).padStart(2, '0');
+                    }
+                },
+
+                updateValue() {
+                    let h24;
+                    if (this.period === 'PM') {
+                        h24 = this.hour12 === 12 ? 12 : this.hour12 + 12;
+                    } else {
+                        h24 = this.hour12 === 12 ? 0 : this.hour12;
+                    }
+                    this.value = String(h24).padStart(2, '0') + ':' + this.minute;
+                    if (this.$refs.hiddenInput) {
+                        this.$refs.hiddenInput.value = this.value;
+                    }
+                },
+
+                setHour(h) {
+                    this.hour12 = h;
+                    this.updateValue();
+                },
+
+                setMinute(m) {
+                    this.minute = String(m).padStart(2, '0');
+                    this.updateValue();
+                },
+
+                setPeriod(p) {
+                    this.period = p;
+                    this.updateValue();
+                },
+
+                setPreset(timeStr) {
+                    this.parseValue(timeStr);
+                    this.updateValue();
+                },
+
+                get displayValue() {
+                    if (!this.hour12) return 'Select Time';
+                    const hStr = String(this.hour12).padStart(2, '0');
+                    return `${hStr}:${this.minute} ${this.period}`;
                 }
             }));
             

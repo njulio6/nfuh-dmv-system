@@ -109,6 +109,11 @@ class Member extends Model
         return trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? ''));
     }
 
+    public function getTraditionalTitleAttribute(): string
+    {
+        return $this->rank?->name ?? 'Member';
+    }
+
     public function loanRequests(): HasMany
     {
         return $this->hasMany(LoanRequest::class);

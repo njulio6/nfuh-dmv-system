@@ -56,12 +56,19 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/member/loans/{loan}/repay-request', [\App\Http\Controllers\LoanController::class, 'requestRepayment'])
         ->name('member.loans.repay-request');
 
-    // Member Attendance & RSVP Routes
+    // Member Attendance Routes
     Route::get('/member/attendance', [\App\Http\Controllers\AttendanceController::class, 'myAttendance'])
         ->name('member.attendance');
-    Route::post('/member/attendance/rsvp', [\App\Http\Controllers\AttendanceController::class, 'submitRsvp'])
-        ->name('member.attendance.rsvp');
 });
+
+// QR Code Session Check-In Routes (Public / Member Landing)
+Route::get('/attendance/check-in/{token}', [\App\Http\Controllers\AttendanceController::class, 'showCheckIn'])
+    ->name('attendance.checkin.show');
+Route::post('/attendance/check-in/{token}/member', [\App\Http\Controllers\AttendanceController::class, 'submitMemberCheckIn'])
+    ->middleware('auth')
+    ->name('attendance.checkin.member');
+Route::post('/attendance/check-in/{token}/guest', [\App\Http\Controllers\AttendanceController::class, 'submitGuestCheckIn'])
+    ->name('attendance.checkin.guest');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -205,8 +212,10 @@ Route::middleware(['auth', 'admin'])->group(function () {
         ->name('attendance.desk');
     Route::post('/admin/attendance/mark', [\App\Http\Controllers\AttendanceController::class, 'mark'])
         ->name('attendance.mark');
-    Route::post('/admin/attendance/bulk-mark-rsvps', [\App\Http\Controllers\AttendanceController::class, 'bulkMarkRsvps'])
-        ->name('attendance.bulk-mark-rsvps');
+    Route::get('/admin/attendance/sessions/{session}/qr', [\App\Http\Controllers\AttendanceController::class, 'viewQr'])
+        ->name('attendance.session.qr');
+    Route::post('/admin/attendance/sessions/{session}/window', [\App\Http\Controllers\AttendanceController::class, 'updateCheckInWindow'])
+        ->name('attendance.session.window');
 
     // Roles, Permissions & Segregation of Duties Routes
     Route::get('/admin/roles', [\App\Http\Controllers\RolePermissionController::class, 'index'])

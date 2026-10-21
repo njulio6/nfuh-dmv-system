@@ -161,29 +161,30 @@ test('action center alerts display pending guarantor requests when active', func
     $response->assertSee('Respond Now');
 });
 
-test('action center alerts display upcoming meeting RSVP prompt when undecided', function () {
+test('action center alerts display upcoming meeting check-in prompt when not checked in', function () {
     [$org, $cycle, $session, $userA, $memberA, $userB, $memberB] = createDashboardContext();
 
-    // Alice has not RSVP'd for upcoming session
+    // Alice has not checked in for upcoming session
     $response = $this->actingAs($userA)->get(route('dashboard'));
     $response->assertStatus(200);
-    $response->assertSee('Upcoming Meeting RSVP');
-    $response->assertSee("Yes, I'll Attend", false);
+    $response->assertSee('Upcoming Meeting');
+    $response->assertSee('Open Check-In Pass');
 
-    // Alice submits RSVP
+    // Alice checks in
     MeetingAttendance::create([
         'organization_id' => $org->id,
         'njangi_session_id' => $session->id,
         'member_id' => $memberA->id,
-        'rsvp_status' => 'attending',
-        'rsvp_at' => now(),
+        'attendance_status' => 'present',
+        'check_in_source' => 'qr_self_check_in',
+        'check_in_at' => now(),
     ]);
 
-    // Now the pending RSVP banner should no longer prompt her
+    // Now the banner shows checked in
     $responseAfter = $this->actingAs($userA)->get(route('dashboard'));
     $responseAfter->assertStatus(200);
-    $responseAfter->assertDontSee("Yes, I'll Attend", false);
-    $responseAfter->assertSee('RSVP: Attending');
+    $responseAfter->assertDontSee('Open Check-In Pass');
+    $responseAfter->assertSee('Checked In Present');
 });
 
 test('dashboard displays localized NFUH terminology correctly', function () {

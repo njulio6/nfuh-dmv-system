@@ -15,6 +15,7 @@
         singleBenefit: {{ old('single_benefit_constraint', $settings->single_benefit_constraint) ? 'true' : 'false' }},
         midCycleEnrollment: {{ old('allow_mid_cycle_enrollment', $settings->allow_mid_cycle_enrollment) ? 'true' : 'false' }},
         midCycleRemoval: {{ old('allow_mid_cycle_removal', $settings->allow_mid_cycle_removal) ? 'true' : 'false' }},
+        restrictCheckinToCycle: {{ old('restrict_checkin_to_cycle_members', $settings->restrict_checkin_to_cycle_members) ? 'true' : 'false' }},
         previews: {
             logo_light: '{{ $settings->logo_light_path ? asset('storage/' . $settings->logo_light_path) : '' }}',
             logo_dark: '{{ $settings->logo_dark_path ? asset('storage/' . $settings->logo_dark_path) : '' }}',
@@ -1209,7 +1210,7 @@
             </div>
 
             <!-- Policies & Constraints (Modern Switch Cards) -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                 <!-- 1. Single-Benefit Constraint per Cycle -->
                 <div 
                     @click="singleBenefit = !singleBenefit"
@@ -1382,6 +1383,64 @@
                         name="allow_mid_cycle_removal" 
                         value="1" 
                         :checked="midCycleRemoval"
+                        class="hidden"
+                    >
+                </div>
+
+                <!-- 4. Restrict Check-in to Cycle Members -->
+                <div 
+                    @click="restrictCheckinToCycle = !restrictCheckinToCycle"
+                    class="bg-white dark:bg-zinc-900 border rounded-2xl p-5 shadow-3xs cursor-pointer select-none transition-all flex flex-col justify-between gap-4 group"
+                    :class="restrictCheckinToCycle 
+                        ? 'border-zinc-950 dark:border-white shadow-xs' 
+                        : 'border-zinc-200/80 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700'"
+                >
+                    <div class="flex flex-col gap-3">
+                        <div class="flex items-center justify-between">
+                            <div class="size-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 flex items-center justify-center shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9 11l3 3L22 4"/>
+                                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                                </svg>
+                            </div>
+                            <!-- Modern Switch -->
+                            <button 
+                                type="button" 
+                                role="switch"
+                                :aria-checked="restrictCheckinToCycle"
+                                class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                                :class="restrictCheckinToCycle ? 'bg-zinc-950 dark:bg-white' : 'bg-zinc-200 dark:bg-zinc-700'"
+                            >
+                                <span 
+                                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white dark:bg-zinc-950 shadow-sm ring-0 transition duration-200 ease-in-out"
+                                    :class="restrictCheckinToCycle ? 'translate-x-5' : 'translate-x-0'"
+                                ></span>
+                            </button>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-xs font-bold text-zinc-950 dark:text-white">
+                                    Strict Cycle Roll-Call
+                                </h3>
+                                <span 
+                                    class="text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider"
+                                    :class="restrictCheckinToCycle ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'"
+                                    x-text="restrictCheckinToCycle ? 'Restricted' : 'Open to All'"
+                                ></span>
+                            </div>
+                            <p class="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">
+                                When enabled, only members registered in the session's active Njangi cycle can check in as members.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Hidden Form Input -->
+                    <input 
+                        type="checkbox" 
+                        name="restrict_checkin_to_cycle_members" 
+                        value="1" 
+                        :checked="restrictCheckinToCycle"
                         class="hidden"
                     >
                 </div>

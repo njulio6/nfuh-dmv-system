@@ -53,6 +53,7 @@ class SettingsController extends Controller
             'savings_withdrawal_fee_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'allow_mid_cycle_enrollment' => ['nullable', 'boolean'],
             'allow_mid_cycle_removal'    => ['nullable', 'boolean'],
+            'restrict_checkin_to_cycle_members' => ['nullable', 'boolean'],
         ]);
 
         $settings->app_name = $validated['app_name'];
@@ -87,6 +88,7 @@ class SettingsController extends Controller
         }
         $settings->allow_mid_cycle_enrollment = $request->has('allow_mid_cycle_enrollment');
         $settings->allow_mid_cycle_removal = $request->has('allow_mid_cycle_removal');
+        $settings->restrict_checkin_to_cycle_members = $request->has('restrict_checkin_to_cycle_members');
 
         if ($request->hasFile('logo_light')) {
             if ($settings->logo_light_path) {

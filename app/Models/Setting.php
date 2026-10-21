@@ -26,6 +26,7 @@ class Setting extends Model
         'savings_withdrawal_fee_percent',
         'allow_mid_cycle_enrollment',
         'allow_mid_cycle_removal',
+        'restrict_checkin_to_cycle_members',
     ];
 
     protected $casts = [
@@ -38,6 +39,7 @@ class Setting extends Model
         'savings_withdrawal_fee_percent' => 'float',
         'allow_mid_cycle_enrollment' => 'boolean',
         'allow_mid_cycle_removal' => 'boolean',
+        'restrict_checkin_to_cycle_members' => 'boolean',
     ];
 
     public function getPrimaryTextLightAttribute(): string

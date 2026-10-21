@@ -234,8 +234,17 @@ class MemberSeeder extends Seeder
             );
 
             // Step 2: Create the Member profile linked to the User via user_id
-            // Skip if this user already has a linked member (idempotent)
-            if (Member::where('user_id', $user->id)->exists()) {
+            // Skip if this user already has a linked member or name exists (idempotent)
+            $existingMember = Member::where('user_id', $user->id)
+                ->orWhere(function ($q) use ($data) {
+                    $q->where('first_name', $data['first_name'])
+                      ->where('last_name', $data['last_name']);
+                })->first();
+
+            if ($existingMember) {
+                if (!$existingMember->user_id) {
+                    $existingMember->update(['user_id' => $user->id]);
+                }
                 continue;
             }
 

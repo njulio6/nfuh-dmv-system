@@ -29,9 +29,12 @@ function createAttendanceTestContext(): array
         'organization_id' => $org->id,
         'njangi_cycle_id' => $cycle->id,
         'session_number' => 1,
-        'session_date' => now()->addDays(5)->toDateString(),
+        'session_date' => now()->toDateString(),
         'title' => 'General Assembly Session 1',
         'status' => 'open',
+        'check_in_opens_at' => '17:00:00',
+        'check_in_closes_at' => '21:00:00',
+        'check_in_timezone' => 'America/New_York',
     ]);
 
     $user = User::factory()->create(['organization_id' => $org->id]);
@@ -53,59 +56,6 @@ function createAttendanceTestContext(): array
     return [$org, $cycle, $session, $user, $member, $adminUser];
 }
 
-test('member can submit and update their RSVP status for an upcoming session', function () {
-    [$org, $cycle, $session, $user, $member, $adminUser] = createAttendanceTestContext();
-
-    $response = $this->actingAs($user)->post(route('member.attendance.rsvp'), [
-        'session_id' => $session->id,
-        'rsvp_status' => 'attending',
-        'rsvp_notes' => 'Looking forward to meeting everyone.',
-    ]);
-
-    $response->assertRedirect();
-    $response->assertSessionHas('success');
-
-    $this->assertDatabaseHas('meeting_attendances', [
-        'njangi_session_id' => $session->id,
-        'member_id' => $member->id,
-        'rsvp_status' => 'attending',
-        'rsvp_notes' => 'Looking forward to meeting everyone.',
-    ]);
-
-    // Member updates RSVP to not_attending
-    $updateResponse = $this->actingAs($user)->post(route('member.attendance.rsvp'), [
-        'session_id' => $session->id,
-        'rsvp_status' => 'not_attending',
-        'rsvp_notes' => 'Sudden travel schedule conflict.',
-    ]);
-
-    $updateResponse->assertRedirect();
-    $this->assertDatabaseHas('meeting_attendances', [
-        'njangi_session_id' => $session->id,
-        'member_id' => $member->id,
-        'rsvp_status' => 'not_attending',
-        'rsvp_notes' => 'Sudden travel schedule conflict.',
-    ]);
-});
-
-test('member cannot submit RSVP for a closed or cancelled session', function () {
-    [$org, $cycle, $session, $user, $member, $adminUser] = createAttendanceTestContext();
-
-    $session->update(['status' => 'closed']);
-
-    $response = $this->actingAs($user)->post(route('member.attendance.rsvp'), [
-        'session_id' => $session->id,
-        'rsvp_status' => 'attending',
-    ]);
-
-    $response->assertRedirect();
-    $response->assertSessionHas('error');
-    $this->assertDatabaseMissing('meeting_attendances', [
-        'njangi_session_id' => $session->id,
-        'member_id' => $member->id,
-    ]);
-});
-
 test('regular member cannot access the officer roll-call desk (403 forbidden)', function () {
     [$org, $cycle, $session, $user, $member, $adminUser] = createAttendanceTestContext();
 
@@ -114,9 +64,6 @@ test('regular member cannot access the officer roll-call desk (403 forbidden)', 
         'session_id' => $session->id,
         'member_id' => $member->id,
         'status' => 'present',
-    ])->assertStatus(403);
-    $this->actingAs($user)->post(route('attendance.bulk-mark-rsvps'), [
-        'session_id' => $session->id,
     ])->assertStatus(403);
 });
 
@@ -153,6 +100,7 @@ test('officer can verify member attendance as Present, Absent, or Excused with a
         'member_id' => $member->id,
         'status' => 'excused',
         'officer_notes' => 'Formal letter of absence accepted by executives.',
+        'reason' => 'Prior approved family bereavement.',
     ]);
 
     $excuseResponse->assertRedirect();
@@ -163,53 +111,14 @@ test('officer can verify member attendance as Present, Absent, or Excused with a
         'officer_notes' => 'Formal letter of absence accepted by executives.',
         'verified_by' => $adminUser->id,
     ]);
-});
 
-test('bulk action marks all attending RSVPs as Present in one click', function () {
-    [$org, $cycle, $session, $user, $member, $adminUser] = createAttendanceTestContext();
-
-    // Create second member with RSVP attending
-    $user2 = User::factory()->create(['organization_id' => $org->id]);
-    $member2 = Member::create([
-        'organization_id' => $org->id,
-        'user_id' => $user2->id,
-        'member_code' => 'MEM-102',
-        'first_name' => 'Beatrice',
-        'last_name' => 'Mbah',
-        'phone' => '2405550102',
-        'status' => 'active',
-    ]);
-
-    MeetingAttendance::create([
-        'organization_id' => $org->id,
+    // Verify audit log was recorded
+    $this->assertDatabaseHas('attendance_audit_logs', [
         'njangi_session_id' => $session->id,
         'member_id' => $member->id,
-        'rsvp_status' => 'attending',
-        'rsvp_at' => now(),
-    ]);
-
-    MeetingAttendance::create([
-        'organization_id' => $org->id,
-        'njangi_session_id' => $session->id,
-        'member_id' => $member2->id,
-        'rsvp_status' => 'attending',
-        'rsvp_at' => now(),
-    ]);
-
-    $response = $this->actingAs($adminUser)->post(route('attendance.bulk-mark-rsvps'), [
-        'session_id' => $session->id,
-    ]);
-
-    $response->assertRedirect();
-    $this->assertDatabaseHas('meeting_attendances', [
-        'njangi_session_id' => $session->id,
-        'member_id' => $member->id,
-        'attendance_status' => 'present',
-    ]);
-    $this->assertDatabaseHas('meeting_attendances', [
-        'njangi_session_id' => $session->id,
-        'member_id' => $member2->id,
-        'attendance_status' => 'present',
+        'changed_by' => $adminUser->id,
+        'new_status' => 'excused',
+        'reason' => 'Prior approved family bereavement.',
     ]);
 });
 
@@ -255,16 +164,15 @@ test('session attendance unique constraint prevents duplicate rows for the same 
         'organization_id' => $org->id,
         'njangi_session_id' => $session->id,
         'member_id' => $member->id,
-        'rsvp_status' => 'attending',
-        'rsvp_at' => now(),
+        'attendance_status' => 'present',
+        'check_in_source' => 'qr_self_check_in',
+        'check_in_at' => now(),
     ]);
 
     expect(fn() => MeetingAttendance::create([
         'organization_id' => $org->id,
         'njangi_session_id' => $session->id,
         'member_id' => $member->id,
-        'rsvp_status' => 'not_attending',
-        'rsvp_at' => now(),
+        'attendance_status' => 'absent',
     ]))->toThrow(\Illuminate\Database\QueryException::class);
 });
-

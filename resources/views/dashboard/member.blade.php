@@ -189,33 +189,29 @@
         </div>
     @endif
 
-    @if(isset($upcomingSession) && (!isset($upcomingAttendance) || $upcomingAttendance->rsvp_status === 'undecided'))
-        <!-- RSVP Alert Banner (Strict text preservation for tests) -->
-        <div class="bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-2xs">
+    @if(isset($upcomingSession) && (!isset($upcomingAttendance) || $upcomingAttendance->attendance_status !== 'present'))
+        <!-- Meeting Check-In Banner -->
+        <div class="bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-2xs">
             <div class="flex items-center gap-3">
-                <div class="p-2.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl shrink-0">
-                    <i data-lucide="calendar-clock" class="w-5 h-5"></i>
+                <div class="p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl shrink-0">
+                    <i data-lucide="qr-code" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <h4 class="text-xs font-bold text-blue-900 dark:text-blue-300">
-                        Upcoming Meeting RSVP: {{ $upcomingSession->title ?? 'Session #' . $upcomingSession->session_number }}
+                    <h4 class="text-xs font-bold text-emerald-900 dark:text-emerald-300">
+                        Upcoming Meeting: {{ $upcomingSession->title ?? 'Session #' . $upcomingSession->session_number }}
                     </h4>
-                    <p class="text-[11px] text-blue-700 dark:text-blue-400 mt-0.5 font-semibold">
-                        Scheduled for {{ $upcomingSession->session_date ? $upcomingSession->session_date->format('l, F d, Y') : '' }}. Please confirm if you will attend to help roll-call planning.
+                    <p class="text-[11px] text-emerald-700 dark:text-emerald-400 mt-0.5 font-semibold">
+                        Scheduled for {{ $upcomingSession->session_date ? $upcomingSession->session_date->format('l, F d, Y') : '' }}. Check-in is open 5:00 PM – 9:00 PM on meeting day.
                     </p>
                 </div>
             </div>
             <div class="flex items-center gap-2 self-stretch md:self-auto">
-                <form method="POST" action="{{ route('member.attendance.rsvp') }}" class="inline">
-                    @csrf
-                    <input type="hidden" name="session_id" value="{{ $upcomingSession->id }}">
-                    <input type="hidden" name="rsvp_status" value="attending">
-                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-xl transition-all cursor-pointer shadow-xs select-none">
-                        Yes, I'll Attend
-                    </button>
-                </form>
+                <a href="{{ route('attendance.checkin.show', $upcomingSession->ensureQrToken()) }}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-xl transition-all cursor-pointer shadow-xs select-none inline-flex items-center gap-1.5">
+                    <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                    <span>Open Check-In Pass</span>
+                </a>
                 <a href="{{ route('member.attendance') }}" class="px-3.5 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 text-[11px] font-bold rounded-xl transition-all hover:bg-zinc-50 dark:hover:bg-zinc-700 select-none">
-                    More Options
+                    Attendance History
                 </a>
             </div>
         </div>
@@ -376,7 +372,7 @@
                     <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
                 </a>
                 <span class="text-[10px] text-zinc-400 font-medium">
-                    {{ $upcomingSession ? ($upcomingAttendance?->rsvp_status === 'attending' ? 'RSVP: Attending' : ($upcomingAttendance?->rsvp_status === 'not_attending' ? 'RSVP: Absent' : 'RSVP: Pending')) : 'No meeting' }}
+                    {{ $upcomingSession ? ($upcomingAttendance?->attendance_status === 'present' ? 'Check-in: Present' : 'Next: ' . ($upcomingSession->session_date ? $upcomingSession->session_date->format('M d') : 'Pending')) : 'No meeting' }}
                 </span>
             </div>
         </div>
@@ -651,21 +647,17 @@
                             </div>
                         </div>
 
-                        <!-- RSVP Status Badge / Quick Action -->
+                        <!-- Check-In Status Badge / Quick Action -->
                         <div class="pt-2 border-t border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-between">
-                            <span class="text-[10px] text-zinc-500 font-semibold">Your RSVP:</span>
-                            @if($upcomingAttendance?->rsvp_status === 'attending')
+                            <span class="text-[10px] text-zinc-500 font-semibold">Your Status:</span>
+                            @if($upcomingAttendance?->attendance_status === 'present')
                                 <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300">
-                                    <i data-lucide="check-circle" class="w-3 h-3"></i> Confirmed Attending
-                                </span>
-                            @elseif($upcomingAttendance?->rsvp_status === 'not_attending')
-                                <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300">
-                                    <i data-lucide="x-circle" class="w-3 h-3"></i> Confirmed Absent
+                                    <i data-lucide="check-circle" class="w-3 h-3"></i> Checked In Present
                                 </span>
                             @else
-                                <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300">
-                                    <i data-lucide="alert-circle" class="w-3 h-3"></i> Pending RSVP
-                                </span>
+                                <a href="{{ route('attendance.checkin.show', $upcomingSession->ensureQrToken()) }}" class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 hover:underline">
+                                    <i data-lucide="qr-code" class="w-3 h-3"></i> Open Check-In
+                                </a>
                             @endif
                         </div>
                     </div>

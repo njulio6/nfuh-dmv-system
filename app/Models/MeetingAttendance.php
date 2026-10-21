@@ -14,17 +14,16 @@ class MeetingAttendance extends Model
         'organization_id',
         'njangi_session_id',
         'member_id',
-        'rsvp_status',
-        'rsvp_notes',
-        'rsvp_at',
         'attendance_status',
+        'check_in_source',
+        'check_in_at',
         'verified_by',
         'verified_at',
         'officer_notes',
     ];
 
     protected $casts = [
-        'rsvp_at' => 'datetime',
+        'check_in_at' => 'datetime',
         'verified_at' => 'datetime',
     ];
 
@@ -58,9 +57,9 @@ class MeetingAttendance extends Model
         return $query->whereNotNull('attendance_status');
     }
 
-    public function isAttendingRsvp(): bool
+    public function isSelfCheckIn(): bool
     {
-        return $this->rsvp_status === 'attending';
+        return $this->check_in_source === 'qr_self_check_in';
     }
 
     public function isOfficialPresent(): bool
@@ -71,5 +70,10 @@ class MeetingAttendance extends Model
     public function isExcused(): bool
     {
         return $this->attendance_status === 'excused';
+    }
+
+    public function isAbsent(): bool
+    {
+        return $this->attendance_status === 'absent';
     }
 }
