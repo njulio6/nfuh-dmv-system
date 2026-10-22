@@ -40,16 +40,26 @@ class GenerateNjangiSessions
             throw new RuntimeException('Invalid cycle dates.');
         }
 
-        DB::transaction(function () use ($cycle, $startDate, $endDate) {
+        $settings = \App\Models\Setting::first();
+        $ordinal = $settings?->session_schedule_ordinal ?? 'first';
+        $weekday = $settings?->session_schedule_weekday ?? 'Saturday';
+
+        DB::transaction(function () use ($cycle, $startDate, $endDate, $ordinal, $weekday) {
             $sessionNumber = 1;
             $currentDate = $startDate->copy();
 
             while ($currentDate->lte($endDate)) {
+                try {
+                    $sessionDate = Carbon::parse("{$ordinal} {$weekday} of " . $currentDate->format('F Y'))->startOfDay();
+                } catch (\Throwable $e) {
+                    $sessionDate = $currentDate->copy()->startOfMonth();
+                }
+
                 NjangiSession::create([
                     'organization_id' => $cycle->organization_id,
                     'njangi_cycle_id' => $cycle->id,
                     'session_number' => $sessionNumber,
-                    'session_date' => $currentDate->copy(),
+                    'session_date' => $sessionDate,
                     'title' => $currentDate->format('F') . ' Session',
                     'notes' => null,
                     'status' => 'scheduled',

@@ -98,18 +98,18 @@ class RealDataSeeder extends Seeder
 
         // ─── SESSIONS (Third Cycle) ───────────────────────────────────────────
         $sessionData = [
-            ['num' => 1,  'date' => '2026-01-01', 'title' => 'January Session',   'status' => 'closed'],
-            ['num' => 2,  'date' => '2026-02-01', 'title' => 'February Session',  'status' => 'closed'],
-            ['num' => 3,  'date' => '2026-03-01', 'title' => 'March Session',     'status' => 'closed'],
-            ['num' => 4,  'date' => '2026-04-01', 'title' => 'April Session',     'status' => 'closed'],
-            ['num' => 5,  'date' => '2026-05-01', 'title' => 'May Session',       'status' => 'closed'],
-            ['num' => 6,  'date' => '2026-06-01', 'title' => 'June Session',      'status' => 'open'],
-            ['num' => 7,  'date' => '2026-07-01', 'title' => 'July Session',      'status' => 'scheduled'],
+            ['num' => 1,  'date' => '2026-01-03', 'title' => 'January Session',   'status' => 'closed'],
+            ['num' => 2,  'date' => '2026-02-07', 'title' => 'February Session',  'status' => 'closed'],
+            ['num' => 3,  'date' => '2026-03-07', 'title' => 'March Session',     'status' => 'closed'],
+            ['num' => 4,  'date' => '2026-04-04', 'title' => 'April Session',     'status' => 'closed'],
+            ['num' => 5,  'date' => '2026-05-02', 'title' => 'May Session',       'status' => 'closed'],
+            ['num' => 6,  'date' => '2026-06-06', 'title' => 'June Session',      'status' => 'open'],
+            ['num' => 7,  'date' => '2026-07-04', 'title' => 'July Session',      'status' => 'scheduled'],
             ['num' => 8,  'date' => '2026-08-01', 'title' => 'August Session',    'status' => 'scheduled'],
-            ['num' => 9,  'date' => '2026-09-01', 'title' => 'September Session', 'status' => 'scheduled'],
-            ['num' => 10, 'date' => '2026-10-01', 'title' => 'October Session',   'status' => 'scheduled'],
-            ['num' => 11, 'date' => '2026-11-01', 'title' => 'November Session',  'status' => 'scheduled'],
-            ['num' => 12, 'date' => '2026-12-01', 'title' => 'December Session',  'status' => 'scheduled'],
+            ['num' => 9,  'date' => '2026-09-05', 'title' => 'September Session', 'status' => 'scheduled'],
+            ['num' => 10, 'date' => '2026-10-03', 'title' => 'October Session',   'status' => 'scheduled'],
+            ['num' => 11, 'date' => '2026-11-07', 'title' => 'November Session',  'status' => 'scheduled'],
+            ['num' => 12, 'date' => '2026-12-05', 'title' => 'December Session',  'status' => 'scheduled'],
         ];
 
         $sessions = [];

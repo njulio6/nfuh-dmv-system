@@ -116,18 +116,19 @@ class NjangiSession extends Model
         $opensAtTime = $this->check_in_opens_at ?: '17:00:00';
         $closesAtTime = $this->check_in_closes_at ?: '21:00:00';
 
-        // Use session date if it falls on the current day; otherwise evaluate against current day
-        // so that active meetings managed at the desk operate within today's configured hours.
-        $baseDate = ($this->session_date && $this->session_date->format('Y-m-d') === $currentTime->format('Y-m-d'))
+        // Evaluate window against the session's actual scheduled meeting date
+        $meetingDate = $this->session_date
             ? $this->session_date->format('Y-m-d')
             : $currentTime->format('Y-m-d');
 
-        $windowStart = Carbon::parse("{$baseDate} {$opensAtTime}", $timezone);
-        $windowEnd = Carbon::parse("{$baseDate} {$closesAtTime}", $timezone);
+        $windowStart = Carbon::parse("{$meetingDate} {$opensAtTime}", $timezone);
+        $windowEnd = Carbon::parse("{$meetingDate} {$closesAtTime}", $timezone);
 
         if ($windowEnd->lessThanOrEqualTo($windowStart)) {
             $windowEnd->addDay();
         }
+
+        $timezoneAbbr = $windowEnd->format('T'); // Dynamic EDT or EST
 
         if ($currentTime->lessThan($windowStart)) {
             return [
@@ -137,6 +138,7 @@ class NjangiSession extends Model
                 'closes_at' => $windowEnd,
                 'current_time' => $currentTime,
                 'timezone' => $timezone,
+                'timezone_abbr' => $timezoneAbbr,
             ];
         }
 
@@ -148,6 +150,7 @@ class NjangiSession extends Model
                 'closes_at' => $windowEnd,
                 'current_time' => $currentTime,
                 'timezone' => $timezone,
+                'timezone_abbr' => $timezoneAbbr,
             ];
         }
 
@@ -158,6 +161,7 @@ class NjangiSession extends Model
             'closes_at' => $windowEnd,
             'current_time' => $currentTime,
             'timezone' => $timezone,
+            'timezone_abbr' => $timezoneAbbr,
         ];
     }
 

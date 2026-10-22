@@ -396,12 +396,12 @@ class AttendanceController extends Controller
         // Enforce time window
         $windowStatus = $session->checkInWindowStatus();
         if (!$windowStatus['is_open']) {
-            $cutoff = $windowStatus['closes_at']->format('g:i A T');
-            $start = $windowStatus['opens_at']->format('g:i A T');
             if ($windowStatus['status'] === 'not_started') {
-                return redirect()->back()->with('error', "Check-in has not opened yet. Check-in opens at {$start}.");
+                $startFormatted = $windowStatus['opens_at']->format('g:i A T');
+                return redirect()->back()->with('error', "Check-in is not yet open. Check-in begins on the scheduled meeting date at {$startFormatted} (Eastern Time).");
             }
-            return redirect()->back()->with('error', "Check-in is currently closed. The check-in window closed at {$cutoff}. Please see the desk officer for manual entry.");
+            $cutoff = $windowStatus['closes_at']->format('g:i A T');
+            return redirect()->back()->with('error', "Check-in is closed for this session (Cutoff was {$cutoff}). Please see an officer at the Attendance Desk to have your attendance recorded.");
         }
 
         // Check for duplicate check-in
@@ -450,8 +450,12 @@ class AttendanceController extends Controller
         // Enforce time window
         $windowStatus = $session->checkInWindowStatus();
         if (!$windowStatus['is_open']) {
+            if ($windowStatus['status'] === 'not_started') {
+                $startFormatted = $windowStatus['opens_at']->format('g:i A T');
+                return redirect()->back()->with('error', "Check-in is not yet open. Check-in begins on the scheduled meeting date at {$startFormatted} (Eastern Time).");
+            }
             $cutoff = $windowStatus['closes_at']->format('g:i A T');
-            return redirect()->back()->with('error', "Check-in is closed for this session (Cutoff was {$cutoff}). Please see an officer.");
+            return redirect()->back()->with('error', "Check-in is closed for this session (Cutoff was {$cutoff}). Please speak with an officer at the Attendance Desk.");
         }
 
         $guestName = trim($request->guest_name);

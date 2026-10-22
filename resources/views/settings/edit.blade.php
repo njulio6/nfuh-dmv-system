@@ -16,6 +16,8 @@
         midCycleEnrollment: {{ old('allow_mid_cycle_enrollment', $settings->allow_mid_cycle_enrollment) ? 'true' : 'false' }},
         midCycleRemoval: {{ old('allow_mid_cycle_removal', $settings->allow_mid_cycle_removal) ? 'true' : 'false' }},
         restrictCheckinToCycle: {{ old('restrict_checkin_to_cycle_members', $settings->restrict_checkin_to_cycle_members) ? 'true' : 'false' }},
+        scheduleOrdinal: '{{ old('session_schedule_ordinal', $settings->session_schedule_ordinal ?? 'first') }}',
+        scheduleWeekday: '{{ old('session_schedule_weekday', $settings->session_schedule_weekday ?? 'Saturday') }}',
         previews: {
             logo_light: '{{ $settings->logo_light_path ? asset('storage/' . $settings->logo_light_path) : '' }}',
             logo_dark: '{{ $settings->logo_dark_path ? asset('storage/' . $settings->logo_dark_path) : '' }}',
@@ -1204,6 +1206,139 @@
                         </span>
                         <p class="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">
                             Ensures payout validation checks confirm exactly this quota of beneficiaries before session closure is allowed.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Regular Meeting Schedule Pattern Card -->
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-3xs flex flex-col gap-4">
+                <div class="flex items-center gap-3 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                    <div class="size-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 flex items-center justify-center shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                            <line x1="16" x2="16" y1="2" y2="6"/>
+                            <line x1="8" x2="8" y1="2" y2="6"/>
+                            <line x1="3" x2="21" y1="10" y2="10"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold text-zinc-950 dark:text-white">Regular Meeting Schedule Pattern</h2>
+                        <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Controls the monthly recurring meeting day used when automatically generating cycle sessions (e.g. First Saturday).</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    <!-- Hidden Form Inputs for Schedule Settings -->
+                    <input type="hidden" name="session_schedule_ordinal" :value="scheduleOrdinal" required>
+                    <input type="hidden" name="session_schedule_weekday" :value="scheduleWeekday" required>
+
+                    <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Occurrence / Week of Month -->
+                        <div class="flex flex-col gap-1.5 w-full relative z-20">
+                            <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1 leading-none h-4">
+                                <span>Week of Month</span>
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <x-dropdown align="left" width="w-full" contentClasses="p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl flex flex-col gap-0.5 max-h-60 overflow-y-auto">
+                                <x-slot name="trigger">
+                                    <button 
+                                        type="button" 
+                                        class="w-full h-11 flex items-center justify-between bg-zinc-50/60 dark:bg-zinc-950/40 hover:bg-zinc-100/40 dark:hover:bg-zinc-900/40 text-zinc-900 dark:text-white px-4 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-semibold focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all cursor-pointer text-left"
+                                    >
+                                        <span class="truncate font-semibold text-sm leading-none" x-text="{
+                                            'first': 'First (1st)',
+                                            'second': 'Second (2nd)',
+                                            'third': 'Third (3rd)',
+                                            'fourth': 'Fourth (4th)',
+                                            'last': 'Last'
+                                        }[scheduleOrdinal] || 'First (1st)'"></span>
+                                        <svg class="h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </x-slot>
+
+                                <x-slot name="content">
+                                    <template x-for="item in [
+                                        { id: 'first', label: 'First (1st)' },
+                                        { id: 'second', label: 'Second (2nd)' },
+                                        { id: 'third', label: 'Third (3rd)' },
+                                        { id: 'fourth', label: 'Fourth (4th)' },
+                                        { id: 'last', label: 'Last' }
+                                    ]" :key="item.id">
+                                        <button 
+                                            type="button" 
+                                            @click="scheduleOrdinal = item.id" 
+                                            class="w-full flex items-center justify-between px-3.5 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left select-none"
+                                            :class="scheduleOrdinal === item.id ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
+                                        >
+                                            <span x-text="item.label"></span>
+                                            <span x-show="scheduleOrdinal === item.id" class="text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                                        </button>
+                                    </template>
+                                </x-slot>
+                            </x-dropdown>
+                            <span class="text-[11px] text-zinc-400 dark:text-zinc-500 leading-normal min-h-[16px]">
+                                Occurrence of the weekday within each month.
+                            </span>
+                        </div>
+
+                        <!-- Weekday -->
+                        <div class="flex flex-col gap-1.5 w-full relative z-10">
+                            <label class="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1 leading-none h-4">
+                                <span>Meeting Weekday</span>
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <x-dropdown align="left" width="w-full" contentClasses="p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl flex flex-col gap-0.5 max-h-60 overflow-y-auto">
+                                <x-slot name="trigger">
+                                    <button 
+                                        type="button" 
+                                        class="w-full h-11 flex items-center justify-between bg-zinc-50/60 dark:bg-zinc-950/40 hover:bg-zinc-100/40 dark:hover:bg-zinc-900/40 text-zinc-900 dark:text-white px-4 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-semibold focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all cursor-pointer text-left"
+                                    >
+                                        <span class="truncate font-semibold text-sm leading-none" x-text="scheduleWeekday || 'Saturday'"></span>
+                                        <svg class="h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </x-slot>
+
+                                <x-slot name="content">
+                                    <template x-for="day in ['Saturday', 'Sunday', 'Friday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday']" :key="day">
+                                        <button 
+                                            type="button" 
+                                            @click="scheduleWeekday = day" 
+                                            class="w-full flex items-center justify-between px-3.5 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left select-none"
+                                            :class="scheduleWeekday === day ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-white font-bold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'"
+                                        >
+                                            <span x-text="day"></span>
+                                            <span x-show="scheduleWeekday === day" class="text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                                        </button>
+                                    </template>
+                                </x-slot>
+                            </x-dropdown>
+                            <span class="text-[11px] text-zinc-400 dark:text-zinc-500 leading-normal min-h-[16px]">
+                                The recurring day of the week for general meetings.
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Explainer Pill & Live Rule Preview -->
+                    <div class="bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200/60 dark:border-zinc-800/60 rounded-xl p-4 flex flex-col gap-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                                Rule Preview
+                            </span>
+                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40">
+                                <span class="size-1.5 rounded-full bg-emerald-500"></span>
+                                Active
+                            </span>
+                        </div>
+                        <p class="text-xs text-zinc-700 dark:text-zinc-300 font-semibold leading-relaxed">
+                            Meetings recur on the <span class="capitalize underline decoration-zinc-400 font-bold" x-text="{ 'first': 'First (1st)', 'second': 'Second (2nd)', 'third': 'Third (3rd)', 'fourth': 'Fourth (4th)', 'last': 'Last' }[scheduleOrdinal] || 'First (1st)'"></span> <span class="font-bold underline decoration-zinc-400" x-text="scheduleWeekday"></span> of each month.
+                        </p>
+                        <p class="text-[11px] text-zinc-500 dark:text-zinc-400 leading-normal">
+                            Session generation will automatically calculate the exact calendar dates (e.g. Nov 7, 2026). Individual session dates can still be adjusted if needed.
                         </p>
                     </div>
                 </div>

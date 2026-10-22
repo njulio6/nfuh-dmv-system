@@ -12,37 +12,22 @@
     <!-- 1. EXECUTIVE HEADER & ACTIONS                                       -->
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-5 w-full max-w-full overflow-hidden">
-        <div class="flex items-center gap-3.5 sm:gap-4 min-w-0">
-            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-brand-primary border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-center shrink-0 shadow-2xs">
-                <i data-lucide="layout-dashboard" class="w-6 h-6 sm:w-7 sm:h-7"></i>
+        <div class="flex flex-col min-w-0 flex-1">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-primary/10 text-brand-primary border border-brand-primary/20 shrink-0">
+                    <span class="w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
+                    {{ Auth::user()->roles->first()?->name ?? 'Executive Officer' }}
+                </span>
+                <span class="text-zinc-300 dark:text-zinc-700 hidden sm:inline">•</span>
+                <span class="text-[11px] font-medium text-zinc-400 dark:text-zinc-500 hidden sm:inline">Executive Governance</span>
             </div>
-            <div class="flex flex-col gap-0.5 min-w-0">
-                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                    <h1 class="text-lg sm:text-2xl font-bold text-zinc-950 dark:text-white tracking-tight flex items-center font-display leading-tight">
-                        <span id="welcome-greeting-text">Good Afternoon</span><span>,&nbsp;</span><span class="truncate">{{ Auth::user()->name }}</span>
-                    </h1>
-                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-primary/10 text-brand-primary border border-brand-primary/20 shrink-0">
-                        {{ Auth::user()->roles->first()?->name ?? 'Executive Officer' }}
-                    </span>
-                </div>
-                <p class="text-xs text-zinc-500 dark:text-zinc-400 truncate sm:whitespace-normal">
-                    Executive oversight and operational governance for {{ !empty($appSettings->app_name) ? $appSettings->app_name : 'NFUH DMV' }}.
-                </p>
-            </div>
+            <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-zinc-950 dark:text-white tracking-tight font-display leading-tight truncate">
+                <span id="welcome-greeting-text">Good Afternoon</span>, {{ Auth::user()->name }}
+            </h1>
+            <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 truncate sm:whitespace-normal">
+                Executive oversight and operational governance for {{ !empty($appSettings->app_name) ? $appSettings->app_name : 'NFUH DMV' }}.
+            </p>
         </div>
-
-        <script>
-            (function() {
-                try {
-                    const hour = new Date().getHours();
-                    let greeting = 'Good Evening';
-                    if (hour < 12) greeting = 'Good Morning';
-                    else if (hour < 18) greeting = 'Good Afternoon';
-                    const el = document.getElementById('welcome-greeting-text');
-                    if (el) el.textContent = greeting;
-                } catch(e) {}
-            })();
-        </script>
 
         <div class="grid grid-cols-2 sm:grid-cols-3 md:flex md:items-center gap-2 w-full md:w-auto pt-3 md:pt-0 border-t border-zinc-100 dark:border-zinc-800/80 md:border-0 shrink-0">
             <button 
@@ -70,9 +55,21 @@
             >
                 <i data-lucide="download" class="w-3.5 h-3.5"></i>
                 <span>Export Report</span>
-            </button>
         </div>
     </div>
+
+    <script>
+        (function() {
+            try {
+                const hour = new Date().getHours();
+                let greeting = 'Good Evening';
+                if (hour < 12) greeting = 'Good Morning';
+                else if (hour < 18) greeting = 'Good Afternoon';
+                const el = document.getElementById('welcome-greeting-text');
+                if (el) el.textContent = greeting;
+            } catch(e) {}
+        })();
+    </script>
 
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <!-- 2. OFFICER QUEUES & URGENT ATTENTION (PERMISSION FILTERED)          -->

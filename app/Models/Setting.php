@@ -27,6 +27,8 @@ class Setting extends Model
         'allow_mid_cycle_enrollment',
         'allow_mid_cycle_removal',
         'restrict_checkin_to_cycle_members',
+        'session_schedule_ordinal',
+        'session_schedule_weekday',
     ];
 
     protected $casts = [

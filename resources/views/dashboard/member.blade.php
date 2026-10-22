@@ -23,24 +23,20 @@
     <!-- 1. CLEAN EXECUTIVE MEMBER HEADER & QUICK SHORTCUTS                  -->
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-5 w-full max-w-full overflow-hidden">
-        <div class="flex items-center gap-3.5 sm:gap-4 min-w-0">
-            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-center font-bold text-base sm:text-lg shrink-0 shadow-2xs font-display">
-                {{ strtoupper(substr($member->first_name, 0, 1) . substr($member->last_name, 0, 1)) }}
+        <div class="flex flex-col min-w-0 flex-1">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-primary/10 text-brand-primary border border-brand-primary/20 shrink-0">
+                    <i data-lucide="shield" class="w-3 h-3"></i>
+                    {{ $member->rank->name ?? 'Active Member' }}
+                </span>
+                <span class="font-mono text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 shrink-0">
+                    #{{ $member->member_code }}
+                </span>
             </div>
-            <div class="flex flex-col gap-0.5 min-w-0">
-                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                    <h1 class="text-lg sm:text-2xl font-bold text-zinc-950 dark:text-white tracking-tight flex items-center font-display leading-tight">
-                        <span id="welcome-greeting-text">Good Afternoon</span><span>,&nbsp;</span><span class="truncate">{{ $member->first_name }}</span>
-                    </h1>
-                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-primary/10 text-brand-primary border border-brand-primary/20 shrink-0">
-                        <i data-lucide="shield" class="w-3 h-3"></i>
-                        {{ $member->rank->name ?? 'Active Member' }}
-                    </span>
-                    <span class="font-mono text-xs font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-lg border border-zinc-200 dark:border-zinc-700 shrink-0">
-                        #{{ $member->member_code }}
-                    </span>
-                </div>
-                <p class="text-xs text-zinc-500 dark:text-zinc-400 truncate sm:whitespace-normal">
+                <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-zinc-950 dark:text-white tracking-tight font-display leading-tight truncate">
+                    <span id="welcome-greeting-text">Good Afternoon</span>, {{ $member->first_name }}
+                </h1>
+                <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 truncate sm:whitespace-normal">
                     Welcome to your {{ !empty($appSettings->app_name) ? $appSettings->app_name : 'NFUH DMV' }} Member Portal. Overview of your rotational rounds, savings, and civic standing.
                 </p>
             </div>

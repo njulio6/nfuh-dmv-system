@@ -316,7 +316,7 @@
                         @elseif(!$windowStatus['is_open'])
                             <!-- Window Closed / Not Started -->
                             <div class="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 text-center space-y-3">
-                                <div class="w-12 h-12 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 mx-auto flex items-center justify-center">
+                                <div class="w-12 h-12 rounded-full @if($windowStatus['status'] === 'not_started') bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 @else bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 @endif mx-auto flex items-center justify-center">
                                     <i data-lucide="clock" class="w-6 h-6"></i>
                                 </div>
                                 <div>
@@ -327,11 +327,11 @@
                                             Self Check-In Window Closed
                                         @endif
                                     </h4>
-                                    <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto leading-relaxed">
+                                    <p class="text-xs text-zinc-600 dark:text-zinc-300 mt-1 max-w-sm mx-auto leading-relaxed font-medium">
                                         @if($windowStatus['status'] === 'not_started')
-                                            Check-in for this meeting opens at <strong>{{ $windowStatus['opens_at']->format('g:i A T') }}</strong>. Please return when the session starts.
+                                            Check-in is not yet open. Check-in begins on the scheduled meeting date at <strong>{{ $windowStatus['opens_at']->format('g:i A T') }}</strong> (Eastern Time).
                                         @else
-                                            The automated self check-in window closed at <strong>{{ $windowStatus['closes_at']->format('g:i A T') }}</strong>. Please see an officer at the roll-call desk for manual entry.
+                                            Check-in is closed for this session (Cutoff was <strong>{{ $windowStatus['closes_at']->format('g:i A T') }}</strong>). If you attended this meeting, please see an officer at the Attendance Desk to have your attendance recorded.
                                         @endif
                                     </p>
                                 </div>
@@ -381,10 +381,22 @@
                     </p>
                 </div>
 
-                @if(!$windowStatus['is_open'] && $windowStatus['status'] === 'closed')
-                    <div class="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs">
-                        <strong>Notice:</strong> The self check-in window closed at {{ $windowStatus['closes_at']->format('g:i A T') }}. Please speak with the desk officer to record your guest attendance.
-                    </div>
+                @if(!$windowStatus['is_open'])
+                    @if($windowStatus['status'] === 'not_started')
+                        <div class="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2.5">
+                            <i data-lucide="clock" class="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5"></i>
+                            <div>
+                                <strong>Check-In Not Yet Open:</strong> Guest registration will open on the scheduled meeting date at {{ $windowStatus['opens_at']->format('g:i A T') }} (Eastern Time).
+                            </div>
+                        </div>
+                    @else
+                        <div class="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs flex items-start gap-2.5">
+                            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5"></i>
+                            <div>
+                                <strong>Check-In Closed:</strong> The self check-in window closed at {{ $windowStatus['closes_at']->format('g:i A T') }}. Please speak with an officer at the Attendance Desk to record your guest attendance.
+                            </div>
+                        </div>
+                    @endif
                 @endif
 
                 <form action="{{ route('attendance.checkin.guest', $session->qr_token) }}" method="POST" class="space-y-4">
@@ -568,7 +580,7 @@
                     <div class="pt-2">
                         <button 
                             type="submit" 
-                            @if(!$windowStatus['is_open'] && $windowStatus['status'] === 'closed') disabled @endif
+                            @if(!$windowStatus['is_open']) disabled @endif
                             class="w-full py-3.5 px-6 rounded-2xl bg-brand-primary hover:opacity-95 text-brand-primary-text font-bold text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-primary/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
                         >
                             <i data-lucide="user-plus" class="w-4 h-4"></i>

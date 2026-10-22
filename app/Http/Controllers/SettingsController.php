@@ -54,6 +54,8 @@ class SettingsController extends Controller
             'allow_mid_cycle_enrollment' => ['nullable', 'boolean'],
             'allow_mid_cycle_removal'    => ['nullable', 'boolean'],
             'restrict_checkin_to_cycle_members' => ['nullable', 'boolean'],
+            'session_schedule_ordinal'   => ['nullable', 'string', 'in:first,second,third,fourth,last'],
+            'session_schedule_weekday'   => ['nullable', 'string', 'in:Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday'],
         ]);
 
         $settings->app_name = $validated['app_name'];
@@ -89,6 +91,8 @@ class SettingsController extends Controller
         $settings->allow_mid_cycle_enrollment = $request->has('allow_mid_cycle_enrollment');
         $settings->allow_mid_cycle_removal = $request->has('allow_mid_cycle_removal');
         $settings->restrict_checkin_to_cycle_members = $request->has('restrict_checkin_to_cycle_members');
+        $settings->session_schedule_ordinal = $validated['session_schedule_ordinal'] ?? 'first';
+        $settings->session_schedule_weekday = $validated['session_schedule_weekday'] ?? 'Saturday';
 
         if ($request->hasFile('logo_light')) {
             if ($settings->logo_light_path) {
