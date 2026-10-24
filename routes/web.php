@@ -216,6 +216,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
         ->name('attendance.session.qr');
     Route::post('/admin/attendance/sessions/{session}/window', [\App\Http\Controllers\AttendanceController::class, 'updateCheckInWindow'])
         ->name('attendance.session.window');
+    Route::post('/admin/attendance/sessions/{session}/clear-records', [\App\Http\Controllers\AttendanceController::class, 'clearSessionRecords'])
+        ->name('attendance.session.clear-records');
 
     // Roles, Permissions & Segregation of Duties Routes
     Route::get('/admin/roles', [\App\Http\Controllers\RolePermissionController::class, 'index'])

@@ -191,7 +191,7 @@ class AttendanceController extends Controller
         $request->validate([
             'session_id' => 'required|exists:njangi_sessions,id',
             'member_id' => 'required|exists:members,id',
-            'status' => 'required|in:present,absent,excused',
+            'status' => 'required|in:present,absent,excused,unverified,pending',
             'officer_notes' => 'nullable|string|max:500',
             'reason' => 'nullable|string|max:500',
         ]);
@@ -207,39 +207,98 @@ class AttendanceController extends Controller
         $previousStatus = $attendance->exists ? $attendance->attendance_status : null;
         $isExisting = $attendance->exists && !empty($attendance->attendance_status);
 
-        $attendance->organization_id = $session->organization_id;
-        $attendance->attendance_status = $request->status;
-        $attendance->verified_by = Auth::id();
-        $attendance->verified_at = now();
+        // Check if this is a Future Session
+        $timezone = $session->check_in_timezone ?: 'America/New_York';
+        $nowInTz = Carbon::now($timezone);
+        $isFutureMeeting = $session->session_date && $session->session_date->copy()->setTimezone($timezone)->startOfDay()->greaterThan($nowInTz->copy()->startOfDay());
 
-        // Source classification
-        if ($isExisting && $previousStatus !== $request->status) {
-            $attendance->check_in_source = 'manual_correction';
-        } elseif (!$attendance->check_in_source) {
-            $attendance->check_in_source = 'officer_verification';
+        // Future Session Safeguard:
+        // Regular roll-call cannot mark Present or Absent on future meetings without an authorized override reason
+        if ($isFutureMeeting && in_array($request->status, ['present', 'absent'])) {
+            $reason = trim($request->reason ?? $request->officer_notes ?? '');
+            if (strlen($reason) < 5) {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Regular roll-call cannot mark Present or Absent before the scheduled meeting date. An authorized override reason is required.'
+                    ], 422);
+                }
+                return redirect()->back()->with('error', 'Regular roll-call cannot mark Present or Absent before the scheduled meeting date. An authorized override reason is required.');
+            }
         }
 
-        if ($request->status === 'present' && !$attendance->check_in_at) {
-            $attendance->check_in_at = now();
-        }
+        // Handle Status Reset back to Pending Verification
+        if (in_array($request->status, ['unverified', 'pending'])) {
+            $attendance->organization_id = $session->organization_id;
+            $attendance->attendance_status = null;
+            $attendance->check_in_source = 'unverified';
+            $attendance->check_in_at = null;
+            $attendance->verified_by = Auth::id();
+            $attendance->verified_at = now();
+            if ($request->filled('officer_notes')) {
+                $attendance->officer_notes = $request->officer_notes;
+            }
+            $attendance->save();
 
-        if ($request->filled('officer_notes')) {
-            $attendance->officer_notes = $request->officer_notes;
-        }
-        $attendance->save();
+            // Record audit log
+            AttendanceAuditLog::create([
+                'organization_id' => $session->organization_id,
+                'njangi_session_id' => $session->id,
+                'member_id' => $member->id,
+                'changed_by' => Auth::id(),
+                'action' => 'status_reset_to_pending',
+                'previous_status' => $previousStatus,
+                'new_status' => 'unverified',
+                'source' => 'officer_reset',
+                'reason' => $request->reason ?? $request->officer_notes ?? 'Status reset to Pending Verification by officer',
+            ]);
 
-        // Record audit trail log if it's a correction or manual change
-        AttendanceAuditLog::create([
-            'organization_id' => $session->organization_id,
-            'njangi_session_id' => $session->id,
-            'member_id' => $member->id,
-            'changed_by' => Auth::id(),
-            'action' => $isExisting ? 'manual_correction' : 'officer_verification',
-            'previous_status' => $previousStatus,
-            'new_status' => $request->status,
-            'source' => $attendance->check_in_source,
-            'reason' => $request->reason ?? $request->officer_notes ?? ($isExisting ? 'Manual status correction by officer' : 'Desk roll-call verification'),
-        ]);
+            $statusLabel = 'Pending Verification';
+        } else {
+            // Normal Roll-Call or Advance Override
+            $attendance->organization_id = $session->organization_id;
+            $attendance->attendance_status = $request->status;
+            $attendance->verified_by = Auth::id();
+            $attendance->verified_at = now();
+
+            // Source classification
+            if ($isFutureMeeting && in_array($request->status, ['present', 'absent', 'excused'])) {
+                $attendance->check_in_source = 'early_officer_override';
+            } elseif ($isExisting && $previousStatus !== $request->status) {
+                $attendance->check_in_source = 'manual_correction';
+            } elseif (!$attendance->check_in_source || $attendance->check_in_source === 'unverified') {
+                $attendance->check_in_source = 'officer_verification';
+            }
+
+            if ($request->status === 'present' && !$attendance->check_in_at) {
+                $attendance->check_in_at = now();
+            }
+
+            $effectiveNotes = $request->filled('officer_notes') ? $request->officer_notes : ($request->filled('reason') ? $request->reason : null);
+            if ($effectiveNotes) {
+                $attendance->officer_notes = $effectiveNotes;
+            }
+            $attendance->save();
+
+            // Record audit trail log
+            $auditAction = $isFutureMeeting && in_array($request->status, ['present', 'absent', 'excused'])
+                ? 'early_officer_override'
+                : ($isExisting ? 'manual_correction' : 'officer_verification');
+
+            AttendanceAuditLog::create([
+                'organization_id' => $session->organization_id,
+                'njangi_session_id' => $session->id,
+                'member_id' => $member->id,
+                'changed_by' => Auth::id(),
+                'action' => $auditAction,
+                'previous_status' => $previousStatus,
+                'new_status' => $request->status,
+                'source' => $attendance->check_in_source,
+                'reason' => $request->reason ?? $request->officer_notes ?? ($isFutureMeeting ? 'Authorized advance roll-call override' : ($isExisting ? 'Manual status correction by officer' : 'Desk roll-call verification')),
+            ]);
+
+            $statusLabel = ucfirst($request->status);
+        }
 
         if ($request->expectsJson() || $request->ajax()) {
             $allSessionAttendances = MeetingAttendance::where('njangi_session_id', $session->id)->get();
@@ -254,7 +313,7 @@ class AttendanceController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Attendance for {$member->first_name} {$member->last_name} marked as " . ucfirst($request->status) . ".",
+                'message' => "Attendance for {$member->first_name} {$member->last_name} set to {$statusLabel}.",
                 'attendance' => [
                     'id' => $attendance->id,
                     'status' => $attendance->attendance_status,
@@ -274,7 +333,92 @@ class AttendanceController extends Controller
             ]);
         }
 
-        return redirect()->back()->with('success', "Attendance for {$member->name} marked as " . ucfirst($request->status) . ".");
+        return redirect()->back()->with('success', "Attendance for {$member->name} set to {$statusLabel}.");
+    }
+
+    /**
+     * Reset all attendance records for a session back to Pending Verification.
+     * Requires 'attendance.clear_records' permission and exact typed challenge confirmation 'Clear'.
+     */
+    public function clearSessionRecords(Request $request, NjangiSession $session)
+    {
+        $this->authorizeDeskAccess();
+
+        $user = Auth::user();
+        if (!$user || (!$user->hasRole('admin') && !$user->can('attendance.clear_records'))) {
+            abort(403, 'Unauthorized action. You do not have permission to clear session attendance records.');
+        }
+
+        $request->validate([
+            'confirm_word' => 'required|string',
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        if (trim($request->confirm_word) !== 'Clear') {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Confirmation failed. You must type the word "Clear" exactly to confirm this action.'
+                ], 422);
+            }
+            return redirect()->back()->with('error', 'Confirmation failed. You must type the word "Clear" exactly to confirm.');
+        }
+
+        // Find all attendances for this session that have a non-null attendance_status
+        $attendancesToClear = MeetingAttendance::where('njangi_session_id', $session->id)
+            ->whereNotNull('attendance_status')
+            ->get();
+
+        $clearedCount = 0;
+        $reason = $request->filled('reason') ? trim($request->reason) : 'Batch session attendance statuses reset to Pending Verification';
+
+        foreach ($attendancesToClear as $attendance) {
+            $prevStatus = $attendance->attendance_status;
+
+            $attendance->attendance_status = null;
+            $attendance->check_in_source = 'unverified';
+            $attendance->check_in_at = null;
+            $attendance->verified_by = $user->id;
+            $attendance->verified_at = now();
+            $attendance->save();
+
+            AttendanceAuditLog::create([
+                'organization_id' => $session->organization_id,
+                'njangi_session_id' => $session->id,
+                'member_id' => $attendance->member_id,
+                'changed_by' => $user->id,
+                'action' => 'session_records_cleared',
+                'previous_status' => $prevStatus,
+                'new_status' => 'unverified',
+                'source' => 'officer_reset',
+                'reason' => $reason,
+            ]);
+
+            $clearedCount++;
+        }
+
+        $totalActiveMembers = Member::where('organization_id', $session->organization_id)->where('status', 'active')->count();
+
+        $stats = [
+            'total_members' => $totalActiveMembers,
+            'verified_present' => 0,
+            'qr_checkins' => 0,
+            'officer_verified' => 0,
+            'verified_absent' => 0,
+            'verified_excused' => 0,
+            'unverified' => $totalActiveMembers,
+        ];
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully reset {$clearedCount} attendance record(s) back to Pending Verification.",
+                'cleared_count' => $clearedCount,
+                'stats' => $stats,
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Successfully reset {$clearedCount} attendance record(s) back to Pending Verification.");
     }
 
     /**

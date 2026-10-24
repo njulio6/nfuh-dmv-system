@@ -151,9 +151,9 @@
                     @if($windowStatus['status'] === 'open')
                         Check-in Open • Closes at {{ $windowStatus['closes_at']->format('g:i A T') }}
                     @elseif($windowStatus['status'] === 'not_started')
-                        Check-in Opens at {{ $windowStatus['opens_at']->format('g:i A T') }}
+                        Check-in Opens {{ $session->session_date ? $session->session_date->format('D, M j, Y') . ' at ' : '' }}{{ $windowStatus['opens_at']->format('g:i A T') }}
                     @else
-                        Check-in Closed at {{ $windowStatus['closes_at']->format('g:i A T') }}
+                        Check-in Closed {{ $session->session_date ? $session->session_date->format('D, M j, Y') . ' at ' : '' }}{{ $windowStatus['closes_at']->format('g:i A T') }}
                     @endif
                 </span>
             </div>
@@ -329,9 +329,9 @@
                                     </h4>
                                     <p class="text-xs text-zinc-600 dark:text-zinc-300 mt-1 max-w-sm mx-auto leading-relaxed font-medium">
                                         @if($windowStatus['status'] === 'not_started')
-                                            Check-in is not yet open. Check-in begins on the scheduled meeting date at <strong>{{ $windowStatus['opens_at']->format('g:i A T') }}</strong> (Eastern Time).
+                                            Check-in is not yet open. Check-in begins on the scheduled meeting date ({{ $session->session_date ? $session->session_date->format('l, F j, Y') : '' }}) at <strong>{{ $windowStatus['opens_at']->format('g:i A T') }}</strong> (Eastern Time).
                                         @else
-                                            Check-in is closed for this session (Cutoff was <strong>{{ $windowStatus['closes_at']->format('g:i A T') }}</strong>). If you attended this meeting, please see an officer at the Attendance Desk to have your attendance recorded.
+                                            Check-in is closed for this session (Cutoff was <strong>{{ $windowStatus['closes_at']->format('g:i A T') }}</strong>{{ $session->session_date ? ' on ' . $session->session_date->format('l, F j, Y') : '' }}). If you attended this meeting, please see an officer at the Attendance Desk to have your attendance recorded.
                                         @endif
                                     </p>
                                 </div>
@@ -386,14 +386,14 @@
                         <div class="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2.5">
                             <i data-lucide="clock" class="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5"></i>
                             <div>
-                                <strong>Check-In Not Yet Open:</strong> Guest registration will open on the scheduled meeting date at {{ $windowStatus['opens_at']->format('g:i A T') }} (Eastern Time).
+                                <strong>Check-In Not Yet Open:</strong> Guest registration will open on the scheduled meeting date ({{ $session->session_date ? $session->session_date->format('l, F j, Y') : '' }}) at {{ $windowStatus['opens_at']->format('g:i A T') }} (Eastern Time).
                             </div>
                         </div>
                     @else
                         <div class="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs flex items-start gap-2.5">
                             <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5"></i>
                             <div>
-                                <strong>Check-In Closed:</strong> The self check-in window closed at {{ $windowStatus['closes_at']->format('g:i A T') }}. Please speak with an officer at the Attendance Desk to record your guest attendance.
+                                <strong>Check-In Closed:</strong> The self check-in window closed at {{ $windowStatus['closes_at']->format('g:i A T') }}{{ $session->session_date ? ' on ' . $session->session_date->format('l, F j, Y') : '' }}. Please speak with an officer at the Attendance Desk to record your guest attendance.
                             </div>
                         </div>
                     @endif

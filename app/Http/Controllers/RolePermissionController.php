@@ -190,6 +190,7 @@ class RolePermissionController extends Controller
             'attendance.view_own',
             'attendance.mark',
             'attendance.view_all',
+            'attendance.clear_records',
 
             // Loans
             'loans.apply',

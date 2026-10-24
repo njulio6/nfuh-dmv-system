@@ -92,6 +92,11 @@ class RoleComplianceService
                 'description' => 'Officers view attendance records of all members.',
                 'icon' => 'users',
             ],
+            'attendance.clear_records' => [
+                'label' => 'Clear Session Attendance',
+                'description' => 'Reset or clear recorded attendance statuses for a session with mandatory confirmation.',
+                'icon' => 'trash-2',
+            ],
 
             // Loans
             'loans.apply' => [

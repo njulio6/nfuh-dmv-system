@@ -1,11 +1,27 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $sessionTz = $selectedSession?->check_in_timezone ?: 'America/New_York';
+    $nowInTz = \Carbon\Carbon::now($sessionTz);
+    $isFutureSession = $selectedSession && $selectedSession->session_date && $selectedSession->session_date->copy()->setTimezone($sessionTz)->startOfDay()->greaterThan($nowInTz->copy()->startOfDay());
+@endphp
 <div x-data="{ 
     sessionId: {{ $selectedSession ? $selectedSession->id : 'null' }},
+    isFutureSession: {{ $isFutureSession ? 'true' : 'false' }},
     activeTab: 'members',
     qrModalOpen: false,
     windowModalOpen: false,
+    advanceModalOpen: false,
+    advanceMemberId: null,
+    advanceMemberName: '',
+    advanceStatus: 'present',
+    advanceReason: '',
+    advanceError: '',
+    clearSessionModalOpen: false,
+    clearChallengeInput: '',
+    clearReasonInput: '',
+    isClearing: false,
     stats: {
         total_members: {{ $stats['total_members'] ?? 0 }},
         verified_present: {{ $stats['verified_present'] ?? 0 }},
@@ -23,7 +39,7 @@
             @endphp
             '{{ $m->id }}': {
                 status: '{{ $att?->attendance_status ?? '' }}',
-                source: '{{ $att?->check_in_source ?? '' }}',
+                source: '{{ $att?->attendance_status ? ($att->check_in_source && $att->check_in_source !== 'unverified' ? $att->check_in_source : 'officer_verification') : '' }}',
                 officer_notes: '{{ addslashes($att?->officer_notes ?? '') }}',
                 verifier_name: '{{ addslashes($att?->verifier?->name ?? '') }}',
                 verified_at: '{{ $att?->verified_at ? ($selectedSession?->check_in_timezone ? $att->verified_at->setTimezone($selectedSession->check_in_timezone)->format('M d, g:i A') : $att->verified_at->format('M d, g:i A')) : '' }}',
@@ -90,6 +106,76 @@
         this.reasonNote = currentNotes || '';
         this.noteModalOpen = true;
     },
+    triggerMark(memberId, memberName, status) {
+        if (this.isFutureSession && (status === 'present' || status === 'absent')) {
+            this.advanceMemberId = memberId;
+            this.advanceMemberName = memberName;
+            this.advanceStatus = status;
+            this.advanceReason = '';
+            this.advanceError = '';
+            this.advanceModalOpen = true;
+        } else {
+            this.markAttendance(memberId, status);
+        }
+    },
+    submitAdvanceOverride() {
+        if (!this.advanceReason || this.advanceReason.trim().length < 5) {
+            this.advanceError = 'A valid override reason (at least 5 characters) is required.';
+            return;
+        }
+        this.advanceError = '';
+        this.markAttendance(this.advanceMemberId, this.advanceStatus, '', this.advanceReason.trim());
+        this.advanceModalOpen = false;
+    },
+    resetToPending(memberId, memberName) {
+        this.markAttendance(memberId, 'unverified', '', 'Status reset to Pending Verification by officer');
+    },
+    openClearSessionModal() {
+        this.clearChallengeInput = '';
+        this.clearReasonInput = '';
+        this.clearSessionModalOpen = true;
+    },
+    async submitClearSessionRecords() {
+        if (this.clearChallengeInput.trim() !== 'Clear') return;
+        this.isClearing = true;
+        try {
+            const res = await fetch('{{ route('attendance.session.clear-records', $selectedSession ? $selectedSession->id : 0) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    confirm_word: this.clearChallengeInput.trim(),
+                    reason: this.clearReasonInput.trim() || 'Batch session attendance statuses reset to Pending Verification'
+                })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                if (data.stats) {
+                    this.stats = { ...this.stats, ...data.stats };
+                }
+                // Reset all member states in Alpine
+                Object.keys(this.members).forEach(id => {
+                    this.members[id].status = '';
+                    this.members[id].source = '';
+                    this.members[id].officer_notes = '';
+                    this.members[id].check_in_at = '';
+                    this.members[id].verified_at = '';
+                });
+                this.clearSessionModalOpen = false;
+                this.showToast(data.message, 'success');
+            } else {
+                throw new Error(data.message || 'Failed to clear session records');
+            }
+        } catch (err) {
+            this.showToast(err.message || 'Error clearing session records', 'error');
+        } finally {
+            this.isClearing = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        }
+    },
     async markAttendance(memberId, status, notes = '', reason = '') {
         if (!this.sessionId) return;
         const memberState = this.members[memberId];
@@ -98,7 +184,7 @@
         const previousStatus = memberState.status;
         const previousNotes = memberState.officer_notes;
         memberState.is_updating = true;
-        memberState.status = status;
+        memberState.status = (status === 'unverified' || status === 'pending') ? '' : status;
         if (notes) memberState.officer_notes = notes;
 
         try {
@@ -121,12 +207,12 @@
             const data = await res.json();
             if (res.ok && data.success) {
                 if (data.attendance) {
-                    memberState.status = data.attendance.status;
-                    memberState.source = data.attendance.check_in_source || 'officer_verification';
+                    memberState.status = data.attendance.status || '';
+                    memberState.source = data.attendance.check_in_source || '';
                     memberState.officer_notes = data.attendance.officer_notes || '';
-                    memberState.verifier_name = data.attendance.verifier_name || 'Officer';
-                    memberState.verified_at = data.attendance.verified_at || 'Just now';
-                    memberState.check_in_at = data.attendance.check_in_at || 'Just now';
+                    memberState.verifier_name = data.attendance.verifier_name || '';
+                    memberState.verified_at = data.attendance.verified_at || '';
+                    memberState.check_in_at = data.attendance.check_in_at || '';
                 }
                 if (data.stats) {
                     this.stats.verified_present = data.stats.verified_present;
@@ -265,8 +351,8 @@
                 </div>
 
                 @if($selectedSession)
-                    <!-- Action Buttons: 2-col equal grid on mobile, inline flex on desktop -->
-                    <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
+                    <!-- Action Buttons: responsive grid / flex -->
+                    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                         <!-- QR Code Projection Button -->
                         <button 
                             type="button" 
@@ -287,6 +373,19 @@
                             <i data-lucide="clock" class="w-4 h-4 shrink-0"></i>
                             <span>Time Window</span>
                         </button>
+
+                        @can('attendance.clear_records')
+                            <!-- Reset Session Records Button (Protected Admin Action) -->
+                            <button 
+                                type="button" 
+                                @click="openClearSessionModal()"
+                                class="h-11 flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 border border-rose-200 dark:border-rose-800/80 text-rose-700 dark:text-rose-300 text-xs font-bold rounded-xl shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+                                title="Reset all attendance statuses for this session back to Pending Verification"
+                            >
+                                <i data-lucide="rotate-ccw" class="w-4 h-4 shrink-0 text-rose-500"></i>
+                                <span>Reset Records</span>
+                            </button>
+                        @endcan
                     </div>
                 @endif
             </div>
@@ -355,6 +454,21 @@
                 <div class="lg:hidden text-2xl font-bold font-display text-teal-600 dark:text-teal-400" x-text="stats.total_guests">{{ $stats['total_guests'] }}</div>
             </div>
         </div>
+
+        @if($isFutureSession)
+            <!-- Future Session Advisory Banner -->
+            <div class="p-3.5 sm:p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-start sm:items-center justify-between gap-3 text-xs text-amber-900 dark:text-amber-200">
+                <div class="flex items-start sm:items-center gap-3">
+                    <span class="p-2 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0">
+                        <i data-lucide="calendar-clock" class="w-4 h-4"></i>
+                    </span>
+                    <div>
+                        <span class="font-bold">Scheduled Future Session ({{ $selectedSession->session_date ? $selectedSession->session_date->format('l, F j, Y') : '' }}):</span>
+                        <span class="ml-1 text-zinc-600 dark:text-zinc-400">Normal roll-call opens on the scheduled meeting date. Advance status overrides (marking Present or Absent early) require an authorized administrative reason.</span>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <!-- Tab Selector: Member Roster vs. Guest Attendees -->
         <div class="grid grid-cols-2 sm:flex items-center gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-2xl sm:bg-transparent sm:dark:bg-transparent sm:p-0 sm:border-b sm:border-zinc-200 sm:dark:border-zinc-800 sm:pb-2">
@@ -536,6 +650,20 @@
                                     <span>QR Self Check-In</span>
                                 </span>
                             </template>
+                            <template x-if="members['{{ $m->id }}']?.source === 'early_officer_override'">
+                                <button 
+                                    type="button"
+                                    @click="openViewNoteModal('{{ $m->id }}', '{{ addslashes($m->name) }}', '{{ $m->member_code }}', members['{{ $m->id }}']?.status, members['{{ $m->id }}']?.officer_notes, members['{{ $m->id }}']?.verifier_name, members['{{ $m->id }}']?.verified_at)"
+                                    class="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-600 dark:text-amber-400 cursor-pointer"
+                                    title="Click to view advance override reason"
+                                >
+                                    <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                        <path d="m9 12 2 2 4-4"/>
+                                    </svg>
+                                    <span>Advance Roll-Call</span>
+                                </button>
+                            </template>
                             <template x-if="members['{{ $m->id }}']?.source === 'manual_correction'">
                                 <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-purple-600 dark:text-purple-400">
                                     <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -545,7 +673,7 @@
                                     <span>Manual Correction</span>
                                 </span>
                             </template>
-                            <template x-if="members['{{ $m->id }}']?.source === 'officer_verification' && members['{{ $m->id }}']?.status">
+                            <template x-if="members['{{ $m->id }}']?.status && members['{{ $m->id }}']?.source !== 'qr_self_check_in' && members['{{ $m->id }}']?.source !== 'early_officer_override' && members['{{ $m->id }}']?.source !== 'manual_correction'">
                                 <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-zinc-500">
                                     <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -554,7 +682,7 @@
                                     <span>Desk Roll-Call</span>
                                 </span>
                             </template>
-                            <template x-if="!members['{{ $m->id }}']?.source || !members['{{ $m->id }}']?.status">
+                            <template x-if="!members['{{ $m->id }}']?.status">
                                 <span class="text-[11px] text-zinc-400 italic">Pending check-in</span>
                             </template>
 
@@ -570,10 +698,10 @@
                         <div class="grid grid-cols-3 gap-2 pt-1">
                             <button 
                                 type="button" 
-                                @click="markAttendance('{{ $m->id }}', 'present')" 
+                                @click="triggerMark('{{ $m->id }}', '{{ addslashes($m->name) }}', 'present')" 
                                 :disabled="members['{{ $m->id }}']?.is_updating"
                                 :class="members['{{ $m->id }}']?.status === 'present' ? 'bg-emerald-600 text-white font-bold ring-2 ring-emerald-500/40' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300 font-semibold'"
-                                class="py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all"
+                                class="py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                             >
                                 <i data-lucide="check" class="w-4 h-4"></i>
                                 <span>Present</span>
@@ -581,10 +709,10 @@
 
                             <button 
                                 type="button" 
-                                @click="markAttendance('{{ $m->id }}', 'absent')" 
+                                @click="triggerMark('{{ $m->id }}', '{{ addslashes($m->name) }}', 'absent')" 
                                 :disabled="members['{{ $m->id }}']?.is_updating"
                                 :class="members['{{ $m->id }}']?.status === 'absent' ? 'bg-rose-600 text-white font-bold ring-2 ring-rose-500/40' : 'bg-rose-50 hover:bg-rose-100 text-rose-800 dark:bg-rose-950/30 dark:text-rose-300 font-semibold'"
-                                class="py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all"
+                                class="py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                             >
                                 <i data-lucide="x" class="w-4 h-4"></i>
                                 <span>Absent</span>
@@ -595,12 +723,25 @@
                                 @click="openNoteModal('{{ $m->id }}', '{{ addslashes($m->name) }}', 'excused', members['{{ $m->id }}']?.officer_notes || '')" 
                                 :disabled="members['{{ $m->id }}']?.is_updating"
                                 :class="members['{{ $m->id }}']?.status === 'excused' ? 'bg-amber-600 text-white font-bold ring-2 ring-amber-500/40' : 'bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300 font-semibold'"
-                                class="py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all"
+                                class="py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                             >
                                 <i data-lucide="file-text" class="w-4 h-4"></i>
                                 <span>Excused</span>
                             </button>
                         </div>
+
+                        <!-- Reset Status to Pending Button (Visible when member has recorded status) -->
+                        <template x-if="members['{{ $m->id }}']?.status">
+                            <button 
+                                type="button" 
+                                @click="resetToPending('{{ $m->id }}', '{{ addslashes($m->name) }}')"
+                                :disabled="members['{{ $m->id }}']?.is_updating"
+                                class="w-full mt-2 py-2 px-3 rounded-xl text-[11px] font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white bg-zinc-100 hover:bg-zinc-200/90 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-zinc-200/90 dark:border-zinc-700 shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400"></i>
+                                <span>Reset to Pending Verification</span>
+                            </button>
+                        </template>
                     </div>
                 @empty
                     <div class="p-8 text-center text-zinc-400 text-xs bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl">
@@ -671,6 +812,21 @@
                                                 <span>QR Self Check-In</span>
                                             </div>
                                         </template>
+                                        <template x-if="members['{{ $m->id }}']?.source === 'early_officer_override'">
+                                            <button 
+                                                type="button"
+                                                @click="openViewNoteModal('{{ $m->id }}', '{{ addslashes($m->name) }}', '{{ $m->member_code }}', members['{{ $m->id }}']?.status, members['{{ $m->id }}']?.officer_notes, members['{{ $m->id }}']?.verifier_name, members['{{ $m->id }}']?.verified_at)"
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 cursor-pointer transition-colors shadow-2xs" 
+                                                title="Click to view advance override reason"
+                                            >
+                                                <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                                    <path d="m9 12 2 2 4-4"/>
+                                                </svg>
+                                                <span>Advance Roll-Call</span>
+                                                <i data-lucide="help-circle" class="w-3 h-3 shrink-0 text-amber-500"></i>
+                                            </button>
+                                        </template>
                                         <template x-if="members['{{ $m->id }}']?.source === 'manual_correction'">
                                             <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50">
                                                 <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -680,7 +836,7 @@
                                                 <span>Manual Correction</span>
                                             </div>
                                         </template>
-                                        <template x-if="members['{{ $m->id }}']?.source === 'officer_verification' && members['{{ $m->id }}']?.status">
+                                        <template x-if="members['{{ $m->id }}']?.status && members['{{ $m->id }}']?.source !== 'qr_self_check_in' && members['{{ $m->id }}']?.source !== 'early_officer_override' && members['{{ $m->id }}']?.source !== 'manual_correction'">
                                             <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
                                                 <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -738,7 +894,7 @@
                                         <div class="inline-flex items-center gap-1.5">
                                             <button 
                                                 type="button" 
-                                                @click="markAttendance('{{ $m->id }}', 'present')" 
+                                                @click="triggerMark('{{ $m->id }}', '{{ addslashes($m->name) }}', 'present')" 
                                                 :disabled="members['{{ $m->id }}']?.is_updating"
                                                 class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
                                                 :class="members['{{ $m->id }}']?.status === 'present' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-zinc-100 hover:bg-emerald-100 hover:text-emerald-700 dark:bg-zinc-800 dark:hover:bg-emerald-950/60 dark:hover:text-emerald-300 text-zinc-600 dark:text-zinc-400'"
@@ -749,7 +905,7 @@
 
                                             <button 
                                                 type="button" 
-                                                @click="markAttendance('{{ $m->id }}', 'absent')" 
+                                                @click="triggerMark('{{ $m->id }}', '{{ addslashes($m->name) }}', 'absent')" 
                                                 :disabled="members['{{ $m->id }}']?.is_updating"
                                                 class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
                                                 :class="members['{{ $m->id }}']?.status === 'absent' ? 'bg-rose-600 text-white shadow-xs' : 'bg-zinc-100 hover:bg-rose-100 hover:text-rose-700 dark:bg-zinc-800 dark:hover:bg-rose-950/60 dark:hover:text-rose-300 text-zinc-600 dark:text-zinc-400'"
@@ -768,6 +924,19 @@
                                             >
                                                 E
                                             </button>
+
+                                            <!-- Reset to Pending Verification -->
+                                            <template x-if="members['{{ $m->id }}']?.status">
+                                                <button 
+                                                    type="button" 
+                                                    @click="resetToPending('{{ $m->id }}', '{{ addslashes($m->name) }}')" 
+                                                    :disabled="members['{{ $m->id }}']?.is_updating"
+                                                    class="p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer bg-zinc-100 hover:bg-zinc-200/90 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white border border-zinc-200/90 dark:border-zinc-700 shadow-2xs"
+                                                    title="Reset to Pending Verification"
+                                                >
+                                                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                                                </button>
+                                            </template>
                                         </div>
                                     </td>
 
@@ -1209,6 +1378,217 @@
             </div>
         </div>
     </div>
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- MODAL 5: ADVANCE ROLL-CALL OVERRIDE MODAL                           -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div 
+        x-show="advanceModalOpen" 
+        x-cloak 
+        class="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+    >
+        <div 
+            @click.outside="advanceModalOpen = false" 
+            class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 relative animate-fadeIn"
+        >
+            <div class="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <div class="flex items-center gap-2.5">
+                    <span class="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                        <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                    </span>
+                    <div class="flex flex-col">
+                        <h3 class="text-base font-bold text-zinc-900 dark:text-white">Advance Roll-Call Override</h3>
+                        <p class="text-xs text-zinc-500">Scheduled Future Session Authorization</p>
+                    </div>
+                </div>
+                <button @click="advanceModalOpen = false" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="mt-4 flex flex-col gap-4">
+                <!-- Session Date Notice -->
+                <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/60 text-xs text-amber-800 dark:text-amber-300">
+                    <span class="font-bold">Future Meeting Date:</span>
+                    <span>This session is scheduled for <strong>{{ $selectedSession?->session_date?->format('l, F j, Y') }}</strong>. Normal roll-call opens on the meeting date. To record an early status, an authorized administrative reason is required and will be logged in the permanent audit trail.</span>
+                </div>
+
+                <!-- Target Member & Proposed Status Card -->
+                <div class="flex items-center justify-between bg-zinc-50 dark:bg-zinc-950/40 p-3 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80">
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-zinc-900 dark:text-white" x-text="advanceMemberName"></span>
+                        <span class="text-[10px] text-zinc-400">Member Roll-Call Roster</span>
+                    </div>
+                    <span 
+                        class="text-xs font-bold px-2.5 py-1 rounded-full uppercase"
+                        :class="advanceStatus === 'present' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30'"
+                        x-text="advanceStatus"
+                    ></span>
+                </div>
+
+                <!-- Quick Reasons -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                        Common Override Reasons:
+                    </label>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button 
+                            type="button" 
+                            @click="advanceReason = 'System & roll-call workflow testing'"
+                            class="px-2.5 py-1 bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer"
+                        >
+                            Workflow Testing
+                        </button>
+                        <button 
+                            type="button" 
+                            @click="advanceReason = 'Pre-authorized officer advance verification'"
+                            class="px-2.5 py-1 bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer"
+                        >
+                            Executive Pre-Authorization
+                        </button>
+                        <button 
+                            type="button" 
+                            @click="advanceReason = 'Advance proxy attendee assigned by executive committee'"
+                            class="px-2.5 py-1 bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer"
+                        >
+                            Proxy Authorization
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Override Reason Input -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                        Administrative Override Reason <span class="text-rose-500">*</span>
+                    </label>
+                    <textarea 
+                        x-model="advanceReason" 
+                        rows="3" 
+                        placeholder="Provide a specific operational reason for recording this status before the meeting date..." 
+                        class="w-full px-3.5 py-2.5 text-xs font-semibold bg-zinc-50/70 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:border-brand-primary text-zinc-900 dark:text-white"
+                    ></textarea>
+                    <template x-if="advanceError">
+                        <p class="text-xs font-semibold text-rose-600 dark:text-rose-400" x-text="advanceError"></p>
+                    </template>
+                </div>
+
+                <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                    <button 
+                        type="button" 
+                        @click="advanceModalOpen = false" 
+                        class="py-2.5 px-4 text-xs font-bold rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        type="button" 
+                        @click="submitAdvanceOverride()"
+                        class="py-2.5 px-4 text-xs font-bold rounded-xl bg-amber-600 hover:bg-amber-700 text-white transition-colors cursor-pointer shadow-xs"
+                    >
+                        Authorize & Save Override
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- MODAL 6: RESET SESSION ATTENDANCE RECORDS (STRICT CHALLENGE MODAL)   -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    @can('attendance.clear_records')
+    <div 
+        x-show="clearSessionModalOpen" 
+        x-cloak 
+        class="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+    >
+        <div 
+            @click.outside="clearSessionModalOpen = false" 
+            class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-fadeIn"
+        >
+            <!-- Modal Header -->
+            <div class="flex items-start justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <div class="flex items-center gap-3">
+                    <span class="p-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
+                        <i data-lucide="alert-octagon" class="w-6 h-6"></i>
+                    </span>
+                    <div class="flex flex-col">
+                        <h3 class="text-base font-bold text-zinc-900 dark:text-white">Reset Session Attendance Statuses</h3>
+                        <p class="text-xs text-zinc-500">{{ $selectedSession?->title }} &bull; {{ $selectedSession?->session_date?->format('M d, Y') }}</p>
+                    </div>
+                </div>
+                <button @click="clearSessionModalOpen = false" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="mt-4 flex flex-col gap-4">
+                <!-- Critical Warning Banner -->
+                <div class="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200/80 dark:border-rose-800/60 text-xs text-rose-900 dark:text-rose-200 space-y-1.5">
+                    <div class="font-bold flex items-center gap-1.5 text-rose-700 dark:text-rose-400">
+                        <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                        <span>Warning: Irreversible Action</span>
+                    </div>
+                    <p class="leading-relaxed">
+                        This action will reset all recorded member attendance statuses (Present, Absent, Excused) for this meeting back to <strong>Pending Verification</strong>.
+                    </p>
+                    <p class="font-bold text-rose-800 dark:text-rose-300">
+                        This operation cannot be undone. All changes will be logged in the attendance audit history.
+                    </p>
+                </div>
+
+                <!-- Typed Challenge Instruction -->
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                        To confirm and proceed, please type the word <strong class="text-rose-600 dark:text-rose-400 font-mono text-sm px-1.5 py-0.5 rounded bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800">Clear</strong> below:
+                    </label>
+                    <input 
+                        type="text" 
+                        x-model="clearChallengeInput" 
+                        placeholder="Type Clear to confirm" 
+                        class="w-full px-3.5 py-2.5 text-xs font-bold font-mono tracking-wide bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:border-rose-500 text-zinc-900 dark:text-white"
+                        autocomplete="off"
+                        autofocus
+                    >
+                </div>
+
+                <!-- Optional Reason -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                        Reason for Reset (Optional):
+                    </label>
+                    <input 
+                        type="text" 
+                        x-model="clearReasonInput" 
+                        placeholder="e.g. Clearing pre-meeting test data" 
+                        class="w-full px-3.5 py-2 text-xs bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:border-brand-primary text-zinc-900 dark:text-white"
+                    >
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                    <button 
+                        type="button" 
+                        @click="clearSessionModalOpen = false" 
+                        class="py-2.5 px-4 text-xs font-bold rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        type="button" 
+                        @click="submitClearSessionRecords()"
+                        :disabled="clearChallengeInput.trim() !== 'Clear' || isClearing"
+                        :class="clearChallengeInput.trim() === 'Clear' && !isClearing 
+                            ? 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer shadow-md' 
+                            : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60'"
+                        class="py-2.5 px-4 text-xs font-bold rounded-xl transition-all flex items-center gap-2"
+                    >
+                        <i data-lucide="rotate-ccw" class="w-4 h-4" x-show="!isClearing"></i>
+                        <span x-text="isClearing ? 'Resetting Records...' : 'Confirm & Reset All Statuses'"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endcan
 
     <!-- Live Toast -->
     <div 
