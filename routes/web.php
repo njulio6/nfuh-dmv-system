@@ -147,11 +147,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/savings/withdrawal-requests/{withdrawalRequest}/reject', [\App\Http\Controllers\SavingsController::class, 'rejectWithdrawal'])
         ->name('savings.withdrawal-requests.reject');
 
-    Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'edit'])
-        ->name('settings.edit');
-    Route::post('/settings', [\App\Http\Controllers\SettingsController::class, 'update'])
-        ->name('settings.update');
-
     // Admin Loan & Repayment Routes
     Route::get('/loans', [\App\Http\Controllers\LoanController::class, 'index'])
         ->name('loans.index');
@@ -182,15 +177,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/loans/{loan}/mark-active', [\App\Http\Controllers\LoanController::class, 'markAsActive'])
         ->name('loans.mark-active');
 
-    // Admin Custom Loan Sub-Status routes
+    // Admin Custom Loan Sub-Status view
     Route::get('/loans/sub-statuses', [\App\Http\Controllers\LoanController::class, 'subStatusesIndex'])
         ->name('loans.sub-statuses');
-    Route::post('/settings/loan-sub-statuses', [\App\Http\Controllers\LoanController::class, 'storeSubStatus'])
-        ->name('admin.settings.store-sub-status');
-    Route::patch('/settings/loan-sub-statuses/{subStatus}', [\App\Http\Controllers\LoanController::class, 'updateSubStatusDefinition'])
-        ->name('admin.settings.update-sub-status');
-    Route::delete('/settings/loan-sub-statuses/{subStatus}', [\App\Http\Controllers\LoanController::class, 'destroySubStatus'])
-        ->name('admin.settings.destroy-sub-status');
 
     // Reports and CSV Exports
     Route::get('/reports/export/loans', [\App\Http\Controllers\ReportsController::class, 'exportLoansCsv'])
@@ -198,15 +187,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/reports/export/savings', [\App\Http\Controllers\ReportsController::class, 'exportSavingsCsv'])
         ->name('reports.export.savings');
 
-    // System Tools routes
-    Route::get('/admin/tools', [\App\Http\Controllers\SystemToolsController::class, 'index'])
-        ->name('admin.tools');
-    Route::post('/admin/tools/migrate', [\App\Http\Controllers\SystemToolsController::class, 'runMigrations'])
-        ->name('admin.tools.migrate');
-    Route::post('/admin/tools/clear-cache', [\App\Http\Controllers\SystemToolsController::class, 'clearCache'])
-        ->name('admin.tools.clear-cache');
-    Route::post('/admin/tools/storage-link', [\App\Http\Controllers\SystemToolsController::class, 'storageLink'])
-        ->name('admin.tools.storage-link');
     // Officer Attendance Desk Routes
     Route::get('/admin/attendance/desk', [\App\Http\Controllers\AttendanceController::class, 'desk'])
         ->name('attendance.desk');
@@ -219,15 +199,46 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/admin/attendance/sessions/{session}/clear-records', [\App\Http\Controllers\AttendanceController::class, 'clearSessionRecords'])
         ->name('attendance.session.clear-records');
 
-    // Roles, Permissions & Segregation of Duties Routes
-    Route::get('/admin/roles', [\App\Http\Controllers\RolePermissionController::class, 'index'])
-        ->name('admin.roles.index');
-    Route::post('/admin/roles/sync-defaults', [\App\Http\Controllers\RolePermissionController::class, 'syncDefaultRolesAndPermissions'])
-        ->name('admin.roles.sync-defaults');
-    Route::put('/admin/roles/{role}/permissions', [\App\Http\Controllers\RolePermissionController::class, 'updateRolePermissions'])
-        ->name('admin.roles.update-permissions');
-    Route::put('/admin/users/{user}/roles', [\App\Http\Controllers\RolePermissionController::class, 'assignUserRoles'])
-        ->name('admin.users.assign-roles');
+    // Administrative Routes - Hybrid (Role 'admin' OR Specific Granular Module Permission)
+    // 1. System Settings & Custom Loan Sub-Status Configuration
+    Route::middleware('role_or_permission:admin|settings.manage')->group(function () {
+        Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'edit'])
+            ->name('settings.edit');
+        Route::post('/settings', [\App\Http\Controllers\SettingsController::class, 'update'])
+            ->name('settings.update');
+
+        // Admin Custom Loan Sub-Status Configuration
+        Route::post('/settings/loan-sub-statuses', [\App\Http\Controllers\LoanController::class, 'storeSubStatus'])
+            ->name('admin.settings.store-sub-status');
+        Route::patch('/settings/loan-sub-statuses/{subStatus}', [\App\Http\Controllers\LoanController::class, 'updateSubStatusDefinition'])
+            ->name('admin.settings.update-sub-status');
+        Route::delete('/settings/loan-sub-statuses/{subStatus}', [\App\Http\Controllers\LoanController::class, 'destroySubStatus'])
+            ->name('admin.settings.destroy-sub-status');
+    });
+
+    // 2. System Tools routes
+    Route::middleware('role_or_permission:admin|tools.manage')->group(function () {
+        Route::get('/admin/tools', [\App\Http\Controllers\SystemToolsController::class, 'index'])
+            ->name('admin.tools');
+        Route::post('/admin/tools/migrate', [\App\Http\Controllers\SystemToolsController::class, 'runMigrations'])
+            ->name('admin.tools.migrate');
+        Route::post('/admin/tools/clear-cache', [\App\Http\Controllers\SystemToolsController::class, 'clearCache'])
+            ->name('admin.tools.clear-cache');
+        Route::post('/admin/tools/storage-link', [\App\Http\Controllers\SystemToolsController::class, 'storageLink'])
+            ->name('admin.tools.storage-link');
+    });
+
+    // 3. Roles, Permissions & Segregation of Duties Routes
+    Route::middleware('role_or_permission:admin|roles.manage')->group(function () {
+        Route::get('/admin/roles', [\App\Http\Controllers\RolePermissionController::class, 'index'])
+            ->name('admin.roles.index');
+        Route::post('/admin/roles/sync-defaults', [\App\Http\Controllers\RolePermissionController::class, 'syncDefaultRolesAndPermissions'])
+            ->name('admin.roles.sync-defaults');
+        Route::put('/admin/roles/{role}/permissions', [\App\Http\Controllers\RolePermissionController::class, 'updateRolePermissions'])
+            ->name('admin.roles.update-permissions');
+        Route::put('/admin/users/{user}/roles', [\App\Http\Controllers\RolePermissionController::class, 'assignUserRoles'])
+            ->name('admin.users.assign-roles');
+    });
 
 });
 

@@ -221,6 +221,7 @@ class RolePermissionController extends Controller
             'roles.manage',
             'members.manage',
             'settings.manage',
+            'tools.manage',
         ];
 
         $newPermissionsCreated = 0;

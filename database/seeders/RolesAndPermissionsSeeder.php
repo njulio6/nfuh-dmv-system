@@ -51,6 +51,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'roles.manage',
             'members.manage',
             'settings.manage',
+            'tools.manage',
         ];
 
         foreach ($permissions as $permName) {

@@ -18,13 +18,13 @@
     }
 </style>
 
-<div class="space-y-6 pb-12">
+<div class="space-y-6 pb-12 w-full">
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <!-- 1. CLEAN EXECUTIVE MEMBER HEADER & QUICK SHORTCUTS                  -->
     <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-5 w-full max-w-full overflow-hidden">
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-5 lg:p-6 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-5 w-full">
         <div class="flex flex-col min-w-0 flex-1">
-            <div class="flex items-center gap-2 mb-1">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-primary/10 text-brand-primary border border-brand-primary/20 shrink-0">
                     <i data-lucide="shield" class="w-3 h-3"></i>
                     {{ $member->rank->name ?? 'Active Member' }}
@@ -33,16 +33,15 @@
                     #{{ $member->member_code }}
                 </span>
             </div>
-                <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-zinc-950 dark:text-white tracking-tight font-display leading-tight truncate">
-                    <span id="welcome-greeting-text">Good Afternoon</span>, {{ $member->first_name }}
-                </h1>
-                <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 truncate sm:whitespace-normal">
-                    Welcome to your {{ !empty($appSettings->app_name) ? $appSettings->app_name : 'NFUH DMV' }} Member Portal. Overview of your rotational rounds, savings, and civic standing.
-                </p>
-            </div>
+            <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-zinc-950 dark:text-white tracking-tight font-display leading-tight">
+                <span id="welcome-greeting-text">Good Afternoon</span>, {{ $member->first_name }}
+            </h1>
+            <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed hidden sm:block">
+                Welcome to your {{ !empty($appSettings->app_name) ? $appSettings->app_name : 'NFUH DMV' }} Member Portal. Overview of your rotational rounds, savings, and civic standing.
+            </p>
         </div>
 
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto pt-3 md:pt-0 border-t border-zinc-100 dark:border-zinc-800/80 md:border-0 shrink-0">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto pt-3 lg:pt-0 border-t border-zinc-100 dark:border-zinc-800/80 lg:border-0 shrink-0">
             @if(isset($memberCycles) && $memberCycles->count() > 1)
                 <div 
                     x-data="{ 
@@ -61,64 +60,99 @@
                         id="cycle_switcher_trigger"
                         @click="dropdownOpen = !dropdownOpen"
                         @click.away="dropdownOpen = false"
-                        class="w-full sm:w-auto inline-flex items-center justify-between sm:justify-start gap-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-3.5 py-2 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-all cursor-pointer shadow-2xs select-none"
+                        class="w-full sm:w-auto inline-flex items-center justify-between gap-2.5 bg-white dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-700/80 px-3.5 h-9 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all cursor-pointer shadow-2xs select-none"
                     >
                         <span class="inline-flex items-center gap-1.5 truncate">
-                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-brand-primary shrink-0"></i>
-                            <span>Cycle: <span class="font-bold" x-text="activeCycleId && cycles[activeCycleId] ? cycles[activeCycleId].name + ' (' + cycles[activeCycleId].year + ')' : 'Select Cycle'"></span></span>
+                            <span class="w-4 h-4 rounded-md bg-brand-primary/10 text-brand-primary flex items-center justify-center shrink-0">
+                                <svg class="w-2.5 h-2.5 transition-transform duration-300" :class="dropdownOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            </span>
+                            <span class="text-zinc-500 dark:text-zinc-400 font-medium">Cycle:</span>
+                            <span class="font-bold text-zinc-900 dark:text-white truncate" x-text="activeCycleId && cycles[activeCycleId] ? cycles[activeCycleId].name + ' (' + cycles[activeCycleId].year + ')' : 'Select Cycle'"></span>
                         </span>
-                        <svg class="w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 shrink-0" :class="dropdownOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <svg class="w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 shrink-0 ml-1" :class="dropdownOpen ? 'rotate-180 text-brand-primary' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
 
                     <div 
                         x-show="dropdownOpen"
-                        x-transition:enter="transition ease-out duration-120"
+                        x-transition:enter="transition ease-out duration-150"
                         x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
                         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                        x-transition:leave="transition ease-in duration-80"
+                        x-transition:leave="transition ease-in duration-100"
                         x-transition:leave-start="opacity-100 scale-100 translate-y-0"
                         x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
-                        class="absolute right-0 z-50 mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-xl w-64 overflow-hidden py-1.5"
+                        class="absolute inset-x-0 w-full z-50 mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-750 rounded-2xl shadow-xl overflow-hidden p-1.5 divide-y divide-zinc-100 dark:divide-zinc-800"
                         style="display: none;"
                     >
-                        <div class="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-zinc-400 border-b border-zinc-100 dark:border-zinc-800">
-                            Switch Njangi Cycle
-                        </div>
-                        <template x-for="cId in Object.keys(cycles)">
-                            <div 
-                                @click="window.location.href = '?cycle_id=' + cId; dropdownOpen = false"
-                                class="px-4 py-2.5 text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors flex items-center justify-between"
-                                :class="activeCycleId == cId ? 'font-bold text-zinc-950 dark:text-white bg-zinc-50 dark:bg-zinc-800/60' : ''"
-                            >
-                                <div class="flex flex-col">
-                                    <span x-text="cycles[cId].name"></span>
-                                    <span class="text-[10px] text-zinc-400 font-mono" x-text="'Year: ' + cycles[cId].year"></span>
-                                </div>
-                                <template x-if="activeCycleId == cId">
-                                    <i data-lucide="check" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                                </template>
+                        <!-- Dropdown Header -->
+                        <div class="px-2.5 py-1.5 flex items-center justify-between pb-1.5 mb-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-4 h-4 rounded-md bg-brand-primary/10 text-brand-primary flex items-center justify-center">
+                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                </span>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Select Cycle</span>
                             </div>
-                        </template>
+                            <span class="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-full font-mono">
+                                {{ $memberCycles->count() }}
+                            </span>
+                        </div>
+
+                        <!-- Cycles List -->
+                        <div class="pt-1 space-y-1">
+                            <template x-for="cId in Object.keys(cycles)" :key="cId">
+                                <div 
+                                    @click="window.location.href = '?cycle_id=' + cId; dropdownOpen = false"
+                                    class="group px-2.5 py-2 rounded-xl text-xs cursor-pointer transition-all flex items-center justify-between gap-2"
+                                    :class="activeCycleId == cId 
+                                        ? 'bg-brand-primary/10 dark:bg-brand-primary/20 text-brand-primary font-bold border border-brand-primary/25 shadow-2xs' 
+                                        : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 border border-transparent'"
+                                >
+                                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                                        <div 
+                                            class="w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors"
+                                            :class="activeCycleId == cId ? 'bg-brand-primary text-brand-primary-text' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700'"
+                                        >
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        </div>
+                                        <div class="flex flex-col min-w-0 flex-1">
+                                            <span class="truncate font-semibold text-xs text-zinc-900 dark:text-white" :class="activeCycleId == cId ? 'text-brand-primary dark:text-brand-primary' : ''" x-text="cycles[cId].name"></span>
+                                            <span class="text-[9px] text-zinc-400 dark:text-zinc-500 font-mono leading-none" x-text="'Year: ' + cycles[cId].year"></span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="shrink-0">
+                                        <template x-if="activeCycleId == cId">
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-brand-primary text-brand-primary-text shadow-2xs">
+                                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                <span>Active</span>
+                                            </span>
+                                        </template>
+                                        <template x-if="activeCycleId != cId">
+                                            <svg class="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-500 dark:group-hover:text-zinc-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
                     </div>
                 </div>
             @endif
 
-            <!-- 3 Symmetrical Mobile Action Buttons (1/3 width each on phones, clean pills on desktop) -->
+            <!-- Unified Executive Quick Actions (Consistent, premium pill styling) -->
             <div class="grid grid-cols-3 sm:flex sm:items-center gap-2 w-full sm:w-auto">
                 @if($member->participates_in_njangi)
-                    <a href="{{ route('member.njangi-payments') }}" class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-2 rounded-xl text-xs font-bold bg-brand-primary text-brand-primary-text hover:opacity-95 shadow-2xs transition-all text-center select-none active:scale-95">
-                        <i data-lucide="send" class="w-3.5 h-3.5 shrink-0"></i>
+                    <a href="{{ route('member.njangi-payments') }}" class="inline-flex items-center justify-center gap-1.5 px-3 h-9 rounded-xl text-xs font-semibold bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/90 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700/80 transition-all text-center select-none active:scale-95 shadow-2xs group">
+                        <i data-lucide="send" class="w-3.5 h-3.5 text-brand-primary shrink-0 transition-transform group-hover:scale-110"></i>
                         <span>Njangi</span>
                     </a>
                 @endif
                 @if($member->participates_in_savings)
-                    <a href="{{ route('member.savings') }}" class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-all text-center select-none active:scale-95">
-                        <i data-lucide="arrow-down-circle" class="w-3.5 h-3.5 shrink-0"></i>
+                    <a href="{{ route('member.savings') }}" class="inline-flex items-center justify-center gap-1.5 px-3 h-9 rounded-xl text-xs font-semibold bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/90 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700/80 transition-all text-center select-none active:scale-95 shadow-2xs group">
+                        <i data-lucide="arrow-down-circle" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 transition-transform group-hover:scale-110"></i>
                         <span>Savings</span>
                     </a>
                 @endif
-                <a href="{{ route('member.loans') }}" class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-2 rounded-xl text-xs font-bold bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700 transition-all text-center select-none active:scale-95">
-                    <i data-lucide="banknote" class="w-3.5 h-3.5 shrink-0"></i>
+                <a href="{{ route('member.loans') }}" class="inline-flex items-center justify-center gap-1.5 px-3 h-9 rounded-xl text-xs font-semibold bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/90 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700/80 transition-all text-center select-none active:scale-95 shadow-2xs group">
+                    <i data-lucide="banknote" class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 transition-transform group-hover:scale-110"></i>
                     <span>Loans</span>
                 </a>
             </div>
@@ -218,7 +252,7 @@
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Pillar 1: Savings Vault (Nkap) -->
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-5 lg:p-6 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group">
             <div class="flex items-center justify-between">
                 <div class="flex items-center min-w-0">
                     <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate">
@@ -256,7 +290,7 @@
         </div>
 
         <!-- Pillar 2: Active Loan Balance -->
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-5 lg:p-6 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group">
             <div class="flex items-center justify-between">
                 <div class="flex items-center min-w-0">
                     <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate">
@@ -296,7 +330,7 @@
         </div>
 
         <!-- Pillar 3: Current Njangi Cycle -->
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-5 lg:p-6 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group">
             <div class="flex items-center justify-between">
                 <div class="flex items-center min-w-0">
                     <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate">
@@ -315,7 +349,7 @@
                 </span>
             </div>
             <div class="my-3">
-                <div class="text-2xl sm:text-3xl font-display font-extrabold text-zinc-950 dark:text-white leading-none tracking-tight truncate">
+                <div class="text-xl sm:text-2xl lg:text-3xl font-display font-extrabold text-zinc-950 dark:text-white leading-tight tracking-tight truncate" title="{{ $activeCycle ? $activeCycle->name : 'None Active' }}">
                     {{ $activeCycle ? $activeCycle->name : 'None Active' }}
                 </div>
             </div>
@@ -334,7 +368,7 @@
         </div>
 
         <!-- Pillar 4: Attendance & Assembly Score -->
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-5 lg:p-6 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group">
             <div class="flex items-center justify-between">
                 <div class="flex items-center min-w-0">
                     <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate">Attendance Score</span>
@@ -374,7 +408,7 @@
         </div>
 
         <!-- Pillar 5: Net Financial Standing -->
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-5 lg:p-6 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group">
             <div class="flex items-center justify-between">
                 <div class="flex items-center min-w-0">
                     <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate">
@@ -414,7 +448,7 @@
         </div>
 
         <!-- Pillar 6: Lifetime Njangi Contributed -->
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-5 lg:p-6 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group">
             <div class="flex items-center justify-between">
                 <div class="flex items-center min-w-0">
                     <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate">
@@ -448,7 +482,7 @@
         </div>
 
         <!-- Pillar 7: Total Loan Repayments -->
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-5 lg:p-6 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group">
             <div class="flex items-center justify-between">
                 <div class="flex items-center min-w-0">
                     <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate">
@@ -482,7 +516,7 @@
         </div>
 
         <!-- Pillar 8: Guarantorship & Trust -->
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-5 lg:p-6 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group">
             <div class="flex items-center justify-between">
                 <div class="flex items-center min-w-0">
                     <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 truncate">
@@ -539,10 +573,8 @@
                 <span class="text-[11px] font-mono font-bold text-zinc-500">Net: {{ ($netFinancialPosition ?? 0) < 0 ? '-$' . number_format(abs($netFinancialPosition), 2) : '$' . number_format($netFinancialPosition ?? 0, 2) }}</span>
             </div>
 
-            <div class="relative py-3 flex items-center justify-center">
-                <div class="w-52 h-52">
-                    <canvas id="memberCapitalDonutChart"></canvas>
-                </div>
+            <div class="relative py-3 flex items-center justify-center w-full max-w-[210px] aspect-square mx-auto">
+                <canvas id="memberCapitalDonutChart" class="w-full h-full max-w-full"></canvas>
             </div>
 
             <div class="grid grid-cols-3 gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-center text-xs">
@@ -582,10 +614,8 @@
                 </span>
             </div>
 
-            <div class="relative py-3 flex items-center justify-center">
-                <div class="w-52 h-52">
-                    <canvas id="memberLoanDonutChart"></canvas>
-                </div>
+            <div class="relative py-3 flex items-center justify-center w-full max-w-[210px] aspect-square mx-auto">
+                <canvas id="memberLoanDonutChart" class="w-full h-full max-w-full"></canvas>
             </div>
 
             <div class="grid grid-cols-2 gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-center text-xs">
@@ -911,7 +941,7 @@
                     </div>
 
                     <div class="overflow-x-auto scrollbar-thin mt-3">
-                        <table class="w-full text-xs text-left">
+                        <table class="w-full text-xs text-left whitespace-nowrap min-w-[520px]">
                             <thead class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 border-b border-zinc-100 dark:border-zinc-800">
                                 <tr>
                                     <th class="py-2.5 px-3">Beneficiary</th>

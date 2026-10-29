@@ -215,6 +215,11 @@ class RoleComplianceService
                 'description' => 'Update branding, themes, logos, and financial limits.',
                 'icon' => 'settings',
             ],
+            'tools.manage' => [
+                'label' => 'Manage System Tools',
+                'description' => 'Run migrations, clear system caches, and link storage.',
+                'icon' => 'wrench',
+            ],
         ];
     }
 

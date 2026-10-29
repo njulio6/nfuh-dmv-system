@@ -8,11 +8,21 @@ use Illuminate\Support\Facades\DB;
 
 class SystemToolsController extends Controller
 {
+    protected function authorizeAdmin(): void
+    {
+        $user = auth()->user();
+        if (!$user || (!$user->hasRole('admin') && !$user->can('tools.manage'))) {
+            abort(403, 'Not Permitted — You do not have access to this feature.');
+        }
+    }
+
     /**
      * Show the system tools dashboard.
      */
     public function index()
     {
+        $this->authorizeAdmin();
+
         // Check PHP Version
         $phpVersion = PHP_VERSION;
 
@@ -59,6 +69,8 @@ class SystemToolsController extends Controller
      */
     public function runMigrations()
     {
+        $this->authorizeAdmin();
+
         try {
             $exitCode = Artisan::call('migrate', ['--force' => true]);
             $output = Artisan::output();
@@ -87,6 +99,8 @@ class SystemToolsController extends Controller
      */
     public function clearCache()
     {
+        $this->authorizeAdmin();
+
         try {
             $log = "";
 
@@ -119,6 +133,8 @@ class SystemToolsController extends Controller
      */
     public function storageLink()
     {
+        $this->authorizeAdmin();
+
         try {
             $exitCode = Artisan::call('storage:link');
             $output = Artisan::output();

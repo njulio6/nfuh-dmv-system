@@ -8,8 +8,18 @@ use Illuminate\Support\Facades\Storage;
 
 class SettingsController extends Controller
 {
+    protected function authorizeAdmin(): void
+    {
+        $user = auth()->user();
+        if (!$user || (!$user->hasRole('admin') && !$user->can('settings.manage'))) {
+            abort(403, 'Not Permitted — You do not have access to this feature.');
+        }
+    }
+
     public function edit()
     {
+        $this->authorizeAdmin();
+
         $settings = Setting::first() ?? Setting::create([
             'app_name' => 'NFUH DMV',
             'beneficiary_count' => 4,
@@ -28,6 +38,8 @@ class SettingsController extends Controller
 
     public function update(Request $request)
     {
+        $this->authorizeAdmin();
+
         $settings = Setting::first();
         if (!$settings) {
             $settings = new Setting();

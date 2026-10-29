@@ -11,7 +11,7 @@
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <!-- 1. EXECUTIVE HEADER & ACTIONS                                       -->
     <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-5 w-full max-w-full overflow-hidden">
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-5 w-full">
         <div class="flex flex-col min-w-0 flex-1">
             <div class="flex items-center gap-2 mb-1">
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-primary/10 text-brand-primary border border-brand-primary/20 shrink-0">

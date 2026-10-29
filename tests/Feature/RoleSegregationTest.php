@@ -357,4 +357,85 @@ test('unauthorized user cannot call sync-defaults route (403)', function () {
     $response->assertStatus(403);
 });
 
+test('non-admin roles (Treasurer, FS, GS, Loan Committee, Member) receive 403 on settings, tools, and roles', function () {
+    $rolesToTest = ['Treasurer', 'Financial Secretary', 'General Secretary', 'Loan Committee', 'member'];
+
+    foreach ($rolesToTest as $roleName) {
+        $user = User::factory()->create();
+        $user->assignRole($roleName);
+
+        // System Settings
+        $this->actingAs($user)->get(route('settings.edit'))->assertStatus(403);
+        $this->actingAs($user)->post(route('settings.update'), ['app_name' => 'Hacked'])->assertStatus(403);
+
+        // System Tools
+        $this->actingAs($user)->get(route('admin.tools'))->assertStatus(403);
+        $this->actingAs($user)->post(route('admin.tools.migrate'))->assertStatus(403);
+        $this->actingAs($user)->post(route('admin.tools.clear-cache'))->assertStatus(403);
+        $this->actingAs($user)->post(route('admin.tools.storage-link'))->assertStatus(403);
+
+        // Roles & Permissions Matrix
+        $this->actingAs($user)->get(route('admin.roles.index'))->assertStatus(403);
+    }
+});
+
+test('admin role has full access to settings, tools, and roles matrix', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)->get(route('settings.edit'))->assertStatus(200);
+    $this->actingAs($admin)->get(route('admin.tools'))->assertStatus(200);
+    $this->actingAs($admin)->get(route('admin.roles.index'))->assertStatus(200);
+});
+
+test('unauthorized access renders the friendly branded 403 error page', function () {
+    $treasurer = User::factory()->create();
+    $treasurer->assignRole('Treasurer');
+
+    $response = $this->actingAs($treasurer)->get(route('settings.edit'));
+    $response->assertStatus(403);
+    $response->assertSee('Not Permitted');
+    $response->assertSee('You do not have access to this feature.');
+    $response->assertSee('Return to Dashboard');
+});
+
+test('non-admin user with settings.manage permission can access and update settings', function () {
+    $secretary = User::factory()->create();
+    $secretary->assignRole('General Secretary');
+    $secretary->givePermissionTo('settings.manage');
+
+    $response = $this->actingAs($secretary)->get(route('settings.edit'));
+    $response->assertStatus(200);
+
+    $update = $this->actingAs($secretary)->post(route('settings.update'), [
+        'app_name' => 'NFUH DMV Updated',
+        'beneficiary_count' => 4,
+        'min_savings_for_loan' => 500,
+        'loan_guarantor_min' => 1,
+        'loan_guarantor_max' => 3,
+        'default_loan_interest' => 1.0,
+        'savings_withdrawal_fee_percent' => 2.0,
+    ]);
+    $update->assertRedirect();
+});
+
+test('non-admin user with tools.manage permission can access tools dashboard', function () {
+    $treasurer = User::factory()->create();
+    $treasurer->assignRole('Treasurer');
+    $treasurer->givePermissionTo('tools.manage');
+
+    $response = $this->actingAs($treasurer)->get(route('admin.tools'));
+    $response->assertStatus(200);
+});
+
+test('non-admin user with roles.manage permission can access roles & duties matrix', function () {
+    $secretary = User::factory()->create();
+    $secretary->assignRole('General Secretary');
+    $secretary->givePermissionTo('roles.manage');
+
+    $response = $this->actingAs($secretary)->get(route('admin.roles.index'));
+    $response->assertStatus(200);
+});
+
+
 

@@ -371,6 +371,11 @@
             ? collect(explode(' ', $authUser->name))->map(fn($n) => mb_substr($n, 0, 1))->take(2)->join('') 
             : 'US';
 
+        $canSettings = $authUser && ($authUser->hasRole('admin') || $authUser->can('settings.manage'));
+        $canRoles = $authUser && ($authUser->hasRole('admin') || $authUser->can('roles.manage'));
+        $canTools = $authUser && ($authUser->hasRole('admin') || $authUser->can('tools.manage'));
+        $canAdministration = $canSettings || $canRoles || $canTools;
+
         $isAdminUser = false;
         if ($authUser) {
             if (!$member) {
@@ -379,7 +384,7 @@
                 $adminRoles = ['Secretary', 'Treasurer', 'Financial Secretary', 'Loan Officer', 'Lead Nformi'];
                 $hasLegacyRole = $member->roles()->whereIn('name', $adminRoles)->exists();
                 $hasSpatieRole = method_exists($authUser, 'hasAnyRole') && $authUser->hasAnyRole(['admin', 'Treasurer', 'Financial Secretary', 'Loan Committee', 'General Secretary']);
-                $isAdminUser = $hasLegacyRole || $hasSpatieRole;
+                $isAdminUser = $hasLegacyRole || $hasSpatieRole || $canAdministration;
             }
         }
 
@@ -701,15 +706,17 @@
                         </div>
                     </div>
 
-                    <!-- Group 4: Administration -->
+                    <!-- Group 4: Administration (Hybrid: Role 'admin' OR Module Permission) -->
+                    @if($canAdministration)
                     <div class="relative flex w-full min-w-0 flex-col px-2 py-1">
                         <div 
                             class="flex h-8 shrink-0 items-center rounded-[10px] px-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 select-none"
-                            x-show="!sidebarCollapsed && (!searchQuery || 'settings'.includes(searchQuery.toLowerCase()))"
+                            x-show="!sidebarCollapsed && (!searchQuery || 'settings roles tools duties'.includes(searchQuery.toLowerCase()))"
                         >
                             Administration
                         </div>
                         <div class="flex w-full min-w-0 flex-col gap-1">
+                            @if($canSettings)
                             <a 
                                 href="{{ route('settings.edit') }}" 
                                 class="group flex items-center gap-2 overflow-hidden rounded-[10px] text-sm outline-none transition-all duration-200 relative select-none cursor-pointer {{ Route::is('settings.*') ? 'bg-zinc-100 dark:bg-zinc-800 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}"
@@ -720,7 +727,9 @@
                                 <i data-lucide="settings" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('settings.*') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
                                 <span x-show="!sidebarCollapsed" class="truncate">Settings</span>
                             </a>
+                            @endif
 
+                            @if($canRoles)
                             <a 
                                 href="{{ route('admin.roles.index') }}" 
                                 class="group flex items-center gap-2 overflow-hidden rounded-[10px] text-sm outline-none transition-all duration-200 relative select-none cursor-pointer {{ Route::is('admin.roles.*') ? 'bg-zinc-100 dark:bg-zinc-800 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}"
@@ -731,7 +740,9 @@
                                 <i data-lucide="shield-check" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('admin.roles.*') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
                                 <span x-show="!sidebarCollapsed" class="truncate">Roles & Duties</span>
                             </a>
+                            @endif
 
+                            @if($canTools)
                             <a 
                                 href="{{ route('admin.tools') }}" 
                                 class="group flex items-center gap-2 overflow-hidden rounded-[10px] text-sm outline-none transition-all duration-200 relative select-none cursor-pointer {{ Route::is('admin.tools') ? 'bg-zinc-100 dark:bg-zinc-800 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}"
@@ -742,8 +753,10 @@
                                 <i data-lucide="terminal" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('admin.tools') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
                                 <span x-show="!sidebarCollapsed" class="truncate">System Tools</span>
                             </a>
+                            @endif
                         </div>
                     </div>
+                    @endif
                 @else
                     <!-- Group: Njangi (Member) -->
                     <div class="relative flex w-full min-w-0 flex-col px-2 py-1">
@@ -903,7 +916,7 @@
                     x-show="userMenuOpen" 
                     x-cloak
                     @click.outside="userMenuOpen = false"
-                    class="absolute bottom-[100%] mb-2 left-2 right-2 glass-surface border border-zinc-200/50 dark:border-white/10 rounded-xl p-1.5 shadow-2xl z-50 flex flex-col gap-1"
+                    class="absolute bottom-[100%] mb-2 left-2 right-2 bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 rounded-xl p-1.5 shadow-xl z-50 flex flex-col gap-1"
                 >
                     <div class="px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-zinc-400 dark:text-zinc-500 select-none">
                         User Account
@@ -936,11 +949,12 @@
         <div 
             x-show="mobileSidebarOpen" 
             x-cloak
-            class="lg:hidden fixed inset-0 z-40 flex font-sans"
+            @keydown.escape.window="mobileSidebarOpen = false"
+            class="lg:hidden fixed inset-0 z-50 flex font-sans"
             role="dialog"
             aria-modal="true"
         >
-            <!-- Overlay Backing -->
+            <!-- Overlay Backing (Clicking outside closes drawer) -->
             <div 
                 x-show="mobileSidebarOpen"
                 x-transition:enter="transition-opacity ease-linear duration-300"
@@ -962,21 +976,12 @@
                 x-transition:leave="transition ease-in-out duration-300 transform"
                 x-transition:leave-start="translate-x-0"
                 x-transition:leave-end="-translate-x-full"
-                class="relative flex w-full max-w-xs flex-1 flex-col glass-surface pt-5 pb-4 border-r border-zinc-200/40 dark:border-white/10"
+                class="relative flex w-full max-w-xs flex-1 flex-col glass-surface pb-4 border-r border-zinc-200/40 dark:border-white/10 shadow-2xl bg-white dark:bg-zinc-900"
             >
-                <div class="absolute top-0 right-0 -mr-12 pt-2">
-                    <button 
-                        @click="mobileSidebarOpen = false" 
-                        class="ml-1 flex h-9 w-9 items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white bg-slate-900/40 text-white"
-                    >
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </button>
-                </div>
-
-                <!-- Logo Section -->
-                <div class="flex shrink-0 items-center px-5 mb-6">
-                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
-                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-primary text-brand-primary-text shadow-sm overflow-hidden">
+                <!-- Drawer Header: Brand + Close Button -->
+                <div class="flex shrink-0 items-center justify-between px-4 py-3.5 mb-2 border-b border-zinc-200/60 dark:border-zinc-800/80">
+                    <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 min-w-0">
+                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-primary text-brand-primary-text font-bold shadow-xs overflow-hidden">
                             @if(isset($appSettings) && $appSettings->logo_light_path && $appSettings->logo_dark_path)
                                 <img src="{{ asset('storage/' . $appSettings->logo_light_path) }}" alt="Logo" class="w-full h-full object-cover dark:hidden">
                                 <img src="{{ asset('storage/' . $appSettings->logo_dark_path) }}" alt="Logo" class="w-full h-full object-cover hidden dark:block">
@@ -985,14 +990,25 @@
                             @elseif(isset($appSettings) && $appSettings->logo_dark_path)
                                 <img src="{{ asset('storage/' . $appSettings->logo_dark_path) }}" alt="Logo" class="w-full h-full object-cover">
                             @else
-                                <i data-lucide="command" class="w-5 h-5"></i>
+                                <i data-lucide="command" class="w-4 h-4"></i>
                             @endif
                         </div>
-                        <div class="flex flex-col">
-                            <span class="font-bold text-sm text-black dark:text-white leading-tight">{{ !empty($appSettings->app_name) ? $appSettings->app_name : 'NFUH DMV' }}</span>
-                            <span class="text-[10px] font-medium text-slate-400 dark:text-zinc-500 leading-none mt-0.5">Membership Portal</span>
+                        <div class="flex flex-col min-w-0">
+                            <span class="font-bold text-sm text-zinc-950 dark:text-white leading-tight truncate">{{ !empty($appSettings->app_name) ? $appSettings->app_name : 'NFUH DMV' }}</span>
+                            <span class="text-[10px] font-medium text-zinc-400 dark:text-zinc-500 leading-none mt-0.5">Membership Portal</span>
                         </div>
                     </a>
+
+                    <!-- Prominent In-Drawer Close Button -->
+                    <button 
+                        type="button"
+                        @click="mobileSidebarOpen = false" 
+                        class="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
+                        title="Close Menu"
+                        aria-label="Close navigation menu"
+                    >
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
                 </div>
 
                 <!-- Mobile Menu Scrollable Nav -->
@@ -1119,22 +1135,30 @@
                             </a>
                         </div>
 
-                        {{-- Admin: Administration flat --}}
+                        {{-- Admin: Administration flat (Hybrid: Role 'admin' OR Module Permission) --}}
+                        @if($canAdministration)
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Administration</span>
+                            @if($canSettings)
                             <a href="{{ route('settings.edit') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('settings.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="settings" class="w-[18px] h-[18px] shrink-0"></i>
                                 <span>Settings</span>
                             </a>
+                            @endif
+                            @if($canRoles)
                             <a href="{{ route('admin.roles.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('admin.roles.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="shield-check" class="w-[18px] h-[18px] shrink-0"></i>
                                 <span>Roles & Duties</span>
                             </a>
+                            @endif
+                            @if($canTools)
                             <a href="{{ route('admin.tools') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('admin.tools') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="terminal" class="w-[18px] h-[18px] shrink-0"></i>
                                 <span>System Tools</span>
                             </a>
+                            @endif
                         </div>
+                        @endif
                     @endif
                 </nav>
 
@@ -1170,12 +1194,13 @@
         <div class="flex-grow flex flex-col h-full min-w-0 min-h-0 overflow-hidden bg-transparent transition-colors duration-300">
             
             <!-- HEADER -->
-            <header class="h-[65px] border-b border-zinc-200/50 dark:border-white/10 px-4 md:px-6 flex items-center justify-between flex-shrink-0 z-35 glass-surface shadow-xs">
+            <header class="relative h-14 sm:h-[65px] border-b border-zinc-200/50 dark:border-white/10 px-3 sm:px-6 flex items-center justify-between flex-shrink-0 z-40 glass-surface shadow-xs">
                 <!-- Left: Burger Menu, Collapse Toggle & Page Title -->
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 sm:gap-4 min-w-0">
                     <button 
-                        @click="mobileSidebarOpen = true" 
-                        class="lg:hidden p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                        @click="mobileSidebarOpen = !mobileSidebarOpen" 
+                        class="lg:hidden p-1.5 sm:p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shrink-0 cursor-pointer"
+                        aria-label="Toggle navigation menu"
                     >
                         <i data-lucide="menu" class="w-4 h-4"></i>
                     </button>
@@ -1189,29 +1214,29 @@
                         <i data-lucide="sidebar" class="w-[15px] h-[15px]"></i>
                     </button>
                     
-                    <div class="flex items-center border-l border-zinc-200/60 dark:border-zinc-800/60 pl-4 select-none">
-                        <span class="font-semibold text-sm text-zinc-900 dark:text-white leading-none">
+                    <div class="flex items-center lg:border-l lg:border-zinc-200/60 lg:dark:border-zinc-800/60 lg:pl-4 select-none min-w-0">
+                        <span class="font-semibold text-xs sm:text-sm text-zinc-900 dark:text-white leading-none truncate">
                             {{ $pageTitle }}
                         </span>
                     </div>
                 </div>
 
                 <!-- Right: Search, Theme Toggle & Avatar Circle -->
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
                     
                     @if($member && $isMemberPortal)
-                        <!-- Member Current Balance Header Widget -->
+                        <!-- Member Current Balance Header Widget (Desktop & Tablet) -->
                         <div 
                             x-data="{ showBalance: localStorage.getItem('member_balance_visible') !== 'false' }"
-                            class="flex items-center gap-2 px-3 h-9 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/90 dark:bg-zinc-950/90 backdrop-blur-md shadow-xs select-none"
+                            class="hidden sm:flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 h-8 sm:h-9 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/90 dark:bg-zinc-950/90 backdrop-blur-md shadow-xs select-none"
                         >
                             <a 
                                 href="{{ Route::has('member.savings') ? route('member.savings') : '#' }}" 
-                                class="flex items-center gap-2 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer group"
+                                class="flex items-center gap-1.5 sm:gap-2 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer group"
                                 title="View Current Savings Balance details"
                             >
-                                <i data-lucide="wallet" class="w-4 h-4 text-brand-primary shrink-0"></i>
-                                <span class="text-xs font-medium text-zinc-500 dark:text-zinc-400">Balance:</span>
+                                <i data-lucide="wallet" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-primary shrink-0"></i>
+                                <span class="hidden sm:inline text-xs font-medium text-zinc-500 dark:text-zinc-400">Balance:</span>
                                 <span 
                                     x-show="showBalance" 
                                     class="text-xs font-bold text-zinc-950 dark:text-white font-display tracking-tight flex items-center"
@@ -1293,7 +1318,7 @@
                             x-show="open"
                             x-cloak
                             @click.outside="open = false"
-                            class="absolute right-0 top-10 w-56 glass-surface border border-zinc-200/50 dark:border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col"
+                            class="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col"
                         >
                             <!-- Profile Info Section (Same to same as TCG Agency) -->
                             <div class="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-3">
@@ -1339,7 +1364,7 @@
             </header>
 
             <!-- MAIN WORKSPACE CONTENT -->
-            <main class="flex-grow min-h-0 px-4 md:px-6 py-5 md:py-6 flex flex-col gap-6 overflow-y-auto w-full bg-transparent">
+            <main class="flex-grow min-h-0 px-3 sm:px-5 md:px-6 py-3.5 sm:py-5 md:py-6 overflow-y-auto w-full bg-transparent">
                 <!-- Toast Status Notification -->
                 @if(session('success'))
                     <div 
@@ -1347,7 +1372,7 @@
                         x-show="show" 
                         x-transition 
                         x-init="setTimeout(() => show = false, 5000)" 
-                        class="flex items-center justify-between p-3.5 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/60 rounded-xl text-emerald-800 dark:text-emerald-400 text-xs font-medium shadow-sm"
+                        class="mb-6 flex items-center justify-between p-3.5 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/60 rounded-xl text-emerald-800 dark:text-emerald-400 text-xs font-medium shadow-sm"
                     >
                         <div class="flex items-center gap-2.5">
                             <i data-lucide="check-circle-2" class="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400"></i>
@@ -1365,7 +1390,7 @@
                         x-show="show" 
                         x-transition 
                         x-init="setTimeout(() => show = false, 7000)" 
-                        class="flex items-center justify-between p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/60 rounded-xl text-red-800 dark:text-red-400 text-xs font-medium shadow-sm animate-fadeIn"
+                        class="mb-6 flex items-center justify-between p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/60 rounded-xl text-red-800 dark:text-red-400 text-xs font-medium shadow-sm animate-fadeIn"
                     >
                         <div class="flex items-center gap-2.5">
                             <i data-lucide="alert-circle" class="w-4.5 h-4.5 text-red-650 dark:text-red-400"></i>
