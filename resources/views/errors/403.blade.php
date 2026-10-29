@@ -9,10 +9,7 @@
             <i data-lucide="shield-alert" class="w-7 h-7"></i>
         </div>
 
-        <!-- Status Tag -->
-        <span class="inline-block text-xs font-semibold tracking-wider text-amber-600 dark:text-amber-400 uppercase mb-2">
-            Error 403
-        </span>
+
 
         <!-- Main Headline -->
         <h1 class="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white tracking-tight mb-2">

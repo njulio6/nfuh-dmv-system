@@ -81,15 +81,30 @@
                 <span class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">${{ number_format($member->available_savings_balance, 2) }}</span>
             </div>
 
+            @php
+                $canWithdraw = auth()->user()?->hasRole('admin') || auth()->user()?->can('savings.withdraw_request');
+            @endphp
             <!-- Request Withdrawal Button -->
-            <button 
-                type="button" 
-                @click="showWithdrawalModal = true"
-                class="h-9 px-4 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-bold rounded-[10px] flex items-center justify-center gap-1.5 shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-            >
-                <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
-                <span>Request Withdrawal</span>
-            </button>
+            @if($canWithdraw)
+                <button 
+                    type="button" 
+                    @click="showWithdrawalModal = true"
+                    class="h-9 px-4 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-bold rounded-[10px] flex items-center justify-center gap-1.5 shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                >
+                    <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
+                    <span>Request Withdrawal</span>
+                </button>
+            @else
+                <button 
+                    type="button" 
+                    disabled
+                    title="You do not have permission to request savings withdrawals"
+                    class="h-9 px-4 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-650 text-xs font-bold rounded-[10px] flex items-center justify-center gap-1.5 cursor-not-allowed select-none opacity-60"
+                >
+                    <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
+                    <span>Withdrawal Disabled</span>
+                </button>
+            @endif
 
             <!-- Reload / Clear Button -->
             <a 
@@ -338,6 +353,7 @@
     </div>
 
     <!-- Request Withdrawal Modal -->
+    @if($canWithdraw)
     <div 
         x-show="showWithdrawalModal" 
         x-cloak 
@@ -632,6 +648,7 @@
             </form>
         </div>
     </div>
+    @endif
 
     <!-- Filter Modal -->
     <div 

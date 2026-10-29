@@ -19,6 +19,10 @@ class MemberPortalController extends Controller
             return redirect()->route('login');
         }
 
+        if (!$user->hasRole('admin') && !$user->can('njangi.submit_payment')) {
+            abort(403, 'Unauthorized action. You do not have permission to submit Njangi payments.');
+        }
+
         $member = MemberResolver::fromUser($user);
         if (!$member) {
             return redirect()->back()->with('error', 'No member profile found associated with this user account.');
@@ -68,6 +72,10 @@ class MemberPortalController extends Controller
         $user = Auth::user();
         if (!$user) {
             return redirect()->route('login');
+        }
+
+        if (!$user->hasRole('admin') && !$user->can('njangi.view_own') && !$user->can('njangi.submit_payment')) {
+            abort(403, 'Unauthorized action. You do not have permission to view Njangi records.');
         }
 
         $member = MemberResolver::fromUser($user);
@@ -235,6 +243,10 @@ class MemberPortalController extends Controller
         $user = Auth::user();
         if (!$user) {
             return redirect()->route('login');
+        }
+
+        if (!$user->hasRole('admin') && !$user->can('njangi.view_own')) {
+            abort(403, 'Unauthorized action. You do not have permission to view Njangi reports.');
         }
 
         $member = MemberResolver::fromUser($user);

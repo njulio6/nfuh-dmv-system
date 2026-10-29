@@ -4,8 +4,9 @@
 <!-- Wrapper for Alpine state context -->
 <div 
     x-data="{ 
-        showModal: false, 
-        selectedMemberId: '',
+        showModal: {{ $errors->any() ? 'true' : 'false' }}, 
+        selectedMemberId: '{{ old('member_id', '') }}',
+        selectedType: '{{ old('type', 'deposit') }}',
         showFilterModal: false
     }"
     class="w-full"
@@ -656,16 +657,43 @@
                 />
 
                 <!-- Transaction Type -->
-                <x-premium-select 
-                    label="Transaction Type" 
-                    name="type" 
-                    id="type" 
-                    required
-                >
-                    <option value="deposit">Deposit</option>
-                    <option value="withdrawal">Withdrawal</option>
-                    <option value="adjustment">Adjustment (Balance Override)</option>
-                </x-premium-select>
+                <div class="flex flex-col w-full">
+                    <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+                        Transaction Type <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative w-full">
+                        <select 
+                            name="type" 
+                            id="type"
+                            x-model="selectedType"
+                            required
+                            class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-white px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all appearance-none cursor-pointer"
+                        >
+                            <option value="deposit">Deposit</option>
+                            <option value="withdrawal">Withdrawal (Queues for Two-Person Approval)</option>
+                            <option value="adjustment">Adjustment (Balance Override - Mandatory Reason)</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-zinc-400">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Notice for Adjustment -->
+                <div x-show="selectedType === 'adjustment'" x-cloak class="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-800 dark:text-purple-300 flex items-start gap-2.5">
+                    <svg class="w-4 h-4 shrink-0 mt-0.5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <div>
+                        <strong>Audit Trail Required:</strong> Adjustments alter the member's balance. You <u>must</u> provide a detailed justification note below (minimum 5 characters).
+                    </div>
+                </div>
+
+                <!-- Dynamic Notice for Withdrawal -->
+                <div x-show="selectedType === 'withdrawal'" x-cloak class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
+                    <svg class="w-4 h-4 shrink-0 mt-0.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <div>
+                        <strong>Segregation of Duties Enforced:</strong> Manual withdrawals cannot bypass approval. Submitting this will automatically queue it under <a href="{{ route('savings.withdrawal-requests') }}" class="underline font-bold hover:text-amber-950 dark:hover:text-white" target="_blank">Withdrawal Requests</a> for committee review and Treasurer disbursement.
+                    </div>
+                </div>
 
                 <!-- Transaction Date -->
                 <x-premium-datepicker 
@@ -675,14 +703,29 @@
                     value="{{ now()->toDateString() }}" 
                 />
 
-                <!-- Optional Note -->
-                <x-premium-textarea 
-                    label="Reference Notes" 
-                    name="notes" 
-                    id="notes" 
-                    rows="2" 
-                    placeholder="Zelle transaction ID, bank reference, etc..."
-                />
+                <!-- Reference Notes -->
+                <div class="flex flex-col w-full">
+                    <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 flex items-center justify-between">
+                        <span>
+                            Reference Notes
+                            <span x-show="selectedType === 'adjustment'" class="text-red-500 font-bold">* (Required for Adjustments)</span>
+                        </span>
+                        <span x-show="selectedType === 'adjustment'" class="text-[10px] text-amber-600 dark:text-amber-400 font-semibold lowercase">min 5 characters</span>
+                    </label>
+                    <div class="relative w-full">
+                        <textarea 
+                            name="notes" 
+                            id="notes" 
+                            rows="2" 
+                            :required="selectedType === 'adjustment'"
+                            placeholder="Reason for adjustment, Zelle transaction ID, bank reference, etc..."
+                            class="w-full bg-zinc-50/40 dark:bg-zinc-950/20 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50 transition-all"
+                        >{{ old('notes') }}</textarea>
+                    </div>
+                    @error('notes')
+                        <span class="text-xs text-red-500 font-semibold mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
 
                 <!-- Footer Actions -->
                 <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 mt-2 w-full">

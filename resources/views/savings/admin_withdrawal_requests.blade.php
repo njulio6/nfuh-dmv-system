@@ -251,6 +251,12 @@
                     </td>
                     <td class="px-3 py-3 text-center">
                         @if ($req->status === 'pending')
+                            @if(\App\Support\SegregationGuard::isSelf(auth()->user(), $req->member_id))
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/80 select-none" title="Segregation of Duties: A peer officer must review your personal withdrawal request">
+                                    <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+                                    Self (Peer Review)
+                                </span>
+                            @else
                             <div class="flex items-center justify-center gap-1.5">
                                 <button 
                                     type="button" 
@@ -284,7 +290,14 @@
                                     <i data-lucide="x" class="w-4 h-4"></i>
                                 </button>
                             </div>
+                            @endif
                         @elseif ($req->status === 'approved')
+                            @if(\App\Support\SegregationGuard::isSelf(auth()->user(), $req->member_id))
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/80 select-none" title="Segregation of Duties: A peer officer must disburse your personal withdrawal">
+                                    <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+                                    Self (Peer Review)
+                                </span>
+                            @else
                             <div class="flex items-center justify-center gap-1.5">
                                 <button 
                                     type="button" 
@@ -318,6 +331,7 @@
                                     <i data-lucide="x" class="w-4 h-4"></i>
                                 </button>
                             </div>
+                            @endif
                         @elseif ($req->status === 'disbursed')
                             <button 
                                 type="button" 

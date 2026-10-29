@@ -40,6 +40,7 @@
                 <i data-lucide="history" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
                 <span>Withdrawal History</span>
             </a>
+            @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('savings.withdraw_request'))
             <button 
                 type="button" 
                 @click="showWithdrawalModal = true"
@@ -48,6 +49,7 @@
                 <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
                 <span>Request Withdrawal</span>
             </button>
+            @endif
         </div>
     </div>
 

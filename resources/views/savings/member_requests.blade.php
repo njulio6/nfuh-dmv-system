@@ -45,15 +45,30 @@
 
         <!-- Right: Action Buttons Group -->
         <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto xl:justify-end">
+            @php
+                $canDeposit = auth()->user()?->hasRole('admin') || auth()->user()?->can('savings.deposit_request');
+            @endphp
             <!-- Request Deposit Button -->
-            <button 
-                type="button" 
-                @click="showRequestModal = true"
-                class="px-5 py-2 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-bold rounded-[10px] flex items-center justify-center gap-1.5 shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                <span>Request Deposit</span>
-            </button>
+            @if($canDeposit)
+                <button 
+                    type="button" 
+                    @click="showRequestModal = true"
+                    class="px-5 py-2 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-bold rounded-[10px] flex items-center justify-center gap-1.5 shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Request Deposit</span>
+                </button>
+            @else
+                <button 
+                    type="button" 
+                    disabled
+                    title="You do not have permission to request savings deposits"
+                    class="px-5 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-650 text-xs font-bold rounded-[10px] flex items-center justify-center gap-1.5 cursor-not-allowed select-none opacity-60"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span>Deposit Disabled</span>
+                </button>
+            @endif
 
             <!-- Reload / Clear Button -->
             <a 
@@ -370,6 +385,7 @@
     </div>
 
     <!-- Request Deposit Modal -->
+    @if($canDeposit)
     <div 
         x-show="showRequestModal" 
         x-cloak 
@@ -470,6 +486,7 @@
             </form>
         </div>
     </div>
+    @endif
 
     <!-- Image Preview Modal -->
     <div 

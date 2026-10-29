@@ -195,8 +195,11 @@
                 </div>
             @endif
 
+            @php
+                $canSubmitNjangi = auth()->user()?->hasRole('admin') || auth()->user()?->can('njangi.submit_payment');
+            @endphp
             <!-- Submit Njangi Play Button -->
-            @if($activeCycle && $cycleMember)
+            @if($canSubmitNjangi && $activeCycle && $cycleMember)
                 <button 
                     type="button" 
                     @click="showRequestModal = true"
@@ -204,6 +207,16 @@
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     <span>Submit Njangi Play</span>
+                </button>
+            @elseif(!$canSubmitNjangi && $activeCycle && $cycleMember)
+                <button 
+                    type="button" 
+                    disabled
+                    title="You do not have permission to submit Njangi plays"
+                    class="px-5 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-650 text-xs font-bold rounded-[10px] flex items-center justify-center gap-1.5 cursor-not-allowed select-none opacity-60"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span>Submission Disabled</span>
                 </button>
             @endif
 
@@ -515,7 +528,7 @@
     </div>
 
     <!-- Submit Njangi Play Modal -->
-    @if($activeCycle && $cycleMember)
+    @if($canSubmitNjangi && $activeCycle && $cycleMember)
         <div 
             x-show="showRequestModal" 
             x-cloak 

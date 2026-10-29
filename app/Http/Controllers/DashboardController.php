@@ -34,7 +34,10 @@ class DashboardController extends Controller
             $isAdmin = $member->roles()->whereIn('name', $adminRoles)->exists();
         }
 
-        if ($isAdmin) {
+        $isDualRole = $isAdmin && ($member !== null);
+        $portalMode = session('portal_mode', 'officer');
+
+        if ($isAdmin && (!$member || $portalMode === 'officer')) {
             // Permission checks
             $canViewMembers = method_exists($user, 'can') ? ($user->can('members.view') || $user->hasRole('admin')) : true;
             $canViewNjangi = method_exists($user, 'can') ? ($user->can('njangi.view_cycles') || $user->hasAnyRole(['admin', 'Financial Secretary', 'Treasurer'])) : true;
@@ -516,5 +519,33 @@ class DashboardController extends Controller
             'appSettings',
             'nfuhTerms'
         ));
+    }
+
+    /**
+     * Switch between Officer and Member portal views for dual-role users.
+     */
+    public function switchPortalMode(Request $request, string $mode)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $officerRoles = ['admin', 'Treasurer', 'Financial Secretary', 'Loan Committee', 'General Secretary'];
+        $isOfficer = method_exists($user, 'hasAnyRole') && $user->hasAnyRole($officerRoles);
+        $member = MemberResolver::fromUser($user);
+
+        if (!$isOfficer && $member) {
+            $adminRoles = ['Secretary', 'Treasurer', 'Financial Secretary', 'Loan Officer', 'Lead Nformi', 'Loan Committee', 'General Secretary'];
+            $isOfficer = $member->roles()->whereIn('name', $adminRoles)->exists();
+        }
+
+        if ($mode === 'officer' && $isOfficer) {
+            session(['portal_mode' => 'officer']);
+        } elseif ($mode === 'member' && $member) {
+            session(['portal_mode' => 'member']);
+        }
+
+        return redirect()->route('dashboard');
     }
 }

@@ -268,7 +268,7 @@ class RoleComplianceService
                 'name' => 'member',
                 'display_name' => 'General Member',
                 'badge_color' => 'zinc',
-                'description' => 'Standard self-service portal access for advance meeting RSVP, savings deposits, loan applications, and statements.',
+                'description' => 'Used by administrators to enforce custom portal access restrictions. When unassigned, members enjoy full general portal access by default.',
                 'icon' => 'user',
             ],
         ];

@@ -524,6 +524,10 @@ class AttendanceController extends Controller
             abort(403, 'Your account is not linked to an active member profile. Please contact an officer.');
         }
 
+        if (!$user->hasRole('admin') && !$user->can('attendance.rsvp')) {
+            return redirect()->back()->with('error', 'Unauthorized action. You do not have permission to check in or RSVP for meetings.');
+        }
+
         $appSettings = Setting::first();
         if ($appSettings?->restrict_checkin_to_cycle_members && $session->njangi_cycle_id) {
             $isEnrolled = DB::table('njangi_cycle_members')
@@ -661,6 +665,10 @@ class AttendanceController extends Controller
         $user = Auth::user();
         if (!$user) {
             return redirect()->route('login');
+        }
+
+        if (!$user->hasRole('admin') && !$user->can('attendance.view_own') && !$user->can('attendance.rsvp')) {
+            abort(403, 'Unauthorized action. You do not have permission to view attendance history.');
         }
 
         $member = MemberResolver::fromUser($user);

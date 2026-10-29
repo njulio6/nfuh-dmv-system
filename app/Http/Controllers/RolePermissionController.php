@@ -109,6 +109,7 @@ class RolePermissionController extends Controller
         ]);
 
         $role->syncPermissions($request->permissions ?? []);
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         return redirect()->route('admin.roles.index', ['tab' => 'matrix', 'role' => $role->name])->with('success', "Permissions for role '{$role->name}' updated successfully.");
     }
@@ -147,6 +148,7 @@ class RolePermissionController extends Controller
 
         // Sync Spatie roles
         $user->syncRoles($proposedRoles);
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // Also sync legacy MemberRole records for backwards-compatibility if linked
         $linkedMember = \App\Support\MemberResolver::fromUser($user);

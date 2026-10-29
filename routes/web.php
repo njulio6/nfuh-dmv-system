@@ -20,6 +20,10 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth'])
     ->name('dashboard');
 
+Route::get('/portal-mode/{mode}', [DashboardController::class, 'switchPortalMode'])
+    ->middleware(['auth'])
+    ->name('portal.switch-mode');
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/member/njangi-payments', [MemberPortalController::class, 'myPayments'])
         ->name('member.njangi-payments');

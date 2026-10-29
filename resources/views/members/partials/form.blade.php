@@ -157,7 +157,7 @@
                     @endforeach
                 ]
             })" @click.outside="close()">
-                <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Traditional Title</label>
+                <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">Traditional Title (Cultural Rank)</label>
                 <input type="hidden" name="rank_id" x-ref="hiddenInput" :value="value">
                 
                 <div class="relative">
@@ -206,6 +206,7 @@
                         </button>
                     </template>
                 </div>
+                <span class="text-[11px] text-zinc-400 dark:text-zinc-500 mt-1">Cultural honorific for community identification. Does not grant operational or system administrative permissions.</span>
             </div>
 
             <!-- Status Dropdown -->
@@ -417,11 +418,15 @@
         </div>
     </div>
 
-    <!-- Card 5: Administrative & Board Roles -->
-    <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-5 shadow-none">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
-            Administrative & Board Roles
-        </h3>
+    <!-- Card 5: System Governance & Board Roles -->
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 md:p-6 flex flex-col gap-4 shadow-none">
+        <div>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white flex items-center justify-between">
+                <span>System Governance & Board Roles</span>
+                <span class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 normal-case tracking-normal">(Grants system permissions)</span>
+            </h3>
+            <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Assign functional leadership roles (e.g. Financial Secretary, Treasurer, Admin). These roles determine user access rights and operational approval authority across the system.</p>
+        </div>
         
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             @foreach ($roles as $role)

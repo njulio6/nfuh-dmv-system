@@ -178,6 +178,12 @@
                     <td class="py-2.5 px-3">
                         <div class="flex items-center justify-center">
                             @if($req->status === 'pending')
+                                @if(\App\Support\SegregationGuard::isSelf(auth()->user(), $req->member_id))
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/80 select-none" title="Segregation of Duties: A peer officer must review your personal loan repayment request">
+                                        <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+                                        Self (Peer Review)
+                                    </span>
+                                @else
                                 <div class="flex items-center gap-1.5">
                                     <x-premium-button
                                         type="button"
@@ -212,6 +218,7 @@
                                         Reject
                                     </x-premium-button>
                                 </div>
+                                @endif
                             @else
                                 <div class="text-xs">
                                     @if($req->status === 'approved')

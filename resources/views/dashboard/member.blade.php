@@ -139,22 +139,24 @@
 
             <!-- Unified Executive Quick Actions (Consistent, premium pill styling) -->
             <div class="grid grid-cols-3 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-                @if($member->participates_in_njangi)
+                @if($member->participates_in_njangi && (auth()->user()?->hasRole('admin') || auth()->user()?->can('njangi.view_own') || auth()->user()?->can('njangi.submit_payment')))
                     <a href="{{ route('member.njangi-payments') }}" class="inline-flex items-center justify-center gap-1.5 px-3 h-9 rounded-xl text-xs font-semibold bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/90 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700/80 transition-all text-center select-none active:scale-95 shadow-2xs group">
                         <i data-lucide="send" class="w-3.5 h-3.5 text-brand-primary shrink-0 transition-transform group-hover:scale-110"></i>
                         <span>Njangi</span>
                     </a>
                 @endif
-                @if($member->participates_in_savings)
+                @if($member->participates_in_savings && (auth()->user()?->hasRole('admin') || auth()->user()?->can('savings.view_own') || auth()->user()?->can('savings.deposit_request') || auth()->user()?->can('savings.withdraw_request')))
                     <a href="{{ route('member.savings') }}" class="inline-flex items-center justify-center gap-1.5 px-3 h-9 rounded-xl text-xs font-semibold bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/90 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700/80 transition-all text-center select-none active:scale-95 shadow-2xs group">
                         <i data-lucide="arrow-down-circle" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 transition-transform group-hover:scale-110"></i>
                         <span>Savings</span>
                     </a>
                 @endif
+                @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('loans.view_own') || auth()->user()?->can('loans.apply'))
                 <a href="{{ route('member.loans') }}" class="inline-flex items-center justify-center gap-1.5 px-3 h-9 rounded-xl text-xs font-semibold bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/90 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700/80 transition-all text-center select-none active:scale-95 shadow-2xs group">
                     <i data-lucide="banknote" class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 transition-transform group-hover:scale-110"></i>
                     <span>Loans</span>
                 </a>
+                @endif
             </div>
         </div>
     </div>
@@ -219,7 +221,7 @@
         </div>
     @endif
 
-    @if(isset($upcomingSession) && (!isset($upcomingAttendance) || $upcomingAttendance->attendance_status !== 'present'))
+    @if(isset($upcomingSession) && (!isset($upcomingAttendance) || $upcomingAttendance->attendance_status !== 'present') && (auth()->user()?->hasRole('admin') || auth()->user()?->can('attendance.rsvp') || auth()->user()?->can('attendance.view_own')))
         <!-- Meeting Check-In Banner -->
         <div class="bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-2xs">
             <div class="flex items-center gap-3">
@@ -236,13 +238,17 @@
                 </div>
             </div>
             <div class="flex items-center gap-2 self-stretch md:self-auto">
+                @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('attendance.rsvp'))
                 <a href="{{ route('attendance.checkin.show', $upcomingSession->ensureQrToken()) }}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-xl transition-all cursor-pointer shadow-xs select-none inline-flex items-center gap-1.5">
                     <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
                     <span>Open Check-In Pass</span>
                 </a>
+                @endif
+                @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('attendance.view_own'))
                 <a href="{{ route('member.attendance') }}" class="px-3.5 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 text-[11px] font-bold rounded-xl transition-all hover:bg-zinc-50 dark:hover:bg-zinc-700 select-none">
                     Attendance History
                 </a>
+                @endif
             </div>
         </div>
     @endif

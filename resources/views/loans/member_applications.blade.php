@@ -135,8 +135,21 @@
 
         <!-- Right: Action Buttons Group -->
         <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto xl:justify-end">
+            @php
+                $canApplyLoan = auth()->user()?->hasRole('admin') || auth()->user()?->can('loans.apply');
+            @endphp
             <!-- Apply For Loan Button -->
-            @if($member->savings_balance >= $minSavings)
+            @if(!$canApplyLoan)
+                <button 
+                    type="button"
+                    disabled
+                    title="You do not have permission to apply for loans"
+                    class="px-5 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-650 text-xs font-bold rounded-[10px] flex items-center justify-center gap-1.5 cursor-not-allowed select-none opacity-60"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span>Apply Disabled</span>
+                </button>
+            @elseif($member->savings_balance >= $minSavings)
                 <button 
                     type="button"
                     @click="showRequestModal = true"
@@ -731,6 +744,7 @@
     </div>
 
     <!-- REQUEST NEW LOAN MODAL -->
+    @if($canApplyLoan)
     <div 
         x-show="showRequestModal" 
         x-cloak
@@ -1065,6 +1079,7 @@
             </form>
         </div>
     </div>
+    @endif
 
     <!-- SUBMIT LOAN REPAYMENT REQUEST MODAL -->
     <div 

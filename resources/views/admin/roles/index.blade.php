@@ -23,7 +23,7 @@
 
         roleCounts: {
             @foreach($roles as $r)
-                '{{ $r->name }}': {{ $r->permissions->count() }},
+                '{{ $r->name }}': {{ $r->name === 'member' ? $r->permissions->whereIn('name', \App\Models\User::$defaultMemberPermissions)->count() : $r->permissions->count() }},
             @endforeach
         },
 
@@ -562,14 +562,15 @@
                             :class="activeMatrixRole === '{{ $r->name }}' ? 'bg-white/20 text-current' : 'bg-zinc-200/80 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300'"
                             class="px-1.5 py-0.2 rounded-full text-[11px] font-mono font-bold"
                         >
-                            {{ $r->permissions->count() }}
+                            {{ $r->name === 'member' ? $r->permissions->whereIn('name', \App\Models\User::$defaultMemberPermissions)->count() : $r->permissions->count() }}
                         </span>
                     </button>
                 @endforeach
             </div>
 
             <div class="text-[13px] text-zinc-500 dark:text-zinc-400 font-medium shrink-0 hidden sm:block">
-                <span class="font-bold text-zinc-900 dark:text-white" x-text="roleCounts[activeMatrixRole] || 0"></span> of {{ $allPermissions->count() }} active
+                <span class="font-bold text-zinc-900 dark:text-white" x-text="roleCounts[activeMatrixRole] || 0"></span> of 
+                <span x-text="activeMatrixRole === 'member' ? '{{ count(\App\Models\User::$defaultMemberPermissions) }}' : '{{ $allPermissions->count() }}'"></span> active
             </div>
         </div>
 
@@ -577,15 +578,42 @@
         @foreach($roles as $role)
             @php
                 $rolePermissions = $role->permissions->pluck('name')->toArray();
+                $isMemberRole = ($role->name === 'member');
+
+                // For 'member' role, hide unrealistic administrative & officer permissions.
+                // Only realistic self-service permissions are shown.
+                $displayModules = $permissionsByModule->map(function ($perms) use ($isMemberRole) {
+                    if ($isMemberRole) {
+                        return $perms->filter(fn($p) => in_array($p->name, \App\Models\User::$defaultMemberPermissions, true));
+                    }
+                    return $perms;
+                })->filter(fn($perms) => $perms->count() > 0);
             @endphp
             <div x-show="activeMatrixRole === '{{ $role->name }}'">
+                @if($isMemberRole)
+                    <!-- Friendly Explanatory Notice for Member Restrictions -->
+                    <div class="bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 rounded-[10px] p-4 mb-5 flex items-start gap-3 shadow-2xs">
+                        <span class="p-1.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-[8px] shrink-0 mt-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        </span>
+                        <div class="flex flex-col gap-1 text-xs text-blue-950 dark:text-blue-200">
+                            <span class="font-bold text-[13px]">Member Role Access & Restriction Policy</span>
+                            <p class="text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                                By default, all general members have full self-service portal access to savings, loans, payments, and attendance without needing any role assigned.
+                                Assign this <strong>Member</strong> role to a user only when you want to enforce specific restrictions on that user (e.g. unchecking loan applications or withdrawal requests).
+                                Unrealistic administrative and officer permissions (loan approvals, fund disbursements, cycle management, system tools) are hidden below.
+                            </p>
+                        </div>
+                    </div>
+                @endif
+
                 <form method="POST" action="{{ route('admin.roles.update-permissions', $role->id) }}">
                     @csrf
                     @method('PUT')
 
                     <!-- Clean 3-Column Responsive Grid of Module Cards -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-6">
-                        @foreach($permissionsByModule as $moduleName => $perms)
+                        @foreach($displayModules as $moduleName => $perms)
                             <div class="bg-white dark:bg-zinc-900 border border-zinc-200/60 dark:border-zinc-800/60 rounded-[10px] p-4 flex flex-col justify-between shadow-2xs">
                                 <div>
                                     <!-- Module Card Header -->
@@ -768,9 +796,18 @@
                                     class="mt-0.5 rounded text-brand-primary focus:ring-brand-primary border-zinc-300 dark:border-zinc-700 w-4 h-4 cursor-pointer"
                                 >
                                 <div class="flex flex-col min-w-0">
-                                    <span class="text-[13.5px] font-bold text-zinc-900 dark:text-white">{{ ucfirst($r->name) }}</span>
+                                    <span class="text-[13.5px] font-bold text-zinc-900 dark:text-white flex items-center gap-1.5">
+                                        {{ ucfirst($r->name) }}
+                                        @if($r->name === 'member')
+                                            <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40">Custom Restrictions</span>
+                                        @endif
+                                    </span>
                                     <span class="text-[11px] text-zinc-400 font-mono mt-0.5">
-                                        {{ $r->permissions->count() }} permissions
+                                        @if($r->name === 'member')
+                                            {{ $r->permissions->whereIn('name', \App\Models\User::$defaultMemberPermissions)->count() }} rules (for restricting member)
+                                        @else
+                                            {{ $r->permissions->count() }} permissions
+                                        @endif
                                     </span>
                                 </div>
                             </label>

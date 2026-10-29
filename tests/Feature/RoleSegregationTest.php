@@ -428,14 +428,447 @@ test('non-admin user with tools.manage permission can access tools dashboard', f
     $response->assertStatus(200);
 });
 
-test('non-admin user with roles.manage permission can access roles & duties matrix', function () {
-    $secretary = User::factory()->create();
-    $secretary->assignRole('General Secretary');
-    $secretary->givePermissionTo('roles.manage');
+function createTestMember(?User $user = null, array $attributes = []): Member
+{
+    $org = Organization::firstOrCreate(
+        ['name' => 'NFUH DMV'],
+        ['code' => 'NFUH-DMV', 'status' => 'active']
+    );
 
-    $response = $this->actingAs($secretary)->get(route('admin.roles.index'));
-    $response->assertStatus(200);
+    return Member::create(array_merge([
+        'organization_id' => $org->id,
+        'user_id' => $user?->id,
+        'member_code' => 'MEM' . rand(10000, 99999),
+        'first_name' => 'Test',
+        'last_name' => 'User',
+        'email' => $user?->email ?? ('test' . rand(1000, 9999) . '@example.com'),
+        'phone' => '240555' . rand(1000, 9999),
+        'status' => 'active',
+        'participates_in_savings' => true,
+        'participates_in_njangi' => true,
+    ], $attributes));
+}
+
+test('officer cannot approve their own loan application', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $member = createTestMember($admin);
+
+    $loan = LoanRequest::create([
+        'organization_id' => $member->organization_id,
+        'member_id' => $member->id,
+        'amount' => 1000,
+        'duration_months' => 6,
+        'purpose' => 'Business inventory',
+        'status' => 'pending_committee',
+    ]);
+
+    $response = $this->actingAs($admin)->post(route('loans.approve', $loan), [
+        'approved_amount' => 500,
+        'duration_months' => 6,
+        'interest_rate' => 1.0,
+    ]);
+
+    $response->assertRedirect();
+    $response->assertSessionHas('error');
+    expect(session('error'))->toContain('Segregation of Duties Violation');
+    expect($loan->fresh()->status)->toBe('pending_committee');
 });
 
+test('officer cannot approve their own savings deposit request', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
 
+    $member = createTestMember($admin, ['participates_in_savings' => true]);
 
+    $depositRequest = \App\Models\SavingsDepositRequest::create([
+        'member_id' => $member->id,
+        'organization_id' => $member->organization_id,
+        'amount' => 100,
+        'payment_method' => 'zelle',
+        'screenshot_path' => 'receipts/test.png',
+        'status' => 'pending',
+        'submitted_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)->post(route('savings.approve', $depositRequest));
+
+    $response->assertRedirect();
+    $response->assertSessionHas('error');
+    expect(session('error'))->toContain('Segregation of Duties Violation');
+    expect($depositRequest->fresh()->status)->toBe('pending');
+});
+
+test('officer cannot approve or disburse their own savings withdrawal request', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $member = createTestMember($admin, ['participates_in_savings' => true]);
+
+    // Give member initial savings balance
+    SavingsTransaction::create([
+        'member_id' => $member->id,
+        'organization_id' => $member->organization_id,
+        'amount' => 1000,
+        'previous_balance' => 0,
+        'new_balance' => 1000,
+        'type' => 'deposit',
+        'status' => 'approved',
+        'transaction_date' => now()->toDateString(),
+    ]);
+
+    $withdrawalRequest = SavingsWithdrawalRequest::create([
+        'member_id' => $member->id,
+        'organization_id' => $member->organization_id,
+        'gross_amount' => 200,
+        'fee_amount' => 2,
+        'fee_rate' => 1,
+        'net_amount' => 198,
+        'payout_method' => 'zelle',
+        'payout_details' => 'zelle: test@example.com',
+        'status' => 'pending',
+    ]);
+
+    $response = $this->actingAs($admin)->post(route('savings.withdrawal-requests.approve', $withdrawalRequest));
+
+    $response->assertRedirect();
+    $response->assertSessionHas('error');
+    expect(session('error'))->toContain('Segregation of Duties Violation');
+    expect($withdrawalRequest->fresh()->status)->toBe('pending');
+});
+
+test('officer cannot approve their own njangi payment submission', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $member = createTestMember($admin);
+
+    $cycle = \App\Models\NjangiCycle::create([
+        'organization_id' => $member->organization_id,
+        'name' => '2026 Test Cycle',
+        'year' => 2026,
+        'status' => 'active',
+    ]);
+
+    $session = \App\Models\NjangiSession::create([
+        'organization_id' => $member->organization_id,
+        'njangi_cycle_id' => $cycle->id,
+        'session_number' => 1,
+        'title' => 'Session 1',
+        'session_date' => now()->toDateString(),
+        'status' => 'open',
+    ]);
+
+    $submission = \App\Models\NjangiPaymentSubmission::create([
+        'njangi_cycle_id' => $cycle->id,
+        'njangi_session_id' => $session->id,
+        'member_id' => $member->id,
+        'organization_id' => $member->organization_id,
+        'amount' => 300,
+        'status' => 'pending',
+        'payment_method' => 'zelle',
+        'screenshot_path' => 'receipts/njangi.png',
+        'submitted_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)->post(route('njangi-submissions.approve', $submission));
+
+    $response->assertRedirect();
+    $response->assertSessionHas('error');
+    expect(session('error'))->toContain('Segregation of Duties Violation');
+    expect($submission->fresh()->status)->toBe('pending');
+});
+
+test('savings store requires notes on adjustment and records audit balance snapshots', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $member = createTestMember(null, ['participates_in_savings' => true]);
+
+    // Initial deposit
+    $init = $this->actingAs($admin)->post(route('savings.store'), [
+        'member_id' => $member->id,
+        'amount' => 500,
+        'type' => 'deposit',
+        'transaction_date' => now()->toDateString(),
+        'notes' => 'Initial deposit',
+    ]);
+    $init->assertRedirect(route('savings.index'));
+
+    $firstTx = SavingsTransaction::where('member_id', $member->id)->first();
+    expect((float)$firstTx->previous_balance)->toBe(0.0);
+    expect((float)$firstTx->new_balance)->toBe(500.0);
+    expect($firstTx->reviewed_by)->toBe($admin->id);
+
+    // Adjustment without notes should fail
+    $invalidAdjustment = $this->actingAs($admin)->post(route('savings.store'), [
+        'member_id' => $member->id,
+        'amount' => 50,
+        'type' => 'adjustment',
+        'transaction_date' => now()->toDateString(),
+        'notes' => '',
+    ]);
+    $invalidAdjustment->assertSessionHasErrors('notes');
+
+    // Adjustment with notes should succeed
+    $validAdjustment = $this->actingAs($admin)->post(route('savings.store'), [
+        'member_id' => $member->id,
+        'amount' => 50,
+        'type' => 'adjustment',
+        'transaction_date' => now()->toDateString(),
+        'notes' => 'Correcting rounding error from previous cycle',
+    ]);
+    $validAdjustment->assertRedirect(route('savings.index'));
+
+    $secondTx = SavingsTransaction::where('member_id', $member->id)->where('type', 'adjustment')->first();
+    expect((float)$secondTx->previous_balance)->toBe(500.0);
+    expect((float)$secondTx->new_balance)->toBe(550.0);
+    expect($secondTx->reviewed_by)->toBe($admin->id);
+
+    // Manual withdrawal queues for dual approval under SavingsWithdrawalRequest
+    $withdrawalRes = $this->actingAs($admin)->post(route('savings.store'), [
+        'member_id' => $member->id,
+        'amount' => 100,
+        'type' => 'withdrawal',
+        'transaction_date' => now()->toDateString(),
+        'notes' => 'Manual withdrawal for member',
+    ]);
+    $withdrawalRes->assertRedirect(route('savings.withdrawal-requests'));
+    $queuedRequest = \App\Models\SavingsWithdrawalRequest::where('member_id', $member->id)->first();
+    expect($queuedRequest)->not->toBeNull();
+    expect($queuedRequest->status)->toBe('pending');
+    expect((float)$queuedRequest->gross_amount)->toBe(100.0);
+});
+
+test('dual-role user can switch portal view mode between officer and member', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $member = createTestMember($admin);
+
+    // Switch to member mode
+    $switchResponse = $this->actingAs($admin)->get(route('portal.switch-mode', 'member'));
+    $switchResponse->assertRedirect(route('dashboard'));
+    expect(session('portal_mode'))->toBe('member');
+
+    // Access dashboard in member mode
+    $dashboardResponse = $this->actingAs($admin)->get(route('dashboard'));
+    $dashboardResponse->assertStatus(200);
+
+    // Switch back to officer mode
+    $switchBack = $this->actingAs($admin)->get(route('portal.switch-mode', 'officer'));
+    $switchBack->assertRedirect(route('dashboard'));
+    expect(session('portal_mode'))->toBe('officer');
+});
+
+test('member cannot apply for loans if loans.apply permission is revoked', function () {
+    $user = User::factory()->create();
+    $user->assignRole('member');
+
+    $member = createTestMember($user, ['participates_in_savings' => true]);
+
+    // Give savings balance so threshold is met
+    SavingsTransaction::create([
+        'member_id' => $member->id,
+        'organization_id' => $member->organization_id,
+        'amount' => 1000,
+        'previous_balance' => 0,
+        'new_balance' => 1000,
+        'type' => 'deposit',
+        'status' => 'approved',
+        'transaction_date' => now()->toDateString(),
+    ]);
+
+    // Ensure member role initially has loans.apply
+    $memberRole = Role::findByName('member');
+    expect($user->can('loans.apply'))->toBeTrue();
+
+    // Revoke loans.apply from member role
+    $memberRole->revokePermissionTo('loans.apply');
+    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+    expect($user->fresh()->can('loans.apply'))->toBeFalse();
+
+    // Try applying for loan -> should be 403 Forbidden
+    $response = $this->actingAs($user)->post(route('member.loans.request'), [
+        'amount' => 500,
+        'duration_months' => 6,
+        'purpose' => 'Test business loan',
+        'repayment_frequency' => 'monthly',
+    ]);
+    $response->assertStatus(403);
+
+    // Now re-grant loans.apply permission
+    $memberRole->givePermissionTo('loans.apply');
+    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+    expect($user->fresh()->can('loans.apply'))->toBeTrue();
+
+    // Create a guarantor member
+    $guarantor = createTestMember(null, ['participates_in_savings' => true]);
+
+    $successResponse = $this->actingAs($user)->post(route('member.loans.request'), [
+        'amount' => 500,
+        'duration_months' => 6,
+        'purpose' => 'Test business loan',
+        'repayment_frequency' => 'monthly',
+        'payout_method' => 'zelle',
+        'payout_details' => 'zelle: 2405551234',
+        'guarantors' => [$guarantor->id],
+    ]);
+    $successResponse->assertRedirect();
+    expect(LoanRequest::where('member_id', $member->id)->exists())->toBeTrue();
+});
+
+test('member cannot submit savings deposit if savings.deposit_request is revoked', function () {
+    $user = User::factory()->create();
+    $user->assignRole('member');
+    $member = createTestMember($user);
+
+    $memberRole = Role::findByName('member');
+    $memberRole->revokePermissionTo('savings.deposit_request');
+    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+    Storage::fake('public');
+    $file = UploadedFile::fake()->image('receipt.jpg');
+
+    $response = $this->actingAs($user)->post(route('member.savings.request'), [
+        'amount' => 200,
+        'payment_method' => 'zelle',
+        'receipt' => $file,
+        'notes' => 'Monthly deposit',
+    ]);
+    $response->assertStatus(403);
+});
+
+test('member cannot submit savings withdrawal if savings.withdraw_request is revoked', function () {
+    $user = User::factory()->create();
+    $user->assignRole('member');
+    $member = createTestMember($user);
+
+    // Initial deposit
+    SavingsTransaction::create([
+        'member_id' => $member->id,
+        'organization_id' => $member->organization_id,
+        'amount' => 1000,
+        'previous_balance' => 0,
+        'new_balance' => 1000,
+        'type' => 'deposit',
+        'status' => 'approved',
+        'transaction_date' => now()->toDateString(),
+    ]);
+
+    $memberRole = Role::findByName('member');
+    $memberRole->revokePermissionTo('savings.withdraw_request');
+    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+    $response = $this->actingAs($user)->post(route('member.savings.withdraw'), [
+        'gross_amount' => 100,
+        'payout_method' => 'zelle',
+        'zelle_name' => 'John Doe',
+        'zelle_contact' => 'john@example.com',
+    ]);
+    $response->assertStatus(403);
+});
+
+test('member cannot submit njangi payment if njangi.submit_payment is revoked', function () {
+    $user = User::factory()->create();
+    $user->assignRole('member');
+    $member = createTestMember($user);
+
+    $cycle = \App\Models\NjangiCycle::create([
+        'organization_id' => $member->organization_id,
+        'name' => 'Cycle 2026',
+        'year' => 2026,
+        'status' => 'active',
+    ]);
+
+    $session = \App\Models\NjangiSession::create([
+        'organization_id' => $member->organization_id,
+        'njangi_cycle_id' => $cycle->id,
+        'session_number' => 1,
+        'title' => 'Session 1',
+        'session_date' => now()->toDateString(),
+        'status' => 'open',
+    ]);
+
+    $memberRole = Role::findByName('member');
+    $memberRole->revokePermissionTo('njangi.submit_payment');
+    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+    Storage::fake('public');
+    $file = UploadedFile::fake()->image('payment.jpg');
+
+    $response = $this->actingAs($user)->post(route('member.submissions.store'), [
+        'njangi_session_id' => $session->id,
+        'amount' => 100,
+        'is_attending' => 1,
+        'screenshot' => $file,
+    ]);
+    $response->assertStatus(403);
+});
+
+test('user without member role has full general member portal access by default', function () {
+    $user = User::factory()->create();
+    // Do NOT assign any roles!
+    expect($user->roles()->count())->toBe(0);
+
+    // General self-service permissions should all be granted automatically
+    expect($user->can('loans.apply'))->toBeTrue();
+    expect($user->can('loans.view_own'))->toBeTrue();
+    expect($user->can('savings.deposit_request'))->toBeTrue();
+    expect($user->can('savings.withdraw_request'))->toBeTrue();
+    expect($user->can('savings.view_own'))->toBeTrue();
+    expect($user->can('njangi.submit_payment'))->toBeTrue();
+    expect($user->can('njangi.view_own'))->toBeTrue();
+    expect($user->can('attendance.rsvp'))->toBeTrue();
+    expect($user->can('attendance.view_own'))->toBeTrue();
+
+    // Administrative permissions should NOT be granted
+    expect($user->can('roles.manage'))->toBeFalse();
+    expect($user->can('settings.manage'))->toBeFalse();
+    expect($user->can('tools.manage'))->toBeFalse();
+    expect($user->can('members.manage'))->toBeFalse();
+    expect($user->can('loans.approve'))->toBeFalse();
+    expect($user->can('loans.disburse'))->toBeFalse();
+    expect($user->can('savings.record_deposit'))->toBeFalse();
+    expect($user->can('attendance.clear_records'))->toBeFalse();
+});
+
+test('assigning member role allows admin to enforce specific restrictions on that user', function () {
+    $user = User::factory()->create();
+    $member = createTestMember($user);
+
+    // Without member role, user can apply for loans
+    expect($user->can('loans.apply'))->toBeTrue();
+
+    // Admin explicitly assigns 'member' role to apply restrictions
+    $user->assignRole('member');
+    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+    // Remove loans.apply from member role
+    $memberRole = Role::findByName('member');
+    $memberRole->revokePermissionTo('loans.apply');
+    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+    // Now the user with 'member' role is restricted from applying for loans!
+    expect($user->fresh()->can('loans.apply'))->toBeFalse();
+    expect($user->fresh()->can('savings.deposit_request'))->toBeTrue(); // other permissions still work
+});
+
+test('member role matrix tab only renders realistic member permissions and hides administrative permissions', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $response = $this->actingAs($admin)->get(route('admin.roles.index', ['tab' => 'matrix', 'role' => 'member']));
+    $response->assertStatus(200);
+
+    // Realistic self-service permissions are present
+    $response->assertSee('Apply for Loans');
+    $response->assertSee('Deposit Request');
+    $response->assertSee('Submit Payment');
+    $response->assertSee('Submit RSVP');
+
+    // Member policy banner is displayed
+    $response->assertSee('Member Role Access', false);
+    $response->assertSee('all general members have full self-service portal access');
+});

@@ -105,13 +105,25 @@ class SavingsController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $rules = [
             'member_id' => ['required', 'exists:members,id'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'type' => ['required', 'in:deposit,withdrawal,adjustment'],
             'transaction_date' => ['required', 'date'],
-            'notes' => ['nullable', 'string', 'max:1000'],
-        ]);
+            'notes' => [
+                $request->input('type') === 'adjustment' ? 'required' : 'nullable',
+                'string',
+                $request->input('type') === 'adjustment' ? 'min:5' : 'nullable',
+                'max:1000'
+            ],
+        ];
+
+        $messages = [
+            'notes.required' => 'The notes field is required when type is adjustment.',
+            'notes.min' => 'The adjustment reason must be at least 5 characters.',
+        ];
+
+        $validated = $request->validate($rules, $messages);
 
         $member = Member::findOrFail($validated['member_id']);
 
@@ -120,14 +132,86 @@ class SavingsController extends Controller
             $member->update(['participates_in_savings' => true]);
         }
 
+        // Calculate previous balance from approved transactions
+        $currentDeposits = (float) SavingsTransaction::where('member_id', $member->id)
+            ->where('status', 'approved')
+            ->whereIn('type', ['deposit', 'adjustment'])
+            ->sum('amount');
+        $currentWithdrawals = (float) SavingsTransaction::where('member_id', $member->id)
+            ->where('status', 'approved')
+            ->where('type', 'withdrawal')
+            ->sum('amount');
+        $previousBalance = max(0, $currentDeposits - $currentWithdrawals);
+
+        $amount = (float) $validated['amount'];
+
+        if ($validated['type'] === 'withdrawal') {
+            if ($previousBalance < $amount) {
+                return redirect()->back()->withErrors(['amount' => 'Withdrawal amount ($' . number_format($amount, 2) . ') exceeds available savings balance of $' . number_format($previousBalance, 2) . '.'])->withInput();
+            }
+
+            $feePercent = (float) (Setting::first()?->savings_withdrawal_fee_percent ?? 2.00);
+            $feeAmount = round($amount * ($feePercent / 100), 2);
+            $netAmount = round($amount - $feeAmount, 2);
+
+            // Create official withdrawal request with pending status so it enters the standard dual-control approval workflow
+            SavingsWithdrawalRequest::create([
+                'member_id' => $member->id,
+                'organization_id' => $member->organization_id,
+                'gross_amount' => $amount,
+                'fee_rate' => $feePercent,
+                'fee_amount' => $feeAmount,
+                'net_amount' => $netAmount,
+                'payout_method' => 'cash',
+                'payout_details' => $validated['notes'] ?: 'Manual Office Withdrawal Request',
+                'notes' => $validated['notes'] ?: ('Manual withdrawal entered by ' . (Auth::user()?->name ?? 'Admin')),
+                'status' => 'pending',
+            ]);
+
+            return redirect()
+                ->route('savings.withdrawal-requests')
+                ->with('success', 'Manual withdrawal of $' . number_format($amount, 2) . ' submitted for ' . $member->name . '. It is now queued under Pending Withdrawal Requests for review and disbursement.');
+        }
+
+        if ($validated['type'] === 'adjustment') {
+            $isNegative = $request->input('adjustment_direction') === 'negative' || (float)$request->input('amount') < 0 || str_starts_with(trim($request->input('notes')), '-');
+            if ($isNegative && $previousBalance < abs($amount)) {
+                return redirect()->back()->withErrors(['amount' => 'Adjustment cannot result in a negative savings balance.'])->withInput();
+            }
+            $newBalance = $isNegative ? max(0, $previousBalance - abs($amount)) : ($previousBalance + $amount);
+
+            SavingsTransaction::create([
+                'member_id' => $member->id,
+                'organization_id' => $member->organization_id,
+                'amount' => $amount,
+                'previous_balance' => $previousBalance,
+                'new_balance' => $newBalance,
+                'type' => 'adjustment',
+                'status' => 'approved',
+                'transaction_date' => $validated['transaction_date'],
+                'notes' => $validated['notes'],
+                'reviewed_by' => Auth::id(),
+                'reviewed_at' => now(),
+            ]);
+
+            return redirect()
+                ->route('savings.index')
+                ->with('success', 'Savings adjustment recorded successfully. Audit ledger updated with previous/new balance snapshots and officer timestamp.');
+        }
+
+        $newBalance = $previousBalance + $amount;
         SavingsTransaction::create([
             'member_id' => $member->id,
             'organization_id' => $member->organization_id,
-            'amount' => $validated['amount'],
-            'type' => $validated['type'],
+            'amount' => $amount,
+            'previous_balance' => $previousBalance,
+            'new_balance' => $newBalance,
+            'type' => 'deposit',
             'status' => 'approved',
             'transaction_date' => $validated['transaction_date'],
-            'notes' => $validated['notes'],
+            'notes' => $validated['notes'] ?? null,
+            'reviewed_by' => Auth::id(),
+            'reviewed_at' => now(),
         ]);
 
         return redirect()
@@ -144,6 +228,10 @@ class SavingsController extends Controller
             return redirect()->back()->with('error', 'This request is not pending.');
         }
 
+        if (\App\Support\SegregationGuard::isSelf(Auth::user(), $depositRequest->member_id)) {
+            return redirect()->back()->with('error', 'Segregation of Duties Violation: You cannot review or approve your own deposit request. Another authorized officer must review this transaction.');
+        }
+
         $depositRequest->update([
             'status' => 'approved',
             'reviewed_by' => Auth::id(),
@@ -151,15 +239,31 @@ class SavingsController extends Controller
             'review_note' => $request->input('review_note'),
         ]);
 
+        // Calculate audit balance
+        $currentDeposits = (float) SavingsTransaction::where('member_id', $depositRequest->member_id)
+            ->where('status', 'approved')
+            ->whereIn('type', ['deposit', 'adjustment'])
+            ->sum('amount');
+        $currentWithdrawals = (float) SavingsTransaction::where('member_id', $depositRequest->member_id)
+            ->where('status', 'approved')
+            ->where('type', 'withdrawal')
+            ->sum('amount');
+        $previousBalance = max(0, $currentDeposits - $currentWithdrawals);
+        $newBalance = $previousBalance + (float) $depositRequest->amount;
+
         // Create actual financial ledger entry on approval
         SavingsTransaction::create([
             'member_id' => $depositRequest->member_id,
             'organization_id' => $depositRequest->organization_id,
             'amount' => $depositRequest->amount,
+            'previous_balance' => $previousBalance,
+            'new_balance' => $newBalance,
             'type' => 'deposit',
             'status' => 'approved',
-            'transaction_date' => $depositRequest->submitted_at->toDateString(),
+            'transaction_date' => $depositRequest->submitted_at ? $depositRequest->submitted_at->toDateString() : now()->toDateString(),
             'notes' => 'Approved deposit request. ' . $depositRequest->notes,
+            'reviewed_by' => Auth::id(),
+            'reviewed_at' => now(),
         ]);
 
         return redirect()
@@ -174,6 +278,10 @@ class SavingsController extends Controller
     {
         if ($depositRequest->status !== 'pending') {
             return redirect()->back()->with('error', 'This request is not pending.');
+        }
+
+        if (\App\Support\SegregationGuard::isSelf(Auth::user(), $depositRequest->member_id)) {
+            return redirect()->back()->with('error', 'Segregation of Duties Violation: You cannot review or reject your own deposit request.');
         }
 
         $request->validate([
@@ -200,6 +308,10 @@ class SavingsController extends Controller
         $user = Auth::user();
         if (!$user) {
             return redirect()->route('login');
+        }
+
+        if (!$user->hasRole('admin') && !$user->can('savings.view_own') && !$user->can('savings.deposit_request') && !$user->can('savings.withdraw_request')) {
+            abort(403, 'Unauthorized action. You do not have permission to view savings records.');
         }
 
         $member = MemberResolver::fromUser($user);
@@ -241,6 +353,10 @@ class SavingsController extends Controller
             return redirect()->route('login');
         }
 
+        if (!$user->hasRole('admin') && !$user->can('savings.deposit_request')) {
+            abort(403, 'Unauthorized action. You do not have permission to submit savings deposit requests.');
+        }
+
         $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
@@ -275,7 +391,7 @@ class SavingsController extends Controller
      */
     public function transactions(Request $request)
     {
-        $query = SavingsTransaction::with('member');
+        $query = SavingsTransaction::with(['member', 'reviewer', 'withdrawalRequest.reviewer', 'withdrawalRequest.disbursedBy']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -319,6 +435,10 @@ class SavingsController extends Controller
             return redirect()->route('login');
         }
 
+        if (!$user->hasRole('admin') && !$user->can('savings.view_own') && !$user->can('savings.deposit_request')) {
+            abort(403, 'Unauthorized action. You do not have permission to view savings deposit requests.');
+        }
+
         $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
@@ -356,7 +476,7 @@ class SavingsController extends Controller
      */
     public function adminRequests(Request $request)
     {
-        $query = SavingsDepositRequest::with('member');
+        $query = SavingsDepositRequest::with(['member', 'reviewer']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -405,6 +525,10 @@ class SavingsController extends Controller
         $user = Auth::user();
         if (!$user) {
             return redirect()->route('login');
+        }
+
+        if (!$user->hasRole('admin') && !$user->can('savings.withdraw_request')) {
+            abort(403, 'Unauthorized action. You do not have permission to request savings withdrawals.');
         }
 
         $member = MemberResolver::fromUser($user);
@@ -513,6 +637,10 @@ class SavingsController extends Controller
             return redirect()->route('login');
         }
 
+        if (!$user->hasRole('admin') && !$user->can('savings.view_own') && !$user->can('savings.withdraw_request')) {
+            abort(403, 'Unauthorized action. You do not have permission to view savings withdrawal requests.');
+        }
+
         $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
@@ -605,21 +733,40 @@ class SavingsController extends Controller
             return redirect()->back()->with('error', 'This withdrawal request is not pending.');
         }
 
+        if (\App\Support\SegregationGuard::isSelf($user, $withdrawalRequest->member_id)) {
+            return redirect()->back()->with('error', 'Segregation of Duties Violation: You cannot review or approve your own withdrawal request. Another authorized officer must review this request.');
+        }
+
         $member = $withdrawalRequest->member;
         if ($member->available_savings_balance < (float) $withdrawalRequest->gross_amount) {
             return redirect()->back()->with('error', 'Member does not have sufficient available savings balance ($' . number_format($member->available_savings_balance, 2) . ') to approve this withdrawal.');
         }
 
         DB::transaction(function () use ($withdrawalRequest, $member, $request) {
+            $currentDeposits = (float) SavingsTransaction::where('member_id', $member->id)
+                ->where('status', 'approved')
+                ->whereIn('type', ['deposit', 'adjustment'])
+                ->sum('amount');
+            $currentWithdrawals = (float) SavingsTransaction::where('member_id', $member->id)
+                ->where('status', 'approved')
+                ->where('type', 'withdrawal')
+                ->sum('amount');
+            $previousBalance = max(0, $currentDeposits - $currentWithdrawals);
+            $newBalance = max(0, $previousBalance - (float)$withdrawalRequest->gross_amount);
+
             // Create pending ledger transaction to distinguish pending payouts from completed withdrawals
             $transaction = SavingsTransaction::create([
                 'member_id' => $member->id,
                 'organization_id' => $member->organization_id,
                 'amount' => $withdrawalRequest->gross_amount,
+                'previous_balance' => $previousBalance,
+                'new_balance' => $newBalance,
                 'type' => 'withdrawal',
                 'status' => 'pending', // Pending payout until disbursed!
                 'transaction_date' => now()->toDateString(),
                 'notes' => "Member withdrawal payout ($" . number_format($withdrawalRequest->net_amount, 2) . ") + " . number_format($withdrawalRequest->fee_rate, 2) . "% Admin Fee ($" . number_format($withdrawalRequest->fee_amount, 2) . ") via " . ucfirst(str_replace('_', ' ', $withdrawalRequest->payout_method)) . " (Pending Disbursement)",
+                'reviewed_by' => Auth::id(),
+                'reviewed_at' => now(),
             ]);
 
             $withdrawalRequest->update([
@@ -646,6 +793,10 @@ class SavingsController extends Controller
 
         if ($withdrawalRequest->status !== 'approved') {
             return redirect()->back()->with('error', 'Withdrawal request must be approved before disbursement.');
+        }
+
+        if (\App\Support\SegregationGuard::isSelf($user, $withdrawalRequest->member_id)) {
+            return redirect()->back()->with('error', 'Segregation of Duties Violation: You cannot disburse your own withdrawal.');
         }
 
         $rules = [
@@ -683,13 +834,25 @@ class SavingsController extends Controller
 
             $notes = "Member withdrawal payout ($" . number_format($withdrawalRequest->net_amount, 2) . ") + " . number_format($withdrawalRequest->fee_rate, 2) . "% Admin Fee ($" . number_format($withdrawalRequest->fee_amount, 2) . ") via " . ucfirst(str_replace('_', ' ', $validated['disbursement_method'])) . $refNote;
 
+            $currentDeposits = (float) SavingsTransaction::where('member_id', $withdrawalRequest->member_id)
+                ->where('status', 'approved')
+                ->whereIn('type', ['deposit', 'adjustment'])
+                ->sum('amount');
+            $currentWithdrawals = (float) SavingsTransaction::where('member_id', $withdrawalRequest->member_id)
+                ->where('status', 'approved')
+                ->where('type', 'withdrawal')
+                ->sum('amount');
+            $prevBal = max(0, $currentDeposits - $currentWithdrawals);
+            $newBal = max(0, $prevBal - (float)$withdrawalRequest->gross_amount);
+
             // Update or create linked SavingsTransaction and mark as approved (completed withdrawal)
             if ($withdrawalRequest->savings_transaction_id) {
                 $transaction = SavingsTransaction::find($withdrawalRequest->savings_transaction_id);
                 if ($transaction) {
                     $transaction->update([
                         'status' => 'approved',
-                        'screenshot_path' => $proofPath,
+                        'previous_balance' => $prevBal,
+                        'new_balance' => $newBal,
                         'transaction_date' => $validated['disbursement_date'],
                         'notes' => $notes,
                         'reviewed_by' => Auth::id(),
@@ -701,9 +864,10 @@ class SavingsController extends Controller
                     'member_id' => $withdrawalRequest->member_id,
                     'organization_id' => $withdrawalRequest->organization_id,
                     'amount' => $withdrawalRequest->gross_amount,
+                    'previous_balance' => $prevBal,
+                    'new_balance' => $newBal,
                     'type' => 'withdrawal',
                     'status' => 'approved',
-                    'screenshot_path' => $proofPath,
                     'transaction_date' => $validated['disbursement_date'],
                     'notes' => $notes,
                     'reviewed_by' => Auth::id(),
@@ -744,6 +908,10 @@ class SavingsController extends Controller
 
         if (!in_array($withdrawalRequest->status, ['pending', 'approved'])) {
             return redirect()->back()->with('error', 'Cannot reject request at this stage.');
+        }
+
+        if (\App\Support\SegregationGuard::isSelf($user, $withdrawalRequest->member_id)) {
+            return redirect()->back()->with('error', 'Segregation of Duties Violation: You cannot reject your own withdrawal request.');
         }
 
         $validated = $request->validate([

@@ -155,6 +155,12 @@
                     <td class="py-2.5 px-3">
                         <div class="flex items-center justify-center">
                             @if($req->status === 'pending')
+                                @if(\App\Support\SegregationGuard::isSelf(auth()->user(), $req->member_id))
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/80 select-none" title="Segregation of Duties: A peer officer must review your personal submission">
+                                        <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+                                        Self (Peer Review)
+                                    </span>
+                                @else
                                 <div class="flex items-center gap-1.5">
                                     <x-premium-button
                                         type="button"
@@ -189,16 +195,32 @@
                                         Reject
                                     </x-premium-button>
                                 </div>
+                                @endif
                             @else
-                                <div class="text-xs">
+                                <div class="flex flex-col items-center justify-center text-xs gap-0.5">
                                     @if($req->status === 'approved')
-                                        <span class="text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider inline-flex items-center gap-1">
+                                        <span class="text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider inline-flex items-center gap-1" title="Approved by {{ $req->reviewer?->name ?? 'Officer' }} on {{ $req->reviewed_at ? $req->reviewed_at->format('M d, Y h:i A') : 'N/A' }}{{ $req->review_note ? ' | Note: ' . $req->review_note : '' }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Approved
                                         </span>
+                                        @if($req->reviewer)
+                                            <span class="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium leading-tight">
+                                                by {{ $req->reviewer->name }}
+                                            </span>
+                                        @endif
                                     @elseif($req->status === 'rejected')
-                                        <span class="text-red-650 dark:text-red-400 font-bold uppercase tracking-wider inline-flex items-center gap-1" title="Reason: {{ $req->review_note }}">
+                                        <span class="text-rose-600 dark:text-rose-400 font-bold uppercase tracking-wider inline-flex items-center gap-1" title="Rejected by {{ $req->reviewer?->name ?? 'Officer' }} on {{ $req->reviewed_at ? $req->reviewed_at->format('M d, Y h:i A') : 'N/A' }}{{ $req->review_note ? ' | Reason: ' . $req->review_note : '' }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> Rejected
                                         </span>
+                                        @if($req->reviewer)
+                                            <span class="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium leading-tight">
+                                                by {{ $req->reviewer->name }}
+                                            </span>
+                                        @endif
+                                        @if($req->review_note)
+                                            <span class="text-[10px] text-rose-600/80 dark:text-rose-400/80 italic max-w-[140px] truncate" title="Rejection Reason: {{ $req->review_note }}">
+                                                "{{ $req->review_note }}"
+                                            </span>
+                                        @endif
                                     @endif
                                 </div>
                             @endif

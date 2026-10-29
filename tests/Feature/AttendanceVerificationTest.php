@@ -13,8 +13,7 @@ uses(RefreshDatabase::class);
 
 function createAttendanceTestContext(): array
 {
-    Role::firstOrCreate(['name' => 'admin']);
-    Role::firstOrCreate(['name' => 'member']);
+    (new \Database\Seeders\RolesAndPermissionsSeeder())->run();
 
     $org = Organization::firstOrCreate(['name' => 'NFUH DMV Org']);
 

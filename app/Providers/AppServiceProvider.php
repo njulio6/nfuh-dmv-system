@@ -40,5 +40,19 @@ class AppServiceProvider extends ServiceProvider
         } catch (\Exception $e) {
             // Prevent migration and command locks before table exists
         }
+
+        // Global Authorization Gate Resolution
+        \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
+            if ($user instanceof \App\Models\User) {
+                if ($user->hasRole('admin')) {
+                    return true;
+                }
+                // Members without the 'member' role implicitly enjoy all general member permissions.
+                // If the 'member' role IS assigned, standard Spatie role permissions take over to enforce restrictions.
+                if (!$user->hasRole('member') && in_array($ability, \App\Models\User::$defaultMemberPermissions, true)) {
+                    return true;
+                }
+            }
+        });
     }
 }

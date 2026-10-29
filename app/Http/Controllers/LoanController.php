@@ -139,6 +139,10 @@ class LoanController extends Controller
             return redirect()->back()->with('error', 'Loan is not in pending committee review status.');
         }
 
+        if (\App\Support\SegregationGuard::isSelf($user, $loan->member_id)) {
+            return redirect()->back()->with('error', 'Segregation of Duties Violation: You cannot approve your own loan application. Another authorized committee officer must review this application.');
+        }
+
         $validated = $request->validate([
             'notes' => ['nullable', 'string', 'max:2000'],
             'duration_months' => ['nullable', 'integer', 'min:1'],
@@ -174,6 +178,10 @@ class LoanController extends Controller
 
         if ($loan->status !== 'approved') {
             return redirect()->back()->with('error', 'Loan must be approved before disbursement.');
+        }
+
+        if (\App\Support\SegregationGuard::isSelf($user, $loan->member_id)) {
+            return redirect()->back()->with('error', 'Segregation of Duties Violation: You cannot disburse your own loan application.');
         }
 
         $rules = [
@@ -234,6 +242,10 @@ class LoanController extends Controller
 
         if (!in_array($loan->status, ['pending_guarantors', 'pending_committee', 'approved'])) {
             return redirect()->back()->with('error', 'Cannot reject loan at this stage.');
+        }
+
+        if (\App\Support\SegregationGuard::isSelf($user, $loan->member_id)) {
+            return redirect()->back()->with('error', 'Segregation of Duties Violation: You cannot reject your own loan application.');
         }
 
         if (!$request->filled('rejection_reason') && $request->filled('notes')) {
@@ -302,6 +314,10 @@ class LoanController extends Controller
             return redirect()->route('login');
         }
 
+        if (!$user->hasRole('admin') && !$user->can('loans.view_own') && !$user->can('loans.apply')) {
+            abort(403, 'Unauthorized action. You do not have permission to view loans.');
+        }
+
         $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
@@ -348,6 +364,10 @@ class LoanController extends Controller
         $user = Auth::user();
         if (!$user) {
             return redirect()->route('login');
+        }
+
+        if (!$user->hasRole('admin') && !$user->can('loans.view_own') && !$user->can('loans.apply')) {
+            abort(403, 'Unauthorized action. You do not have permission to view loan applications.');
         }
 
         $member = MemberResolver::fromUser($user);
@@ -422,6 +442,10 @@ class LoanController extends Controller
         $user = Auth::user();
         if (!$user) {
             return redirect()->route('login');
+        }
+
+        if (!$user->hasRole('admin') && !$user->can('loans.apply')) {
+            abort(403, 'Unauthorized action. You do not have permission to apply for loans.');
         }
 
         $member = MemberResolver::fromUser($user);
@@ -581,6 +605,10 @@ class LoanController extends Controller
             return redirect()->route('login');
         }
 
+        if (!$user->hasRole('admin') && !$user->can('loans.view_own')) {
+            abort(403, 'Unauthorized action. You do not have permission to view loan statements.');
+        }
+
         $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
@@ -733,6 +761,10 @@ class LoanController extends Controller
             return redirect()->route('login');
         }
 
+        if (!$user->hasRole('admin') && !$user->can('loans.view_own')) {
+            abort(403, 'Unauthorized action. You do not have permission to submit repayment requests.');
+        }
+
         $member = MemberResolver::fromUser($user);
         if (!$member) {
             abort(403, 'Unauthorized action. User profile is not linked to a member record.');
@@ -790,6 +822,10 @@ class LoanController extends Controller
         $user = Auth::user();
         if (!$user) {
             return redirect()->route('login');
+        }
+
+        if (!$user->hasRole('admin') && !$user->can('loans.view_own')) {
+            abort(403, 'Unauthorized action. You do not have permission to view repayment requests.');
         }
 
         $member = MemberResolver::fromUser($user);
@@ -877,6 +913,10 @@ class LoanController extends Controller
             return redirect()->back()->with('error', 'This request is not pending.');
         }
 
+        if (\App\Support\SegregationGuard::isSelf(Auth::user(), $repaymentRequest->member_id)) {
+            return redirect()->back()->with('error', 'Segregation of Duties Violation: You cannot approve your own loan repayment request.');
+        }
+
         $loan = $repaymentRequest->loanRequest;
         $remaining = $loan->remaining_balance;
         if ($repaymentRequest->amount > $remaining + 0.01) {
@@ -917,6 +957,10 @@ class LoanController extends Controller
     {
         if ($repaymentRequest->status !== 'pending') {
             return redirect()->back()->with('error', 'This request is not pending.');
+        }
+
+        if (\App\Support\SegregationGuard::isSelf(Auth::user(), $repaymentRequest->member_id)) {
+            return redirect()->back()->with('error', 'Segregation of Duties Violation: You cannot reject your own loan repayment request.');
         }
 
         $request->validate([

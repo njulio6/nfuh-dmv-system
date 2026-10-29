@@ -41,6 +41,12 @@ class NjangiPaymentSubmissionController extends Controller
         NjangiPaymentSubmission $submission,
         ApproveNjangiPaymentSubmission $service
     ) {
+        if (\App\Support\SegregationGuard::isSelf(auth()->user(), $submission->member_id)) {
+            return redirect()
+                ->back()
+                ->with('error', 'Segregation of Duties Violation: You cannot review or approve your own Njangi payment submission. Another authorized officer must review this submission.');
+        }
+
         try {
             $reviewerUserId = auth()->id();
 
@@ -62,6 +68,12 @@ class NjangiPaymentSubmissionController extends Controller
             return redirect()
                 ->back()
                 ->with('error', 'Only pending submissions can be rejected.');
+        }
+
+        if (\App\Support\SegregationGuard::isSelf(auth()->user(), $submission->member_id)) {
+            return redirect()
+                ->back()
+                ->with('error', 'Segregation of Duties Violation: You cannot review or reject your own Njangi payment submission.');
         }
 
         $submission->update([

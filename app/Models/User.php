@@ -13,6 +13,66 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasRoles;
 
+    /**
+     * Standard self-service permissions granted to members by default.
+     * Members do not need the 'member' role assigned to access these.
+     * The 'member' role is assigned only when an administrator wants to enforce restrictions.
+     */
+    public static array $defaultMemberPermissions = [
+        'attendance.rsvp',
+        'attendance.view_own',
+        'loans.apply',
+        'loans.view_own',
+        'savings.deposit_request',
+        'savings.withdraw_request',
+        'savings.view_own',
+        'njangi.submit_payment',
+        'njangi.view_own',
+    ];
+
+    /**
+     * Determine if the user has the given permission.
+     *
+     * Architectural Access Policy:
+     * 1. Super administrators ('admin') possess full authority across all modules.
+     * 2. Direct permissions or permissions via assigned roles (e.g. Treasurer, Loan Committee) are checked.
+     * 3. If the user HAS the 'member' role assigned: their member access is strictly governed by
+     *    the permissions granted to that role (enabling admins to restrict specific capabilities).
+     * 4. If the user DOES NOT have the 'member' role assigned: they automatically have all general member access.
+     */
+    public function hasPermissionTo($permission, ?string $guardName = null): bool
+    {
+        $permName = is_string($permission) ? $permission : ($permission->name ?? null);
+
+        // 1. Super admin always has unrestricted access
+        if ($this->hasRole('admin')) {
+            return true;
+        }
+
+        // 2. Standard Spatie check (direct permissions or via assigned roles)
+        try {
+            $perm = $this->filterPermission($permission, $guardName);
+            if ($this->hasDirectPermission($perm) || $this->hasPermissionViaRole($perm)) {
+                return true;
+            }
+        } catch (\Throwable $e) {
+            // Permission does not exist in DB or guard mismatch; continue evaluation
+        }
+
+        // 3. If 'member' role is explicitly assigned to this user, restrictions are enforced:
+        // Do NOT grant implicit default access (they only get what the role or direct assignment gave them).
+        if ($this->hasRole('member')) {
+            return false;
+        }
+
+        // 4. Default policy: If 'member' role is NOT assigned, the user has all general member self-service permissions
+        if ($permName && in_array($permName, self::$defaultMemberPermissions, true)) {
+            return true;
+        }
+
+        return false;
+    }
+
     public function member(): HasOne
     {
         return $this->hasOne(Member::class);

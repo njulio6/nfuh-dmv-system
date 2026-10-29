@@ -376,21 +376,47 @@
         $canTools = $authUser && ($authUser->hasRole('admin') || $authUser->can('tools.manage'));
         $canAdministration = $canSettings || $canRoles || $canTools;
 
-        $isAdminUser = false;
+        $isOfficerUser = false;
         if ($authUser) {
             if (!$member) {
-                $isAdminUser = true;
+                $isOfficerUser = true;
             } else {
-                $adminRoles = ['Secretary', 'Treasurer', 'Financial Secretary', 'Loan Officer', 'Lead Nformi'];
+                $adminRoles = ['Secretary', 'Treasurer', 'Financial Secretary', 'Loan Officer', 'Lead Nformi', 'Loan Committee', 'General Secretary'];
                 $hasLegacyRole = $member->roles()->whereIn('name', $adminRoles)->exists();
                 $hasSpatieRole = method_exists($authUser, 'hasAnyRole') && $authUser->hasAnyRole(['admin', 'Treasurer', 'Financial Secretary', 'Loan Committee', 'General Secretary']);
-                $isAdminUser = $hasLegacyRole || $hasSpatieRole || $canAdministration;
+                $isOfficerUser = $hasLegacyRole || $hasSpatieRole || $canAdministration;
             }
         }
+        $isAdminUser = $isOfficerUser;
+        $isDualRoleUser = ($isOfficerUser && $member !== null);
 
-        // Dynamic Route-based Page Title
+        // Dynamic Route-based Page Title & Mode
         $routeName = Route::currentRouteName();
-        $isMemberPortal = str_starts_with($routeName ?? '', 'member.') || ($routeName === 'dashboard' && !$isAdminUser);
+        $sessionMode = session('portal_mode', ($isOfficerUser ? 'officer' : 'member'));
+
+        if (str_starts_with($routeName ?? '', 'member.')) {
+            $activePortalMode = 'member';
+        } elseif (
+            str_starts_with($routeName ?? '', 'members.') ||
+            str_starts_with($routeName ?? '', 'titles.') ||
+            str_starts_with($routeName ?? '', 'njangi-cycles.') ||
+            str_starts_with($routeName ?? '', 'njangi-submissions.') ||
+            str_starts_with($routeName ?? '', 'njangi-contributions.') ||
+            str_starts_with($routeName ?? '', 'savings.index') ||
+            str_starts_with($routeName ?? '', 'savings.transactions') ||
+            str_starts_with($routeName ?? '', 'savings.requests') ||
+            str_starts_with($routeName ?? '', 'savings.withdrawal-requests') ||
+            str_starts_with($routeName ?? '', 'loans.') ||
+            str_starts_with($routeName ?? '', 'admin.') ||
+            str_starts_with($routeName ?? '', 'settings.')
+        ) {
+            $activePortalMode = 'officer';
+        } else {
+            $activePortalMode = ($isDualRoleUser ? $sessionMode : ($isOfficerUser ? 'officer' : 'member'));
+        }
+
+        $showOfficerNav = ($activePortalMode === 'officer' && $isOfficerUser);
+        $isMemberPortal = ($activePortalMode === 'member');
         $pageTitle = 'Dashboard';
         if ($routeName) {
             if (str_starts_with($routeName, 'members')) $pageTitle = 'Members';
@@ -497,7 +523,7 @@
                     </div>
                 </div>
 
-                @if($isAdminUser)
+                @if($showOfficerNav)
                     <!-- Group 2: Core Directory -->
                     <div class="relative flex w-full min-w-0 flex-col px-2 py-1">
                         <div 
@@ -758,6 +784,7 @@
                     </div>
                     @endif
                 @else
+                    @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('njangi.view_own') || auth()->user()?->can('njangi.submit_payment') || auth()->user()?->can('attendance.view_own') || auth()->user()?->can('attendance.rsvp'))
                     <!-- Group: Njangi (Member) -->
                     <div class="relative flex w-full min-w-0 flex-col px-2 py-1">
                         <div 
@@ -767,6 +794,7 @@
                             Njangi
                         </div>
                         <div class="flex w-full min-w-0 flex-col gap-1">
+                            @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('njangi.view_own') || auth()->user()?->can('njangi.submit_payment'))
                             <!-- My Njangi Payment -->
                             <a 
                                 href="{{ route('member.njangi-payments') }}" 
@@ -778,6 +806,9 @@
                                 <i data-lucide="credit-card" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('member.njangi-payments') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
                                 <span x-show="!sidebarCollapsed" class="truncate">My Njangi Payment</span>
                             </a>
+                            @endif
+
+                            @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('njangi.view_own'))
                             <!-- Njangi Report -->
                             <a 
                                 href="{{ route('member.njangi-report') }}" 
@@ -789,6 +820,9 @@
                                 <i data-lucide="file-text" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('member.njangi-report') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
                                 <span x-show="!sidebarCollapsed" class="truncate">Njangi Report</span>
                             </a>
+                            @endif
+
+                            @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('attendance.view_own') || auth()->user()?->can('attendance.rsvp'))
                             <!-- Meeting Attendance -->
                             <a 
                                 href="{{ route('member.attendance') }}" 
@@ -800,8 +834,11 @@
                                 <i data-lucide="calendar-check" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('member.attendance') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
                                 <span x-show="!sidebarCollapsed" class="truncate">Meeting Attendance</span>
                             </a>
+                            @endif
                         </div>
                     </div>
+                    @endif
+                    @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('savings.view_own') || auth()->user()?->can('savings.deposit_request') || auth()->user()?->can('savings.withdraw_request'))
                     <!-- Group: Savings (Member) -->
                     <div class="relative flex w-full min-w-0 flex-col px-2 py-1">
                         <div 
@@ -846,7 +883,9 @@
                             </a>
                         </div>
                     </div>
+                    @endif
 
+                    @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('loans.view_own') || auth()->user()?->can('loans.apply'))
                     <!-- Group: Loans (Member) -->
                     <div class="relative flex w-full min-w-0 flex-col px-2 py-1">
                         <div 
@@ -891,6 +930,7 @@
                             </a>
                         </div>
                     </div>
+                    @endif
                 @endif
             </nav>
 
@@ -1003,78 +1043,114 @@
                     <button 
                         type="button"
                         @click="mobileSidebarOpen = false" 
-                        class="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
+                        class="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors touch-manipulation cursor-pointer shrink-0"
                         title="Close Menu"
                         aria-label="Close navigation menu"
                     >
-                        <i data-lucide="x" class="w-5 h-5"></i>
+                        <i data-lucide="x" class="w-5 h-5 pointer-events-none"></i>
                     </button>
                 </div>
+
+                @if($isDualRoleUser)
+                    <div class="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800">
+                        <div class="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">Switch Portal View</div>
+                        <div class="grid grid-cols-2 gap-1 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold">
+                            <a href="{{ route('portal.switch-mode', 'officer') }}" 
+                               @click="mobileSidebarOpen = false"
+                               class="min-h-[40px] flex items-center justify-center rounded-lg transition-all text-center {{ $activePortalMode === 'officer' ? 'bg-white dark:bg-zinc-900 text-zinc-950 dark:text-white shadow-xs font-bold' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white' }}">
+                                Officer View
+                            </a>
+                            <a href="{{ route('portal.switch-mode', 'member') }}" 
+                               @click="mobileSidebarOpen = false"
+                               class="min-h-[40px] flex items-center justify-center rounded-lg transition-all text-center {{ $activePortalMode === 'member' ? 'bg-white dark:bg-zinc-900 text-zinc-950 dark:text-white shadow-xs font-bold' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white' }}">
+                                Member View
+                            </a>
+                        </div>
+                    </div>
+                @endif
 
                 <!-- Mobile Menu Scrollable Nav -->
                 <nav class="flex-1 overflow-y-auto px-3 space-y-4">
                     <div class="space-y-1">
                         <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Overview</span>
-                        <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('dashboard') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                            <i data-lucide="layout-grid" class="w-[18px] h-[18px] shrink-0"></i>
+                        <a href="{{ route('dashboard') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('dashboard') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <i data-lucide="layout-grid" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                             <span>Dashboard</span>
                         </a>
                     </div>
-                    @if(!$isAdminUser)
+                    @if(!$showOfficerNav)
+                        @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('njangi.view_own') || auth()->user()?->can('njangi.submit_payment') || auth()->user()?->can('attendance.view_own') || auth()->user()?->can('attendance.rsvp'))
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Njangi</span>
-                            <a href="{{ route('member.njangi-payments') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.njangi-payments') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="credit-card" class="w-[18px] h-[18px] shrink-0"></i>
+                            @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('njangi.view_own') || auth()->user()?->can('njangi.submit_payment'))
+                            <a href="{{ route('member.njangi-payments') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.njangi-payments') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="credit-card" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>My Njangi Payment</span>
                             </a>
-                            <a href="{{ route('member.njangi-report') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.njangi-report') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="file-text" class="w-[18px] h-[18px] shrink-0"></i>
+                            @endif
+
+                            @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('njangi.view_own'))
+                            <a href="{{ route('member.njangi-report') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.njangi-report') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="file-text" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Njangi Report</span>
                             </a>
-                            <a href="{{ route('member.attendance') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.attendance') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="calendar-check" class="w-[18px] h-[18px] shrink-0"></i>
+                            @endif
+
+                            @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('attendance.view_own') || auth()->user()?->can('attendance.rsvp'))
+                            <a href="{{ route('member.attendance') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.attendance') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="calendar-check" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Meeting Attendance</span>
                             </a>
+                            @endif
                         </div>
+                        @endif
 
+                        @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('savings.view_own') || auth()->user()?->can('savings.deposit_request') || auth()->user()?->can('savings.withdraw_request'))
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Savings</span>
-                            <a href="{{ route('member.savings') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.savings') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="piggy-bank" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('member.savings') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.savings') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="piggy-bank" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>My Savings</span>
                             </a>
-                            <a href="{{ route('member.savings.requests') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.savings.requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="inbox" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('member.savings.requests') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.savings.requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="inbox" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Deposit Requests</span>
                             </a>
+                            <a href="{{ route('member.savings.withdrawals') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.savings.withdrawals') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="arrow-up-right" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
+                                <span>Withdrawals</span>
+                            </a>
                         </div>
+                        @endif
 
+                        @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('loans.view_own') || auth()->user()?->can('loans.apply'))
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Loans</span>
-                            <a href="{{ route('member.loans') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.loans') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="trending-up" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('member.loans') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.loans') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="trending-up" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Overview</span>
                             </a>
-                            <a href="{{ route('member.loans.applications') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.loans.applications') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="inbox" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('member.loans.applications') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.loans.applications') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="inbox" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>My Applications</span>
                             </a>
-                            <a href="{{ route('member.loans.repayment-requests') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('member.loans.repayment-requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="history" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('member.loans.repayment-requests') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.loans.repayment-requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="history" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Repay Requests</span>
                             </a>
                         </div>
+                        @endif
                     @endif
 
-                    @if($isAdminUser)
+                    @if($showOfficerNav)
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Membership</span>
-                            <a href="{{ route('members.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('members.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="users" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('members.index') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('members.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="users" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Members</span>
                             </a>
-                            <a href="{{ route('titles.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('titles.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="award" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('titles.index') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('titles.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="award" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Traditional Titles</span>
                             </a>
                         </div>
@@ -1083,20 +1159,20 @@
 
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Njangi</span>
-                            <a href="{{ route('njangi-cycles.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('njangi-cycles.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="refresh-cw" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('njangi-cycles.index') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('njangi-cycles.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="refresh-cw" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Cycles</span>
                             </a>
-                            <a href="{{ route('njangi-submissions.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('njangi-submissions.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="receipt" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('njangi-submissions.index') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('njangi-submissions.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="receipt" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Audit Submissions</span>
                             </a>
-                            <a href="{{ route('njangi-contributions.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('njangi-contributions.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="wallet" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('njangi-contributions.index') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('njangi-contributions.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="wallet" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Ledger</span>
                             </a>
-                            <a href="{{ route('attendance.desk') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('attendance.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="clipboard-check" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('attendance.desk') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('attendance.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="clipboard-check" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Attendance Desk</span>
                             </a>
                         </div>
@@ -1104,16 +1180,16 @@
                         {{-- Admin: Savings flat section --}}
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Savings</span>
-                            <a href="{{ route('savings.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('savings.index') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="piggy-bank" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('savings.index') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('savings.index') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="piggy-bank" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Balances</span>
                             </a>
-                            <a href="{{ route('savings.requests') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('savings.requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="inbox" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('savings.requests') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('savings.requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="inbox" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Deposit Requests</span>
                             </a>
-                            <a href="{{ route('savings.transactions') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('savings.transactions') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="history" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('savings.transactions') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('savings.transactions') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="history" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Transactions</span>
                             </a>
                         </div>
@@ -1121,16 +1197,16 @@
                         {{-- Admin: Loans flat section --}}
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Loans</span>
-                            <a href="{{ route('loans.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('loans.index') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="landmark" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('loans.index') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('loans.index') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="landmark" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Overview</span>
                             </a>
-                            <a href="{{ route('loans.sub-statuses') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('loans.sub-statuses') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="tag" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('loans.sub-statuses') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('loans.sub-statuses') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="tag" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Sub Statuses</span>
                             </a>
-                            <a href="{{ route('loans.repayment-requests') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('loans.repayment-requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="inbox" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('loans.repayment-requests') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('loans.repayment-requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="inbox" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Repay Requests</span>
                             </a>
                         </div>
@@ -1140,20 +1216,20 @@
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Administration</span>
                             @if($canSettings)
-                            <a href="{{ route('settings.edit') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('settings.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="settings" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('settings.edit') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('settings.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="settings" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Settings</span>
                             </a>
                             @endif
                             @if($canRoles)
-                            <a href="{{ route('admin.roles.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('admin.roles.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="shield-check" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('admin.roles.index') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('admin.roles.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="shield-check" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Roles & Duties</span>
                             </a>
                             @endif
                             @if($canTools)
-                            <a href="{{ route('admin.tools') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium {{ Route::is('admin.tools') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
-                                <i data-lucide="terminal" class="w-[18px] h-[18px] shrink-0"></i>
+                            <a href="{{ route('admin.tools') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('admin.tools') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                                <i data-lucide="terminal" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>System Tools</span>
                             </a>
                             @endif
@@ -1198,20 +1274,22 @@
                 <!-- Left: Burger Menu, Collapse Toggle & Page Title -->
                 <div class="flex items-center gap-2 sm:gap-4 min-w-0">
                     <button 
-                        @click="mobileSidebarOpen = !mobileSidebarOpen" 
-                        class="lg:hidden p-1.5 sm:p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shrink-0 cursor-pointer"
-                        aria-label="Toggle navigation menu"
+                        type="button"
+                        @click.stop="mobileSidebarOpen = !mobileSidebarOpen" 
+                        class="lg:hidden min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95 transition-all touch-manipulation cursor-pointer"
+                        aria-label="Open navigation menu"
                     >
-                        <i data-lucide="menu" class="w-4 h-4"></i>
+                        <i data-lucide="menu" class="w-5 h-5 pointer-events-none"></i>
                     </button>
                     
                     <!-- Sidebar Collapse Button inside the Header (Panel Toggle) -->
                     <button 
+                        type="button"
                         @click="sidebarCollapsed = !sidebarCollapsed" 
                         class="hidden lg:flex p-2.5 border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl text-zinc-700 dark:text-zinc-300 glass-button hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all cursor-pointer shadow-xs"
                         title="Toggle Sidebar"
                     >
-                        <i data-lucide="sidebar" class="w-[15px] h-[15px]"></i>
+                        <i data-lucide="sidebar" class="w-[15px] h-[15px] pointer-events-none"></i>
                     </button>
                     
                     <div class="flex items-center lg:border-l lg:border-zinc-200/60 lg:dark:border-zinc-800/60 lg:pl-4 select-none min-w-0">
@@ -1219,6 +1297,19 @@
                             {{ $pageTitle }}
                         </span>
                     </div>
+
+                    @if($isDualRoleUser)
+                        <div class="hidden md:flex items-center p-0.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold select-none ml-2">
+                            <a href="{{ route('portal.switch-mode', 'officer') }}" 
+                               class="px-2.5 py-1 rounded-lg transition-all {{ $activePortalMode === 'officer' ? 'bg-white dark:bg-zinc-900 text-zinc-950 dark:text-white shadow-xs font-bold' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white' }}">
+                                Officer View
+                            </a>
+                            <a href="{{ route('portal.switch-mode', 'member') }}" 
+                               class="px-2.5 py-1 rounded-lg transition-all {{ $activePortalMode === 'member' ? 'bg-white dark:bg-zinc-900 text-zinc-950 dark:text-white shadow-xs font-bold' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white' }}">
+                                Member View
+                            </a>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Right: Search, Theme Toggle & Avatar Circle -->

@@ -336,6 +336,15 @@
                                     </p>
                                 </div>
                             </div>
+                        @elseif(!auth()->user()?->hasRole('admin') && !auth()->user()?->can('attendance.rsvp'))
+                            <!-- Permission to RSVP not granted -->
+                            <div class="p-6 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-center space-y-3">
+                                <i data-lucide="shield-alert" class="w-8 h-8 text-amber-600 mx-auto"></i>
+                                <h4 class="text-sm font-bold text-amber-900 dark:text-amber-200">Self Check-In Disabled</h4>
+                                <p class="text-xs text-amber-700 dark:text-amber-300">
+                                    Your account does not have permission to self check in or RSVP. Please see an officer at the Attendance Desk to record your attendance.
+                                </p>
+                            </div>
                         @else
                             <!-- Ready to Check In -->
                             <div class="space-y-4">

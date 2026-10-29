@@ -54,7 +54,7 @@ class NjangiTestSeeder extends Seeder
                 'organization_id' => $org->id,
                 'njangi_cycle_id' => $cycle->id,
                 'session_number' => $i,
-                'session_date' => now()->copy()->startOfMonth()->addMonths($i - 6)->toDateString(),
+                'session_date' => now()->copy()->startOfMonth()->addMonths($i - 6)->firstOfMonth(\Carbon\CarbonInterface::SATURDAY)->toDateString(),
                 'title' => date('F', mktime(0, 0, 0, (($i - 1) % 12) + 1, 10)) . ' Session',
                 'status' => $i < 6 ? 'closed' : ($i == 6 ? 'open' : 'scheduled'),
             ]);

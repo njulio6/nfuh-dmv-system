@@ -70,21 +70,28 @@
                     <td class="py-2.5 px-3 text-zinc-500 dark:text-zinc-450">{{ $submission->submitted_at }}</td>
                     <td class="py-2.5 px-3 text-center">
                         @if ($submission->status === 'pending')
-                            <div class="flex gap-2 justify-center">
-                                <form method="POST" action="{{ route('njangi-submissions.approve', $submission) }}">
-                                    @csrf
-                                    <x-premium-button type="submit" variant="primary" class="text-[10px] py-1 px-2.5">
-                                        Approve
-                                    </x-premium-button>
-                                </form>
+                            @if(\App\Support\SegregationGuard::isSelf(auth()->user(), $submission->member_id))
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/80 select-none" title="Segregation of Duties: A peer officer must review your personal payment submission">
+                                    <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+                                    Self (Peer Review)
+                                </span>
+                            @else
+                                <div class="flex gap-2 justify-center">
+                                    <form method="POST" action="{{ route('njangi-submissions.approve', $submission) }}">
+                                        @csrf
+                                        <x-premium-button type="submit" variant="primary" class="text-[10px] py-1 px-2.5">
+                                            Approve
+                                        </x-premium-button>
+                                    </form>
 
-                                <form method="POST" action="{{ route('njangi-submissions.reject', $submission) }}">
-                                    @csrf
-                                    <x-premium-button type="submit" variant="danger" class="text-[10px] py-1 px-2.5">
-                                        Reject
-                                    </x-premium-button>
-                                </form>
-                            </div>
+                                    <form method="POST" action="{{ route('njangi-submissions.reject', $submission) }}">
+                                        @csrf
+                                        <x-premium-button type="submit" variant="danger" class="text-[10px] py-1 px-2.5">
+                                            Reject
+                                        </x-premium-button>
+                                    </form>
+                                </div>
+                            @endif
                         @else
                             <span class="text-zinc-400 dark:text-zinc-600 text-xs font-semibold">Audited</span>
                         @endif
