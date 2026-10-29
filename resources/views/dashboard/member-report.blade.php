@@ -95,7 +95,7 @@
 
     @if(!$activeCycle || !$cycleMember)
         <!-- Enrollment Warning Card -->
-        <x-premium-card class="-mt-1">
+        <x-premium-card>
             <div class="flex flex-col items-center justify-center text-center p-8 gap-3">
                 <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-full text-zinc-300 dark:text-zinc-700">
                     <i data-lucide="alert-circle" class="w-8 h-8"></i>

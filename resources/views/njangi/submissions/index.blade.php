@@ -9,7 +9,7 @@
     back-title="{{ isset($activeCycle) ? 'Back to Cycle' : 'Back to Dashboard' }}"
 />
 
-<div class="-mt-3" x-data="{ receiptModalOpen: false, receiptUrl: '' }">
+<div x-data="{ receiptModalOpen: false, receiptUrl: '' }">
     <x-premium-card>
         <x-premium-table :headers="[
             'ID',

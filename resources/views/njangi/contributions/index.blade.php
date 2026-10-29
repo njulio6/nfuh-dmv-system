@@ -10,7 +10,7 @@
 />
 
 <!-- Ledger Summary Cards (Aeroco Gradient System) -->
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 -mt-3 mb-6">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
     <div class="stat-card-gradient p-5 flex flex-col justify-between gap-3.5 group">
         <div class="flex items-center gap-3">
             <div class="stat-icon-badge p-2 shrink-0">

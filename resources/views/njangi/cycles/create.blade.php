@@ -9,7 +9,7 @@
         back-url="{{ route('njangi-cycles.index') }}" 
     />
 
-    <form action="{{ route('njangi-cycles.store') }}" method="POST" class="flex flex-col gap-6 w-full -mt-3">
+    <form action="{{ route('njangi-cycles.store') }}" method="POST" class="flex flex-col gap-6 w-full">
         @csrf
 
         <!-- Validation Errors Alert Block -->

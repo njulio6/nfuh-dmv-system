@@ -8,7 +8,7 @@
     back-title="Back to Cycle"
 />
 
-<div class="-mt-3">
+<div>
     <x-premium-card title="Select Cycle Members">
         <form method="POST" action="{{ route('njangi-sessions.beneficiaries.update', $njangiSession) }}" class="flex flex-col gap-6">
             @csrf

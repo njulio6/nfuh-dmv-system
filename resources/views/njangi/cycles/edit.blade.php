@@ -9,7 +9,7 @@
         back-url="{{ route('njangi-cycles.show', $njangiCycle) }}" 
     />
 
-    <form action="{{ route('njangi-cycles.update', $njangiCycle) }}" method="POST" class="flex flex-col gap-6 w-full -mt-3">
+    <form action="{{ route('njangi-cycles.update', $njangiCycle) }}" method="POST" class="flex flex-col gap-6 w-full">
         @csrf
         @method('PUT')
 

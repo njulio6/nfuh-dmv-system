@@ -7,7 +7,7 @@
     back-url="{{ route('njangi-cycles.index') }}" 
 />
 
-<div class="-mt-3">
+<div>
     <x-premium-card>
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-150 dark:border-zinc-800 pb-4 mb-5">
             <div>

@@ -10,7 +10,7 @@
     />
 
     <!-- Main Split Layout Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start -mt-3">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         
         <!-- Left: Quick Info Badge Card -->
         <x-premium-card class="lg:col-span-4 items-center text-center">

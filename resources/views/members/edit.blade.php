@@ -9,7 +9,7 @@
         back-url="{{ route('members.index') }}" 
     />
 
-    <form action="{{ route('members.update', $member) }}" method="POST" class="flex flex-col gap-6 w-full -mt-3">
+    <form action="{{ route('members.update', $member) }}" method="POST" class="flex flex-col gap-6 w-full">
         @csrf
         @method('PUT')
 

@@ -1,5 +1,5 @@
 @props(['title', 'subtitle' => null, 'backUrl' => null, 'backTitle' => 'Go Back'])
-<div class="flex items-center gap-4 border-b border-zinc-100 dark:border-zinc-800/60 pb-3 mb-0 {{ $attributes->get('class') }}">
+<div class="flex items-center gap-4 border-b border-zinc-100 dark:border-zinc-800/60 pb-4 mb-6 {{ $attributes->get('class') }}">
     @if($backUrl)
         <a 
             href="{{ $backUrl }}" 
@@ -9,12 +9,12 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
         </a>
     @endif
-    <div class="flex flex-col gap-0.5">
+    <div class="flex flex-col gap-1">
         <h1 class="text-xl font-bold text-zinc-950 dark:text-white tracking-tight font-display">
             {{ $title }}
         </h1>
         @if($subtitle)
-            <p class="text-xs text-zinc-550 dark:text-zinc-400 font-medium">
+            <p class="text-xs text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
                 {{ $subtitle }}
             </p>
         @endif
