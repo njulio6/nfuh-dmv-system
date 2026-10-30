@@ -133,12 +133,13 @@ class NjangiCycleController extends Controller
 
     public function addMembers(NjangiCycle $njangiCycle)
     {
-        if ($njangiCycle->sessions()->exists()) {
+        $hasStartedSessions = $njangiCycle->sessions()->where('status', '!=', 'scheduled')->exists() || $njangiCycle->contributions()->exists();
+        if ($hasStartedSessions) {
             $settings = Setting::first();
             if (!$settings || !$settings->allow_mid_cycle_enrollment) {
                 return redirect()
                     ->route('njangi-cycles.show', $njangiCycle)
-                    ->with('error', 'Cannot add members after sessions have been generated.');
+                    ->with('error', 'Cannot add members after sessions have started.');
             }
         }
 
@@ -175,7 +176,8 @@ class NjangiCycleController extends Controller
 
     public function addSingleMember(Request $request, NjangiCycle $njangiCycle)
     {
-        if ($njangiCycle->sessions()->exists()) {
+        $hasStartedSessions = $njangiCycle->sessions()->where('status', '!=', 'scheduled')->exists() || $njangiCycle->contributions()->exists();
+        if ($hasStartedSessions) {
             $settings = Setting::first();
             if (!$settings || !$settings->allow_mid_cycle_enrollment) {
                 return redirect()
@@ -270,7 +272,8 @@ class NjangiCycleController extends Controller
 
     public function removeMember(NjangiCycle $njangiCycle, NjangiCycleMember $njangiCycleMember)
     {
-        if ($njangiCycle->sessions()->exists()) {
+        $hasStartedSessions = $njangiCycle->sessions()->where('status', '!=', 'scheduled')->exists() || $njangiCycle->contributions()->exists();
+        if ($hasStartedSessions) {
             $settings = Setting::first();
             if (!$settings || !$settings->allow_mid_cycle_removal) {
                 return redirect()
@@ -311,10 +314,11 @@ class NjangiCycleController extends Controller
     }
 public function assignBenefitOrder(NjangiCycle $njangiCycle)
 {
-    if ($njangiCycle->sessions()->exists()) {
+    $hasStartedSessions = $njangiCycle->sessions()->where('status', '!=', 'scheduled')->exists() || $njangiCycle->contributions()->exists();
+    if ($hasStartedSessions) {
         return redirect()
             ->route('njangi-cycles.show', $njangiCycle)
-            ->with('error', 'Cannot assign benefit order after sessions have been generated.');
+            ->with('error', 'Cannot assign benefit order after sessions have started.');
     }
 
     $cycleMembers = $njangiCycle->cycleMembers()

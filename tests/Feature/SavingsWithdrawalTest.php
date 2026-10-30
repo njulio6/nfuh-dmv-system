@@ -6,11 +6,11 @@ use App\Models\Organization;
 use App\Models\SavingsTransaction;
 use App\Models\SavingsWithdrawalRequest;
 use App\Models\Setting;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
-    Role::firstOrCreate(['name' => 'admin']);
-    Role::firstOrCreate(['name' => 'member']);
+    (new RolesAndPermissionsSeeder())->run();
 });
 
 function createMemberWithUser(float $savingsBalance = 1000.00): array {

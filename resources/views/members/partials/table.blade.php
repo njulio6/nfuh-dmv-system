@@ -6,8 +6,8 @@
     ['label' => 'Join Date'],
     ['label' => 'Email'],
     ['label' => 'Phone'],
-    ['label' => 'Title'],
-    ['label' => 'Roles'],
+    ['label' => 'Traditional Title'],
+    ['label' => 'Officer Roles'],
     ['label' => 'Status', 'width' => 'w-24', 'align' => 'center'],
     ['label' => 'Actions', 'width' => 'w-28', 'align' => 'center']
 ]" class="min-w-[700px]">
@@ -54,18 +54,18 @@
                         {{ $member->phone }}
                     </td>
 
-                    <!-- Title (Rank) Cell -->
+                    <!-- Title (Traditional Title) Cell -->
                     <td class="py-2.5 px-3">
-                        <span class="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/30 text-blue-750 dark:text-blue-300 rounded-lg text-xs font-bold uppercase tracking-wide">
+                        <span class="px-2.5 py-0.5 bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 rounded-md text-xs font-bold uppercase tracking-wide">
                             {{ $member->rank->name ?? 'Warrior' }}
                         </span>
                     </td>
 
-                    <!-- Roles Cell -->
+                    <!-- Officer Roles Cell -->
                     <td class="py-2.5 px-3">
                         <div class="flex flex-wrap gap-1">
                             @forelse ($member->roles as $role)
-                                <span class="inline-block px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                                <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-brand-primary/10 text-brand-primary border border-brand-primary/20">
                                     {{ $role->name }}
                                 </span>
                             @empty

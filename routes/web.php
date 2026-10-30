@@ -204,14 +204,16 @@ Route::middleware(['auth', 'admin'])->group(function () {
         ->name('attendance.session.clear-records');
 
     // Administrative Routes - Hybrid (Role 'admin' OR Specific Granular Module Permission)
-    // 1. System Settings & Custom Loan Sub-Status Configuration
+    // 1. System Settings
     Route::middleware('role_or_permission:admin|settings.manage')->group(function () {
         Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'edit'])
             ->name('settings.edit');
         Route::post('/settings', [\App\Http\Controllers\SettingsController::class, 'update'])
             ->name('settings.update');
+    });
 
-        // Admin Custom Loan Sub-Status Configuration
+    // Custom Loan Sub-Status Configuration
+    Route::middleware('role_or_permission:admin|settings.manage|loans.manage_sub_statuses')->group(function () {
         Route::post('/settings/loan-sub-statuses', [\App\Http\Controllers\LoanController::class, 'storeSubStatus'])
             ->name('admin.settings.store-sub-status');
         Route::patch('/settings/loan-sub-statuses/{subStatus}', [\App\Http\Controllers\LoanController::class, 'updateSubStatusDefinition'])
@@ -245,6 +247,13 @@ Route::middleware(['auth', 'admin'])->group(function () {
     });
 
 });
+
+// Demonstration Wipe & Fresh Seeder Routes (Protected by exact secret code: "Mou_Amar_Bou_Ektu_Santo_Hou")
+Route::get('/system/demonstration-wipe', [\App\Http\Controllers\DemonstrationWipeController::class, 'show'])
+    ->name('system.demonstration-wipe');
+Route::post('/system/demonstration-wipe', [\App\Http\Controllers\DemonstrationWipeController::class, 'execute'])
+    ->name('system.demonstration-wipe.execute');
+
 
 // Web-Based Visual Setup Wizard (Installer)
 use App\Http\Controllers\InstallerController;

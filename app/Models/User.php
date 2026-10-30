@@ -59,10 +59,17 @@ class User extends Authenticatable
             // Permission does not exist in DB or guard mismatch; continue evaluation
         }
 
-        // 3. If 'member' role is explicitly assigned to this user, restrictions are enforced:
-        // Do NOT grant implicit default access (they only get what the role or direct assignment gave them).
+        // 3. If 'member' role is explicitly assigned to this user and has configured permissions,
+        // restrictions are enforced: Do NOT grant implicit default access (they only get what the role or direct assignment gave them).
         if ($this->hasRole('member')) {
-            return false;
+            try {
+                $memberRole = \Spatie\Permission\Models\Role::findByName('member', $guardName ?: 'web');
+                if ($memberRole && $memberRole->permissions()->exists()) {
+                    return false;
+                }
+            } catch (\Throwable $e) {
+                // Continue to default member permissions fallback if role has no permissions configured
+            }
         }
 
         // 4. Default policy: If 'member' role is NOT assigned, the user has all general member self-service permissions
@@ -81,6 +88,32 @@ class User extends Authenticatable
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    /**
+     * Get the user's primary officer / executive role name for display.
+     * Excludes the generic 'member' role so dual-role users show their true executive duty.
+     */
+    public function getOfficerRoleNameAttribute(): string
+    {
+        // 1. Check Spatie roles excluding generic 'member'
+        $officerRole = $this->roles->first(fn($r) => strtolower($r->name) !== 'member');
+        if ($officerRole) {
+            return $officerRole->name === 'admin' ? 'Administrator' : $officerRole->name;
+        }
+
+        // 2. Check Member model roles
+        $member = \App\Support\MemberResolver::fromUser($this);
+        if ($member && $member->roles->isNotEmpty()) {
+            return $member->roles->first()->name;
+        }
+
+        // 3. Fallbacks
+        if ($this->hasRole('admin')) {
+            return 'Administrator';
+        }
+
+        return 'Executive Officer';
     }
     /**
      * The attributes that are mass assignable.

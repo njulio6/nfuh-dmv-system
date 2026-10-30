@@ -334,6 +334,166 @@
             animation: swift-up-premium 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
             opacity: 0;
         }
+        #mobile-hamburger-btn svg,
+        #mobile-hamburger-btn svg * {
+            pointer-events: none !important;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════ */
+        /* GLOBAL PRINT & PDF EXPORT STYLESHEET                               */
+        /* ═══════════════════════════════════════════════════════════════════ */
+        @media print {
+            @page {
+                size: letter portrait;
+                margin: 12mm 12mm 15mm 12mm;
+            }
+
+            /* Unconstrain viewport and scroll containers for true multi-page pagination */
+            html, body {
+                height: auto !important;
+                min-height: 100% !important;
+                overflow: visible !important;
+                background: #ffffff !important;
+                color: #09090b !important;
+                font-size: 11pt !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* Reset body and layout flex wrappers to standard block flow to prevent print layout overlap */
+            body,
+            body > div,
+            .flex.h-full.w-full,
+            .flex-grow.flex.flex-col,
+            main {
+                display: block !important;
+                position: static !important;
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                overflow: visible !important;
+                width: 100% !important;
+                float: none !important;
+            }
+
+            /* Unconstrain all overflow wrappers so content flows across all pages */
+            .overflow-hidden,
+            .overflow-y-auto,
+            .overflow-x-auto,
+            [class*="overflow-"] {
+                overflow: visible !important;
+                height: auto !important;
+                max-height: none !important;
+            }
+
+            .h-full,
+            .h-screen,
+            .min-h-0,
+            .min-h-screen,
+            .flex-grow {
+                height: auto !important;
+                min-height: 0 !important;
+            }
+
+            /* Hide application navigation shells, drawers, sidebars, buttons, tooltips, ambient backgrounds, and layout footer */
+            footer,
+            .no-print,
+            #desktop-sidebar,
+            #mobile-sidebar-drawer,
+            header,
+            nav,
+            aside,
+            button,
+            [role="tooltip"],
+            .sidebar-logo-container,
+            .ambient-mesh,
+            .fixed.inset-0.-z-10,
+            #mobile-hamburger-btn {
+                display: none !important;
+            }
+
+            /* Main document canvas */
+            main {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+                background: transparent !important;
+            }
+
+            /* Prevent awkward slicing of cards and tables across page boundaries */
+            .break-inside-avoid,
+            .rounded-2xl,
+            .rounded-xl,
+            table,
+            tr,
+            .card {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            table {
+                width: 100% !important;
+                min-width: 0 !important;
+                border-collapse: collapse !important;
+            }
+
+            thead {
+                display: table-header-group !important;
+            }
+
+            tbody tr {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            /* Force clean high-contrast light colors for crisp document printing */
+            .bg-white,
+            .dark\:bg-zinc-900,
+            .dark\:bg-zinc-950,
+            .glass-surface {
+                background: #ffffff !important;
+                color: #09090b !important;
+                border-color: #e4e4e7 !important;
+                box-shadow: none !important;
+            }
+
+            .dark\:border-zinc-800,
+            .dark\:border-zinc-800\/80,
+            .dark\:border-zinc-700 {
+                border-color: #e4e4e7 !important;
+            }
+
+            .text-white,
+            .dark\:text-white,
+            .dark\:text-zinc-100,
+            .dark\:text-zinc-200 {
+                color: #09090b !important;
+            }
+
+            .dark\:text-zinc-400,
+            .dark\:text-zinc-500 {
+                color: #52525b !important;
+            }
+
+            /* Un-truncate text on print */
+            .truncate {
+                overflow: visible !important;
+                text-overflow: clip !important;
+                white-space: normal !important;
+            }
+
+            /* Show elements marked print-only */
+            .print-only {
+                display: block !important;
+            }
+        }
+
+        .print-only {
+            display: none;
+        }
     </style>
 </head>
 <body 
@@ -341,6 +501,27 @@
         sidebarCollapsed: localStorage.getItem('sidebar-collapsed') === 'true',
         transitionActive: false,
         mobileSidebarOpen: false,
+        _lastSidebarToggle: 0,
+        toggleMobileSidebar(e) {
+            const now = Date.now();
+            if (now - this._lastSidebarToggle < 250) {
+                if (e && typeof e.preventDefault === 'function') e.preventDefault();
+                return;
+            }
+            this._lastSidebarToggle = now;
+            if (e) {
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+            }
+            this.mobileSidebarOpen = !this.mobileSidebarOpen;
+        },
+        closeMobileSidebar(e) {
+            if (e) {
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+            }
+            this.mobileSidebarOpen = false;
+        },
         darkMode: localStorage.getItem('theme') === 'dark',
         userMenuOpen: false,
         searchQuery: '',
@@ -352,6 +533,15 @@
                     document.documentElement.classList.add('dark');
                 } else {
                     document.documentElement.classList.remove('dark');
+                }
+            });
+            this.$watch('mobileSidebarOpen', val => {
+                if (val) {
+                    document.documentElement.classList.add('overflow-hidden');
+                    document.body.classList.add('overflow-hidden');
+                } else {
+                    document.documentElement.classList.remove('overflow-hidden');
+                    document.body.classList.remove('overflow-hidden');
                 }
             });
             var initialStyle = document.getElementById('initial-sidebar-style');
@@ -366,6 +556,7 @@
         $authUser = Auth::user();
         $member = $authUser ? \App\Support\MemberResolver::fromUser($authUser) : null;
         $roleName = $member ? $member->roles()->first()?->name : 'Warrior';
+        $officerRole = $authUser ? $authUser->officer_role_name : 'Executive Officer';
         $titleName = ($member && $member->rank) ? $member->rank->name : 'Warrior';
         $userInitials = $authUser 
             ? collect(explode(' ', $authUser->name))->map(fn($n) => mb_substr($n, 0, 1))->take(2)->join('') 
@@ -374,6 +565,7 @@
         $canSettings = $authUser && ($authUser->hasRole('admin') || $authUser->can('settings.manage'));
         $canRoles = $authUser && ($authUser->hasRole('admin') || $authUser->can('roles.manage'));
         $canTools = $authUser && ($authUser->hasRole('admin') || $authUser->can('tools.manage'));
+        $canAttendanceDesk = $authUser && ($authUser->hasRole('admin') || $authUser->can('attendance.mark'));
         $canAdministration = $canSettings || $canRoles || $canTools;
 
         $isOfficerUser = false;
@@ -602,6 +794,7 @@
                                 <span x-show="!sidebarCollapsed" class="truncate">Ledger</span>
                             </a>
 
+                            @if($canAttendanceDesk)
                             <!-- Attendance Desk -->
                             <a 
                                 href="{{ route('attendance.desk') }}" 
@@ -613,6 +806,7 @@
                                 <i data-lucide="clipboard-check" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('attendance.*') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
                                 <span x-show="!sidebarCollapsed" class="truncate">Attendance Desk</span>
                             </a>
+                            @endif
                         </div>
                     </div>
 
@@ -946,7 +1140,7 @@
                     </div>
                     <div class="flex flex-col min-w-0 flex-1 text-start leading-tight" x-show="!sidebarCollapsed">
                         <span class="text-sm font-semibold text-zinc-900 dark:text-white truncate leading-none">{{ $authUser->name ?? 'User' }}</span>
-                        <span class="text-xs text-zinc-500 dark:text-zinc-400 truncate leading-none mt-1">{{ $authUser->email ?? 'user@gmail.com' }}</span>
+                        <span class="text-xs text-zinc-500 dark:text-zinc-400 truncate leading-none mt-1">{{ $showOfficerNav ? $officerRole : ($titleName !== 'Warrior' ? $titleName : ($authUser->email ?? 'Member')) }}</span>
                     </div>
                     <i data-lucide="chevrons-up-down" class="text-zinc-400 flex-shrink-0 ms-auto size-3.5" x-show="!sidebarCollapsed"></i>
                 </div>
@@ -989,7 +1183,7 @@
         <div 
             x-show="mobileSidebarOpen" 
             x-cloak
-            @keydown.escape.window="mobileSidebarOpen = false"
+            @keydown.escape.window="closeMobileSidebar($event)"
             class="lg:hidden fixed inset-0 z-50 flex font-sans"
             role="dialog"
             aria-modal="true"
@@ -1003,7 +1197,8 @@
                 x-transition:leave="transition-opacity ease-linear duration-300"
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
-                @click="mobileSidebarOpen = false" 
+                @click="closeMobileSidebar($event)" 
+                @touchend.prevent.stop="closeMobileSidebar($event)"
                 class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
             ></div>
 
@@ -1016,6 +1211,8 @@
                 x-transition:leave="transition ease-in-out duration-300 transform"
                 x-transition:leave-start="translate-x-0"
                 x-transition:leave-end="-translate-x-full"
+                @click.stop
+                @touchend.stop
                 class="relative flex w-full max-w-xs flex-1 flex-col glass-surface pb-4 border-r border-zinc-200/40 dark:border-white/10 shadow-2xl bg-white dark:bg-zinc-900"
             >
                 <!-- Drawer Header: Brand + Close Button -->
@@ -1042,8 +1239,10 @@
                     <!-- Prominent In-Drawer Close Button -->
                     <button 
                         type="button"
-                        @click="mobileSidebarOpen = false" 
-                        class="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors touch-manipulation cursor-pointer shrink-0"
+                        @click="closeMobileSidebar($event)" 
+                        @touchend.prevent.stop="closeMobileSidebar($event)"
+                        class="min-w-[44px] min-h-[44px] p-2 flex items-center justify-center rounded-xl text-zinc-600 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 active:bg-zinc-200 dark:active:bg-zinc-700 select-none transition-colors touch-manipulation cursor-pointer shrink-0"
+                        style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;"
                         title="Close Menu"
                         aria-label="Close navigation menu"
                     >
@@ -1056,12 +1255,10 @@
                         <div class="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">Switch Portal View</div>
                         <div class="grid grid-cols-2 gap-1 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold">
                             <a href="{{ route('portal.switch-mode', 'officer') }}" 
-                               @click="mobileSidebarOpen = false"
                                class="min-h-[40px] flex items-center justify-center rounded-lg transition-all text-center {{ $activePortalMode === 'officer' ? 'bg-white dark:bg-zinc-900 text-zinc-950 dark:text-white shadow-xs font-bold' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white' }}">
                                 Officer View
                             </a>
                             <a href="{{ route('portal.switch-mode', 'member') }}" 
-                               @click="mobileSidebarOpen = false"
                                class="min-h-[40px] flex items-center justify-center rounded-lg transition-all text-center {{ $activePortalMode === 'member' ? 'bg-white dark:bg-zinc-900 text-zinc-950 dark:text-white shadow-xs font-bold' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white' }}">
                                 Member View
                             </a>
@@ -1070,10 +1267,10 @@
                 @endif
 
                 <!-- Mobile Menu Scrollable Nav -->
-                <nav class="flex-1 overflow-y-auto px-3 space-y-4">
+                <nav class="flex-1 overflow-y-auto px-3 space-y-4 overscroll-contain" style="-webkit-overflow-scrolling: touch;">
                     <div class="space-y-1">
                         <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Overview</span>
-                        <a href="{{ route('dashboard') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('dashboard') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                        <a href="{{ route('dashboard') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('dashboard') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                             <i data-lucide="layout-grid" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                             <span>Dashboard</span>
                         </a>
@@ -1083,21 +1280,21 @@
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Njangi</span>
                             @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('njangi.view_own') || auth()->user()?->can('njangi.submit_payment'))
-                            <a href="{{ route('member.njangi-payments') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.njangi-payments') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('member.njangi-payments') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.njangi-payments') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="credit-card" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>My Njangi Payment</span>
                             </a>
                             @endif
 
                             @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('njangi.view_own'))
-                            <a href="{{ route('member.njangi-report') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.njangi-report') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('member.njangi-report') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.njangi-report') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="file-text" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Njangi Report</span>
                             </a>
                             @endif
 
                             @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('attendance.view_own') || auth()->user()?->can('attendance.rsvp'))
-                            <a href="{{ route('member.attendance') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.attendance') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('member.attendance') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.attendance') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="calendar-check" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Meeting Attendance</span>
                             </a>
@@ -1108,15 +1305,15 @@
                         @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('savings.view_own') || auth()->user()?->can('savings.deposit_request') || auth()->user()?->can('savings.withdraw_request'))
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Savings</span>
-                            <a href="{{ route('member.savings') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.savings') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('member.savings') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.savings') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="piggy-bank" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>My Savings</span>
                             </a>
-                            <a href="{{ route('member.savings.requests') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.savings.requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('member.savings.requests') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.savings.requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="inbox" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Deposit Requests</span>
                             </a>
-                            <a href="{{ route('member.savings.withdrawals') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.savings.withdrawals') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('member.savings.withdrawals') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.savings.withdrawals') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="arrow-up-right" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Withdrawals</span>
                             </a>
@@ -1126,15 +1323,15 @@
                         @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('loans.view_own') || auth()->user()?->can('loans.apply'))
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Loans</span>
-                            <a href="{{ route('member.loans') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.loans') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('member.loans') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.loans') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="trending-up" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Overview</span>
                             </a>
-                            <a href="{{ route('member.loans.applications') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.loans.applications') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('member.loans.applications') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.loans.applications') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="inbox" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>My Applications</span>
                             </a>
-                            <a href="{{ route('member.loans.repayment-requests') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.loans.repayment-requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('member.loans.repayment-requests') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('member.loans.repayment-requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="history" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Repay Requests</span>
                             </a>
@@ -1145,11 +1342,11 @@
                     @if($showOfficerNav)
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Membership</span>
-                            <a href="{{ route('members.index') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('members.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('members.index') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('members.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="users" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Members</span>
                             </a>
-                            <a href="{{ route('titles.index') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('titles.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('titles.index') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('titles.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="award" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Traditional Titles</span>
                             </a>
@@ -1159,36 +1356,38 @@
 
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Njangi</span>
-                            <a href="{{ route('njangi-cycles.index') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('njangi-cycles.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('njangi-cycles.index') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('njangi-cycles.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="refresh-cw" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Cycles</span>
                             </a>
-                            <a href="{{ route('njangi-submissions.index') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('njangi-submissions.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('njangi-submissions.index') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('njangi-submissions.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="receipt" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Audit Submissions</span>
                             </a>
-                            <a href="{{ route('njangi-contributions.index') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('njangi-contributions.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('njangi-contributions.index') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('njangi-contributions.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="wallet" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Ledger</span>
                             </a>
-                            <a href="{{ route('attendance.desk') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('attendance.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            @if($canAttendanceDesk)
+                            <a href="{{ route('attendance.desk') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('attendance.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="clipboard-check" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Attendance Desk</span>
                             </a>
+                            @endif
                         </div>
 
                         {{-- Admin: Savings flat section --}}
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Savings</span>
-                            <a href="{{ route('savings.index') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('savings.index') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('savings.index') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('savings.index') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="piggy-bank" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Balances</span>
                             </a>
-                            <a href="{{ route('savings.requests') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('savings.requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('savings.requests') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('savings.requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="inbox" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Deposit Requests</span>
                             </a>
-                            <a href="{{ route('savings.transactions') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('savings.transactions') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('savings.transactions') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('savings.transactions') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="history" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Transactions</span>
                             </a>
@@ -1197,15 +1396,15 @@
                         {{-- Admin: Loans flat section --}}
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Loans</span>
-                            <a href="{{ route('loans.index') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('loans.index') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('loans.index') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('loans.index') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="landmark" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Overview</span>
                             </a>
-                            <a href="{{ route('loans.sub-statuses') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('loans.sub-statuses') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('loans.sub-statuses') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('loans.sub-statuses') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="tag" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Sub Statuses</span>
                             </a>
-                            <a href="{{ route('loans.repayment-requests') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('loans.repayment-requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('loans.repayment-requests') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('loans.repayment-requests') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="inbox" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Repay Requests</span>
                             </a>
@@ -1216,19 +1415,19 @@
                         <div class="space-y-1">
                             <span class="px-3 text-[11px] font-medium text-slate-400 dark:text-zinc-500 block mb-1.5">Administration</span>
                             @if($canSettings)
-                            <a href="{{ route('settings.edit') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('settings.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('settings.edit') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('settings.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="settings" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Settings</span>
                             </a>
                             @endif
                             @if($canRoles)
-                            <a href="{{ route('admin.roles.index') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('admin.roles.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('admin.roles.index') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('admin.roles.*') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="shield-check" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>Roles & Duties</span>
                             </a>
                             @endif
                             @if($canTools)
-                            <a href="{{ route('admin.tools') }}" @click="mobileSidebarOpen = false" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('admin.tools') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
+                            <a href="{{ route('admin.tools') }}" class="min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium touch-manipulation {{ Route::is('admin.tools') ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-900 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}">
                                 <i data-lucide="terminal" class="w-[18px] h-[18px] shrink-0 pointer-events-none"></i>
                                 <span>System Tools</span>
                             </a>
@@ -1246,7 +1445,7 @@
                         </div>
                         <div>
                             <p class="text-xs font-semibold text-black dark:text-white leading-tight mb-0.5">{{ $authUser->name ?? 'User' }}</p>
-                            <p class="text-[10px] text-slate-400 dark:text-zinc-500 leading-none truncate block">{{ $authUser->email ?? 'user@gmail.com' }}</p>
+                            <p class="text-[10px] text-slate-500 dark:text-zinc-400 font-medium leading-none truncate block">{{ $showOfficerNav ? $officerRole : ($titleName !== 'Warrior' ? $titleName : ($authUser->email ?? 'Member')) }}</p>
                         </div>
                     </div>
                     
@@ -1273,11 +1472,16 @@
             <header class="relative h-14 sm:h-[65px] border-b border-zinc-200/50 dark:border-white/10 px-3 sm:px-6 flex items-center justify-between flex-shrink-0 z-40 glass-surface shadow-xs">
                 <!-- Left: Burger Menu, Collapse Toggle & Page Title -->
                 <div class="flex items-center gap-2 sm:gap-4 min-w-0">
+                    <!-- Mobile Hamburger Button -->
                     <button 
                         type="button"
-                        @click.stop="mobileSidebarOpen = !mobileSidebarOpen" 
-                        class="lg:hidden min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95 transition-all touch-manipulation cursor-pointer"
-                        aria-label="Open navigation menu"
+                        id="mobile-hamburger-btn"
+                        @click="toggleMobileSidebar($event)" 
+                        @touchend.prevent.stop="toggleMobileSidebar($event)" 
+                        class="lg:hidden min-w-[44px] min-h-[44px] p-2.5 flex items-center justify-center rounded-xl text-zinc-800 dark:text-zinc-100 bg-zinc-100/90 dark:bg-zinc-800/90 border border-zinc-200/90 dark:border-zinc-700/80 active:bg-zinc-200 dark:active:bg-zinc-700 select-none shadow-2xs shrink-0 cursor-pointer"
+                        style="touch-action: manipulation; -webkit-tap-highlight-color: transparent; -webkit-user-select: none;"
+                        aria-label="Toggle navigation menu"
+                        title="Toggle navigation menu"
                     >
                         <i data-lucide="menu" class="w-5 h-5 pointer-events-none"></i>
                     </button>
@@ -1420,8 +1624,8 @@
                                     <p class="text-xs font-bold text-zinc-900 dark:text-white truncate leading-none">
                                         {{ $authUser->name ?? 'Admin' }}
                                     </p>
-                                    <p class="text-[10px] text-zinc-500 dark:text-zinc-400 truncate mt-1 leading-none">
-                                        {{ $authUser->email ?? '' }}
+                                    <p class="text-[10px] font-semibold text-brand-primary dark:text-zinc-400 truncate mt-1 leading-none">
+                                        {{ $showOfficerNav ? $officerRole : ($titleName !== 'Warrior' ? $titleName : ($authUser->email ?? 'Member')) }}
                                     </p>
                                 </div>
                             </div>
@@ -1498,7 +1702,7 @@
             </main>
 
             <!-- Footer -->
-            <footer class="flex-shrink-0 px-4 md:px-6 py-3.5 bg-white dark:bg-zinc-900 text-left text-xs text-zinc-400 dark:text-zinc-500 border-t border-zinc-200/50 dark:border-zinc-800/50 select-none">
+            <footer class="no-print flex-shrink-0 px-4 md:px-6 py-3.5 bg-white dark:bg-zinc-900 text-left text-xs text-zinc-400 dark:text-zinc-500 border-t border-zinc-200/50 dark:border-zinc-800/50 select-none">
                 &copy; {{ now()->year }} {{ !empty($appSettings->app_name) ? $appSettings->app_name : config('app.name', 'NFUH DMV System') }}. All rights reserved.
             </footer>
 

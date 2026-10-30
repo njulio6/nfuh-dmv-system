@@ -37,7 +37,6 @@ class AttendanceController extends Controller
         $member = MemberResolver::fromUser($user);
         $canMark = $user->hasRole('admin')
             || ($user->can('attendance.mark') ?? false)
-            || $user->hasRole('General Secretary')
             || ($member && $member->roles()->whereIn('name', ['Secretary', 'Admin'])->exists());
 
         if (!$canMark) {

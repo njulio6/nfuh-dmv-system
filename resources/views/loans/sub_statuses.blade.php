@@ -2,6 +2,10 @@
 
 @section('content')
 
+@php
+    $canManageSubStatuses = auth()->user() && (auth()->user()->hasRole('admin') || auth()->user()->can('loans.manage_sub_statuses') || auth()->user()->can('settings.manage'));
+@endphp
+
 <!-- Wrapper for Alpine state context -->
 <div 
     x-data="{
@@ -62,6 +66,7 @@
         <!-- Right: Action Buttons Group -->
         <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto xl:justify-end">
             <!-- Add Action Button -->
+            @if($canManageSubStatuses)
             <button 
                 type="button"
                 @click="showAddModal = true"
@@ -70,6 +75,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 <span>Add Sub-Status</span>
             </button>
+            @endif
 
             <!-- Reload / Clear Button -->
             <a 
@@ -90,7 +96,7 @@
             ['label' => 'Sub-Status Name'],
             ['label' => 'Badge Preview'],
             ['label' => 'Created At'],
-            ['label' => 'Actions', 'width' => 'w-28', 'align' => 'center']
+            ['label' => $canManageSubStatuses ? 'Actions' : 'Access', 'width' => 'w-28', 'align' => 'center']
         ]" class="min-w-[600px]">
             @forelse ($subStatuses as $index => $ss)
                 @php
@@ -143,24 +149,33 @@
 
                     <!-- Actions cell -->
                     <td class="py-2.5 px-3">
-                        <div class="flex items-center justify-center gap-1.5">
-                            <button 
-                                type="button"
-                                @click="editStatusId = {{ $ss->id }}; editStatusName = '{{ addslashes($ss->name) }}'; editStatusColor = '{{ $ss->color }}'; showEditModal = true"
-                                class="p-1.5 rounded-[10px] text-zinc-650 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center justify-center"
-                                title="Edit Sub-Status"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"></path></svg>
-                            </button>
-                            <button 
-                                type="button"
-                                @click="deleteStatusId = {{ $ss->id }}; deleteStatusName = '{{ addslashes($ss->name) }}'; showDeleteModal = true"
-                                class="p-1.5 rounded-[10px] text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center justify-center"
-                                title="Delete Sub-Status"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                            </button>
-                        </div>
+                        @if($canManageSubStatuses)
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button 
+                                    type="button"
+                                    @click="editStatusId = {{ $ss->id }}; editStatusName = '{{ addslashes($ss->name) }}'; editStatusColor = '{{ $ss->color }}'; showEditModal = true"
+                                    class="p-1.5 rounded-[10px] text-zinc-650 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center justify-center"
+                                    title="Edit Sub-Status"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"></path></svg>
+                                </button>
+                                <button 
+                                    type="button"
+                                    @click="deleteStatusId = {{ $ss->id }}; deleteStatusName = '{{ addslashes($ss->name) }}'; showDeleteModal = true"
+                                    class="p-1.5 rounded-[10px] text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center justify-center"
+                                    title="Delete Sub-Status"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                </button>
+                            </div>
+                        @else
+                            <div class="flex items-center justify-center">
+                                <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 italic select-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 text-zinc-400"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    <span>Read-only</span>
+                                </span>
+                            </div>
+                        @endif
                     </td>
                 </x-premium-table-row>
             @empty
@@ -272,6 +287,7 @@
         </div>
     </div>
 
+    @if($canManageSubStatuses)
     <!-- ─── ADD SUB-STATUS POPUP MODAL ─── -->
     <div 
         x-show="showAddModal" 
@@ -626,6 +642,7 @@
             </div>
         </div>
     </div>
+    @endif
 </div>
 
 @endsection

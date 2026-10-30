@@ -872,3 +872,46 @@ test('member role matrix tab only renders realistic member permissions and hides
     $response->assertSee('Member Role Access', false);
     $response->assertSee('all general members have full self-service portal access');
 });
+
+test('traditional title and assigned officer roles are displayed separately on member profile and directory', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $org = Organization::firstOrCreate(['name' => 'Test Org']);
+    $rank = \App\Models\MemberRank::firstOrCreate([
+        'organization_id' => $org->id,
+        'name' => 'HRH',
+    ]);
+    $role = \App\Models\MemberRole::firstOrCreate([
+        'organization_id' => $org->id,
+        'name' => 'Treasurer',
+    ]);
+
+    $member = Member::create([
+        'organization_id' => $org->id,
+        'rank_id' => $rank->id,
+        'first_name' => 'John',
+        'last_name' => 'Fon',
+        'phone' => '2405559999',
+        'status' => 'active',
+        'member_code' => 'MEM-TRAD-1',
+    ]);
+    $member->roles()->attach($role->id);
+
+    // Profile page test
+    $profileResponse = $this->actingAs($admin)->get(route('members.show', $member));
+    $profileResponse->assertStatus(200);
+    $profileResponse->assertSee('Traditional Title');
+    $profileResponse->assertSee('Cultural honorific');
+    $profileResponse->assertSee('HRH');
+    $profileResponse->assertSee('Assigned Officer Roles');
+    $profileResponse->assertSee('Treasurer');
+
+    // Index directory table test
+    $indexResponse = $this->actingAs($admin)->get(route('members.index'));
+    $indexResponse->assertStatus(200);
+    $indexResponse->assertSee('Traditional Title');
+    $indexResponse->assertSee('Officer Roles');
+    $indexResponse->assertSee('HRH');
+    $indexResponse->assertSee('Treasurer');
+});

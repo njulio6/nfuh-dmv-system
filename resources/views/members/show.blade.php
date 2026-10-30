@@ -49,22 +49,30 @@
 
             <!-- Profile Attributes list -->
             <div class="flex flex-col gap-3.5 w-full text-left">
-                <!-- Rank -->
+                <!-- Traditional Title (Cultural Honorific) -->
                 <div class="flex items-center justify-between text-xs border-b border-zinc-50 dark:border-zinc-800/40 pb-2.5">
-                    <span class="font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[9px]">Rank Title</span>
-                    <span class="font-semibold text-zinc-800 dark:text-zinc-200">{{ $member->rank->name ?? 'Warrior' }}</span>
+                    <div class="flex flex-col">
+                        <span class="font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[9px]">Traditional Title</span>
+                        <span class="text-[9px] text-zinc-400 dark:text-zinc-500">Cultural honorific</span>
+                    </div>
+                    <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                        {{ $member->rank->name ?? 'Warrior' }}
+                    </span>
                 </div>
                 <!-- Join Date -->
                 <div class="flex items-center justify-between text-xs border-b border-zinc-50 dark:border-zinc-800/40 pb-2.5">
                     <span class="font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[9px]">Join Date</span>
                     <span class="font-semibold text-zinc-800 dark:text-zinc-200">{{ $member->join_date ? $member->join_date->format('M d, Y') : 'N/A' }}</span>
                 </div>
-                <!-- Board Roles -->
+                <!-- Governance / Officer Roles (Permissions) -->
                 <div class="flex flex-col gap-1.5 text-xs">
-                    <span class="font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[9px] mb-0.5">Assigned Roles</span>
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[9px]">Assigned Officer Roles</span>
+                        <span class="text-[9px] text-zinc-400 dark:text-zinc-500">Grants permissions</span>
+                    </div>
                     <div class="flex flex-wrap gap-1">
                         @forelse($member->roles as $role)
-                            <span class="inline-block bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 px-2.5 py-0.5 rounded-full text-[9px] font-bold border border-zinc-200/10 dark:border-white/5">
+                            <span class="inline-block bg-brand-primary/10 text-brand-primary border border-brand-primary/20 px-2.5 py-0.5 rounded-full text-[9px] font-bold">
                                 {{ $role->name }}
                             </span>
                         @empty

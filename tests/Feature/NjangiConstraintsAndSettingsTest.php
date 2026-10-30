@@ -155,3 +155,58 @@ test('single benefit per cycle constraint is validated dynamically based on sett
 
     $responseSuccess->assertRedirect(route('njangi-cycles.show', $cycle->id));
 });
+
+test('sessions can be generated independently of member roster on a cycle with zero members', function () {
+    $cycle = NjangiCycle::create([
+        'organization_id' => $this->org->id,
+        'name' => 'Cycle 2027',
+        'year' => 2027,
+        'start_date' => '2027-01-01',
+        'end_date' => '2027-12-31',
+        'status' => 'draft',
+    ]);
+
+    expect($cycle->cycleMembers)->toHaveCount(0);
+
+    // Generate sessions on cycle with zero members
+    $response = $this->actingAs($this->adminUser)
+        ->post(route('njangi-cycles.generate-sessions', $cycle));
+
+    $response->assertRedirect(route('njangi-cycles.show', $cycle->id));
+    $response->assertSessionHas('success', 'Njangi sessions generated successfully.');
+
+    // 12 monthly sessions created
+    $sessions = NjangiSession::where('njangi_cycle_id', $cycle->id)->orderBy('session_number')->get();
+    expect($sessions)->toHaveCount(12);
+
+    // Verify first session is First Saturday of January 2027 (Jan 2, 2027)
+    expect($sessions->first()->session_date->toDateString())->toBe('2027-01-02');
+    expect($sessions->first()->session_date->format('l'))->toBe('Saturday');
+
+    // Now enroll participating members after sessions were generated
+    $member = Member::create([
+        'organization_id' => $this->org->id,
+        'member_code' => 'M-2027',
+        'first_name' => 'John',
+        'last_name' => 'Doe',
+        'email' => 'john2027@test.com',
+        'phone' => '999',
+        'participates_in_njangi' => true,
+    ]);
+
+    $enrollResponse = $this->actingAs($this->adminUser)
+        ->post(route('njangi-cycles.add-members', $cycle));
+
+    $enrollResponse->assertRedirect(route('njangi-cycles.show', $cycle->id));
+    $enrollResponse->assertSessionHas('success');
+
+    expect($cycle->cycleMembers()->count())->toBe(1);
+
+    // Assign benefit order after sessions exist
+    $assignResponse = $this->actingAs($this->adminUser)
+        ->post(route('njangi-cycles.assign-benefit-order', $cycle));
+
+    $assignResponse->assertRedirect(route('njangi-cycles.show', $cycle->id));
+    $assignResponse->assertSessionHas('success', 'Benefit order assigned successfully.');
+});
+

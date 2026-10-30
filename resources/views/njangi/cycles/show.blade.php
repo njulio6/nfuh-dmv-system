@@ -63,6 +63,12 @@
             </div>
         </div>
 
+        @php
+            $hasStartedSessions = $njangiCycle->sessions()->where('status', '!=', 'scheduled')->exists() || $njangiCycle->contributions()->exists();
+            $canEnroll = !$hasStartedSessions || ($settings && $settings->allow_mid_cycle_enrollment);
+            $canAssignOrder = !$hasStartedSessions;
+        @endphp
+
         <!-- Quick Operations Menu -->
         <div class="mt-8 flex flex-wrap gap-2.5 border-t border-zinc-100 dark:border-zinc-800 pt-5">
             <x-premium-button variant="primary" href="{{ route('njangi-submissions.index', ['cycle_id' => $njangiCycle->id]) }}">
@@ -72,32 +78,34 @@
                 Contributions & Ledger
             </x-premium-button>
 
-            @if ($njangiCycle->sessions->isEmpty() || ($settings && $settings->allow_mid_cycle_enrollment))
+            @if ($canEnroll)
                 <form action="{{ route('njangi-cycles.add-members', $njangiCycle) }}" method="POST" class="inline">
                     @csrf
                     <x-premium-button type="submit" variant="primary">Add Members</x-premium-button>
                 </form>
             @endif
 
-            @if ($njangiCycle->sessions->isEmpty())
+            @if ($canAssignOrder)
                 <form action="{{ route('njangi-cycles.assign-benefit-order', $njangiCycle) }}" method="POST" class="inline">
                     @csrf
                     <x-premium-button type="submit" variant="secondary">Assign Benefit Order</x-premium-button>
                 </form>
 
                 <x-premium-button variant="secondary" href="{{ route('njangi-cycles.edit', $njangiCycle) }}">Edit Cycle</x-premium-button>
+            @endif
 
+            @if ($njangiCycle->sessions->isEmpty())
                 <form action="{{ route('njangi-cycles.destroy', $njangiCycle) }}" method="POST" onsubmit="return confirm('Delete this cycle?');" class="inline">
                     @csrf
                     @method('DELETE')
                     <x-premium-button type="submit" variant="secondary" class="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20 border-red-105">Delete Cycle</x-premium-button>
                 </form>
+
+                <form action="{{ route('njangi-cycles.generate-sessions', $njangiCycle) }}" method="POST" class="inline">
+                    @csrf
+                    <x-premium-button type="submit" variant="primary">Generate Sessions</x-premium-button>
+                </form>
             @endif
- 
-            <form action="{{ route('njangi-cycles.generate-sessions', $njangiCycle) }}" method="POST" class="inline">
-                @csrf
-                <x-premium-button type="submit" variant="primary">Generate Sessions</x-premium-button>
-            </form>
         </div>
     </x-premium-card>
 </div>
@@ -109,10 +117,6 @@
             <h3 class="text-xs font-extrabold uppercase tracking-wider text-zinc-900 dark:text-white">
                 Cycle Members
             </h3>
-            
-            @php
-                $canEnroll = $njangiCycle->sessions->isEmpty() || ($settings && $settings->allow_mid_cycle_enrollment);
-            @endphp
             
             @if ($canEnroll)
                 <div x-data="{ addMemberOpen: false }">
@@ -304,7 +308,7 @@
                         </td>
                         <td class="py-2.5 px-3 text-center">
                             @php
-                                $canDelete = $njangiCycle->sessions->isEmpty() || ($settings && $settings->allow_mid_cycle_removal);
+                                $canDelete = !$hasStartedSessions || ($settings && $settings->allow_mid_cycle_removal);
                             @endphp
                             @if ($canDelete)
                                 <button 

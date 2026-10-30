@@ -643,10 +643,15 @@ class LoanController extends Controller
     }
 
     /**
-     * Store a new custom sub-status (admin only, managed in Settings).
+     * Store a new custom sub-status.
      */
     public function storeSubStatus(Request $request)
     {
+        $user = Auth::user();
+        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.manage_sub_statuses') && !$user->can('settings.manage'))) {
+            abort(403, 'Unauthorized action. You do not have permission to manage loan sub-statuses.');
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:50', 'unique:loan_sub_statuses,name'],
             'color' => ['required', 'string', 'max:30'],
@@ -683,10 +688,15 @@ class LoanController extends Controller
     }
 
     /**
-     * Update a custom sub-status (admin only).
+     * Update a custom sub-status.
      */
     public function updateSubStatusDefinition(Request $request, LoanSubStatus $subStatus)
     {
+        $user = Auth::user();
+        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.manage_sub_statuses') && !$user->can('settings.manage'))) {
+            abort(403, 'Unauthorized action. You do not have permission to manage loan sub-statuses.');
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:50', 'unique:loan_sub_statuses,name,' . $subStatus->id],
             'color' => ['required', 'string', 'max:30'],
@@ -701,10 +711,15 @@ class LoanController extends Controller
     }
 
     /**
-     * Delete a custom sub-status (admin only, managed in Settings).
+     * Delete a custom sub-status.
      */
     public function destroySubStatus(LoanSubStatus $subStatus)
     {
+        $user = Auth::user();
+        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.manage_sub_statuses') && !$user->can('settings.manage'))) {
+            abort(403, 'Unauthorized action. You do not have permission to manage loan sub-statuses.');
+        }
+
         $subStatus->delete();
         return redirect()->back()->with('success', 'Custom loan sub-status deleted.');
     }

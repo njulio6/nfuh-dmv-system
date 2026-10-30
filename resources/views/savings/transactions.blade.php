@@ -93,7 +93,12 @@
                         <div class="font-mono text-[11px] font-bold text-zinc-500 dark:text-zinc-400">{{ $t->member->member_code }}</div>
                     </td>
                     <td class="py-3 px-3 text-xs whitespace-nowrap">
-                        @if($t->type === 'deposit')
+                        @if($t->status === 'rejected')
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-800 dark:bg-rose-500/15 dark:text-rose-300 border border-rose-200/70 dark:border-rose-500/30">
+                                <span class="w-1.5 h-1.5 rounded-full bg-rose-500 dark:bg-rose-400"></span>
+                                <span>{{ $t->type === 'deposit' ? 'Rejected Deposit' : ($t->type === 'withdrawal' ? 'Rejected Withdrawal' : 'Rejected Adjustment') }}</span>
+                            </span>
+                        @elseif($t->type === 'deposit')
                             @if($t->is_manual)
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-500/30">
                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400"></span>
@@ -174,14 +179,18 @@
                                     'id' => $t->id,
                                     'type' => strtoupper($t->type),
                                     'isManual' => $t->is_manual,
-                                    'badgeText' => $t->type === 'adjustment' 
-                                        ? 'Adjustment (Override)' 
-                                        : ($t->type === 'withdrawal' 
-                                            ? ($t->status === 'pending' ? 'Pending Payout' : ($t->is_manual ? 'Manual Withdrawal' : 'Portal Withdrawal'))
-                                            : ($t->is_manual ? 'Manual Deposit' : 'Portal Deposit')),
-                                    'badgeType' => $t->type === 'adjustment' 
-                                        ? 'adjustment' 
-                                        : ($t->status === 'pending' ? 'pending' : ($t->is_manual ? ($t->type === 'deposit' ? 'manual-deposit' : 'manual-withdrawal') : ($t->type === 'deposit' ? 'portal-deposit' : 'portal-withdrawal'))),
+                                    'badgeText' => $t->status === 'rejected'
+                                        ? ($t->type === 'deposit' ? 'Rejected Deposit' : ($t->type === 'withdrawal' ? 'Rejected Withdrawal' : 'Rejected Adjustment'))
+                                        : ($t->type === 'adjustment' 
+                                            ? 'Adjustment (Override)' 
+                                            : ($t->type === 'withdrawal' 
+                                                ? ($t->status === 'pending' ? 'Pending Payout' : ($t->is_manual ? 'Manual Withdrawal' : 'Portal Withdrawal'))
+                                                : ($t->is_manual ? 'Manual Deposit' : 'Portal Deposit'))),
+                                    'badgeType' => $t->status === 'rejected'
+                                        ? 'rejected'
+                                        : ($t->type === 'adjustment' 
+                                            ? 'adjustment' 
+                                            : ($t->status === 'pending' ? 'pending' : ($t->is_manual ? ($t->type === 'deposit' ? 'manual-deposit' : 'manual-withdrawal') : ($t->type === 'deposit' ? 'portal-deposit' : 'portal-withdrawal')))),
                                     'status' => ucfirst($t->status),
                                     'date' => $t->transaction_date->format('M d, Y'),
                                     'time' => $t->created_at ? $t->created_at->format('h:i A') : '',

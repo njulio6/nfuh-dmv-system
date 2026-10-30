@@ -14,21 +14,7 @@ class GenerateNjangiSessions
     {
         $cycle->load(['cycleMembers', 'sessions']);
 
-        // 1. Must have cycle members
-        if ($cycle->cycleMembers->isEmpty()) {
-            throw new RuntimeException('Cannot generate sessions because this cycle has no members.');
-        }
-
-        // 2. All cycle members must have benefit order
-        $membersWithoutOrder = $cycle->cycleMembers->filter(function ($cycleMember) {
-            return is_null($cycleMember->benefit_order);
-        });
-
-        if ($membersWithoutOrder->isNotEmpty()) {
-            throw new RuntimeException('Cannot generate sessions until all cycle members have a benefit order.');
-        }
-
-        // 3. Prevent duplicate generation
+        // 1. Prevent duplicate generation
         if ($cycle->sessions->isNotEmpty()) {
             throw new RuntimeException('Sessions already exist for this cycle.');
         }
