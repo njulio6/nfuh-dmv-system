@@ -37,6 +37,16 @@
 
         <!-- Right: Action Buttons Group -->
         <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto xl:justify-end">
+            <!-- Export Njangi CSV Button -->
+            <a 
+                href="{{ route('reports.export.njangi') }}" 
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 border border-zinc-200 dark:border-zinc-800 rounded-[10px] text-xs font-semibold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-950/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-all active:scale-[0.96] select-none"
+                title="Export Njangi Contributions (CSV)"
+            >
+                <i data-lucide="download" class="w-3.5 h-3.5 text-amber-500"></i>
+                <span>Export CSV</span>
+            </a>
+
             <!-- Add Action Button -->
             <a 
                 href="{{ route('njangi-cycles.create') }}" 

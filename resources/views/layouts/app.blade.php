@@ -13,6 +13,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
+    <!-- CDNs and Preconnects -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -22,11 +26,83 @@
     <!-- Alpine.js CDN -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Lucide Icons (Pinned version with defer to eliminate redirect and render-blocking latency) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <!-- Chart.js CDN (Deferred for optimal DOM parsing and touch responsiveness) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+    <!-- Instant 0ms Native Mobile Drawer Controller -->
+    <script>
+        window.openMobileDrawer = function(e) {
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
+            if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+            var drawer = document.getElementById('mobile-sidebar-drawer');
+            var backdrop = document.getElementById('mobile-sidebar-backdrop');
+            var panel = document.getElementById('mobile-sidebar-panel');
+            if (!drawer) return;
+            drawer.classList.remove('hidden');
+            drawer.style.display = 'flex';
+            document.documentElement.classList.add('overflow-hidden');
+            document.body.classList.add('overflow-hidden');
+            requestAnimationFrame(function() {
+                if (backdrop) {
+                    backdrop.classList.remove('opacity-0');
+                    backdrop.classList.add('opacity-100');
+                }
+                if (panel) {
+                    panel.classList.remove('-translate-x-full');
+                    panel.classList.add('translate-x-0');
+                }
+            });
+            try {
+                if (window.Alpine && document.body && document.body._x_dataStack) {
+                    document.body._x_dataStack[0].mobileSidebarOpen = true;
+                }
+            } catch(err) {}
+        };
+
+        window.closeMobileDrawer = function(e) {
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
+            if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+            var drawer = document.getElementById('mobile-sidebar-drawer');
+            var backdrop = document.getElementById('mobile-sidebar-backdrop');
+            var panel = document.getElementById('mobile-sidebar-panel');
+            if (!drawer) return;
+            if (backdrop) {
+                backdrop.classList.remove('opacity-100');
+                backdrop.classList.add('opacity-0');
+            }
+            if (panel) {
+                panel.classList.remove('translate-x-0');
+                panel.classList.add('-translate-x-full');
+            }
+            setTimeout(function() {
+                drawer.classList.add('hidden');
+                drawer.style.display = 'none';
+                document.documentElement.classList.remove('overflow-hidden');
+                document.body.classList.remove('overflow-hidden');
+            }, 250);
+            try {
+                if (window.Alpine && document.body && document.body._x_dataStack) {
+                    document.body._x_dataStack[0].mobileSidebarOpen = false;
+                }
+            } catch(err) {}
+        };
+
+        window.toggleMobileDrawer = function(e) {
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
+            if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+            var drawer = document.getElementById('mobile-sidebar-drawer');
+            if (!drawer) return;
+            var isVisible = !drawer.classList.contains('hidden') && drawer.style.display !== 'none';
+            if (isVisible) {
+                window.closeMobileDrawer(e);
+            } else {
+                window.openMobileDrawer(e);
+            }
+        };
+    </script>
 
     <!-- Dynamic Theme Engine -->
     @include('partials.theme-styles')
@@ -485,6 +561,178 @@
                 white-space: normal !important;
             }
 
+            /* Print pagination and break controls */
+            .print-page-break,
+            .print-break-after,
+            .page-break-after {
+                page-break-after: always !important;
+                break-after: page !important;
+                height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                display: block !important;
+                clear: both !important;
+            }
+
+            .print-break-before,
+            .page-break-before {
+                page-break-before: always !important;
+                break-before: page !important;
+                display: block !important;
+                clear: both !important;
+            }
+
+            .avoid-break,
+            .break-inside-avoid {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            /* Page 1: 8 KPI Pillars (Strict 4x2 Board Grid in Print) */
+            .print-kpi-grid {
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 8px !important;
+                width: 100% !important;
+                margin-bottom: 8px !important;
+            }
+
+            .print-kpi-card {
+                padding: 8px 10px !important;
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 8px !important;
+                background: #ffffff !important;
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+                box-shadow: none !important;
+            }
+
+            .print-kpi-title {
+                font-size: 7.5pt !important;
+                font-weight: 700 !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.05em !important;
+                color: #475569 !important;
+                line-height: 1.2 !important;
+            }
+
+            .print-kpi-val {
+                font-size: 15pt !important;
+                font-weight: 800 !important;
+                line-height: 1.1 !important;
+                color: #09090b !important;
+                margin: 3px 0 !important;
+            }
+
+            .print-kpi-sub {
+                font-size: 7pt !important;
+                font-weight: 600 !important;
+                padding-top: 4px !important;
+                border-top: 1px solid #f1f5f9 !important;
+                color: #64748b !important;
+            }
+
+            /* Page 1: Financial Flows Bar Chart (Guaranteed to scale 100% with ZERO clipping via high-res image) */
+            .print-flows-card {
+                margin-top: 8px !important;
+                padding: 10px 14px !important;
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 8px !important;
+                background: #ffffff !important;
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+                box-shadow: none !important;
+                overflow: visible !important;
+            }
+
+            #adminFlowsChartPrintImg {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto !important;
+                max-height: 255px !important;
+                display: block !important;
+                margin: 0 auto !important;
+                object-fit: contain !important;
+            }
+
+            /* Page 2: 3-Column Portfolio Donut Grid */
+            .print-donuts-grid {
+                display: grid !important;
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 10px !important;
+                width: 100% !important;
+                margin-bottom: 10px !important;
+            }
+
+            .print-donut-card {
+                padding: 10px 12px !important;
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 8px !important;
+                background: #ffffff !important;
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+                box-shadow: none !important;
+                overflow: visible !important;
+            }
+
+            #adminCapitalPieChartPrintImg,
+            #adminLoansPieChartPrintImg,
+            #adminMemberPieChartPrintImg {
+                height: 125px !important;
+                width: 125px !important;
+                max-height: 125px !important;
+                max-width: 125px !important;
+                display: block !important;
+                margin: 0 auto !important;
+                object-fit: contain !important;
+            }
+
+            .print-donut-legend {
+                margin-top: 6px !important;
+                padding-top: 6px !important;
+                border-top: 1px solid #f1f5f9 !important;
+                font-size: 8pt !important;
+                line-height: 1.4 !important;
+            }
+
+            /* Page 2: Operational Table */
+            .print-table-card {
+                padding: 10px 14px !important;
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 8px !important;
+                background: #ffffff !important;
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+                box-shadow: none !important;
+                margin-bottom: 8px !important;
+            }
+
+            .print-table-card table {
+                font-size: 8pt !important;
+                width: 100% !important;
+            }
+
+            .print-table-card th {
+                background-color: #f8fafc !important;
+                color: #334155 !important;
+                font-weight: 800 !important;
+                font-size: 7pt !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.05em !important;
+                padding: 4px 6px !important;
+                border-bottom: 2px solid #cbd5e1 !important;
+            }
+
+            .print-table-card td {
+                padding: 4px 6px !important;
+                border-bottom: 1px solid #e2e8f0 !important;
+                color: #0f172a !important;
+            }
+
+            .print-table-card tr:nth-child(even) td {
+                background-color: #f8fafc !important;
+            }
+
             /* Show elements marked print-only */
             .print-only {
                 display: block !important;
@@ -501,26 +749,27 @@
         sidebarCollapsed: localStorage.getItem('sidebar-collapsed') === 'true',
         transitionActive: false,
         mobileSidebarOpen: false,
-        _lastSidebarToggle: 0,
         toggleMobileSidebar(e) {
-            const now = Date.now();
-            if (now - this._lastSidebarToggle < 250) {
-                if (e && typeof e.preventDefault === 'function') e.preventDefault();
-                return;
-            }
-            this._lastSidebarToggle = now;
             if (e) {
                 if (typeof e.preventDefault === 'function') e.preventDefault();
                 if (typeof e.stopPropagation === 'function') e.stopPropagation();
             }
-            this.mobileSidebarOpen = !this.mobileSidebarOpen;
+            if (window.toggleMobileDrawer) {
+                window.toggleMobileDrawer(e);
+            } else {
+                this.mobileSidebarOpen = !this.mobileSidebarOpen;
+            }
         },
         closeMobileSidebar(e) {
             if (e) {
                 if (typeof e.preventDefault === 'function') e.preventDefault();
                 if (typeof e.stopPropagation === 'function') e.stopPropagation();
             }
-            this.mobileSidebarOpen = false;
+            if (window.closeMobileDrawer) {
+                window.closeMobileDrawer(e);
+            } else {
+                this.mobileSidebarOpen = false;
+            }
         },
         darkMode: localStorage.getItem('theme') === 'dark',
         userMenuOpen: false,
@@ -1181,15 +1430,17 @@
 
         <!-- ================= SIDEBAR (MOBILE DRAWER) ================= -->
         <div 
+            id="mobile-sidebar-drawer"
             x-show="mobileSidebarOpen" 
             x-cloak
             @keydown.escape.window="closeMobileSidebar($event)"
-            class="lg:hidden fixed inset-0 z-50 flex font-sans"
+            class="hidden lg:hidden fixed inset-0 z-50 flex font-sans"
             role="dialog"
             aria-modal="true"
         >
             <!-- Overlay Backing (Clicking outside closes drawer) -->
             <div 
+                id="mobile-sidebar-backdrop"
                 x-show="mobileSidebarOpen"
                 x-transition:enter="transition-opacity ease-linear duration-300"
                 x-transition:enter-start="opacity-0"
@@ -1197,13 +1448,15 @@
                 x-transition:leave="transition-opacity ease-linear duration-300"
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
+                onclick="window.closeMobileDrawer(event)"
                 @click="closeMobileSidebar($event)" 
                 @touchend.prevent.stop="closeMobileSidebar($event)"
-                class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
+                class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm opacity-0 transition-opacity duration-300"
             ></div>
 
             <!-- Drawer Panel -->
             <div 
+                id="mobile-sidebar-panel"
                 x-show="mobileSidebarOpen"
                 x-transition:enter="transition ease-in-out duration-300 transform"
                 x-transition:enter-start="-translate-x-full"
@@ -1213,7 +1466,7 @@
                 x-transition:leave-end="-translate-x-full"
                 @click.stop
                 @touchend.stop
-                class="relative flex w-full max-w-xs flex-1 flex-col glass-surface pb-4 border-r border-zinc-200/40 dark:border-white/10 shadow-2xl bg-white dark:bg-zinc-900"
+                class="relative flex w-full max-w-xs flex-1 flex-col glass-surface pb-4 border-r border-zinc-200/40 dark:border-white/10 shadow-2xl bg-white dark:bg-zinc-900 -translate-x-full transition-transform duration-300"
             >
                 <!-- Drawer Header: Brand + Close Button -->
                 <div class="flex shrink-0 items-center justify-between px-4 py-3.5 mb-2 border-b border-zinc-200/60 dark:border-zinc-800/80">
@@ -1239,6 +1492,8 @@
                     <!-- Prominent In-Drawer Close Button -->
                     <button 
                         type="button"
+                        id="mobile-sidebar-close-btn"
+                        onclick="window.closeMobileDrawer(event)"
                         @click="closeMobileSidebar($event)" 
                         @touchend.prevent.stop="closeMobileSidebar($event)"
                         class="min-w-[44px] min-h-[44px] p-2 flex items-center justify-center rounded-xl text-zinc-600 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 active:bg-zinc-200 dark:active:bg-zinc-700 select-none transition-colors touch-manipulation cursor-pointer shrink-0"
@@ -1476,14 +1731,15 @@
                     <button 
                         type="button"
                         id="mobile-hamburger-btn"
+                        onclick="window.toggleMobileDrawer(event)"
                         @click="toggleMobileSidebar($event)" 
                         @touchend.prevent.stop="toggleMobileSidebar($event)" 
-                        class="lg:hidden min-w-[44px] min-h-[44px] p-2.5 flex items-center justify-center rounded-xl text-zinc-800 dark:text-zinc-100 bg-zinc-100/90 dark:bg-zinc-800/90 border border-zinc-200/90 dark:border-zinc-700/80 active:bg-zinc-200 dark:active:bg-zinc-700 select-none shadow-2xs shrink-0 cursor-pointer"
+                        class="lg:hidden min-w-[40px] min-h-[40px] p-2 flex items-center justify-center text-zinc-700 dark:text-zinc-100 hover:text-zinc-950 dark:hover:text-white bg-transparent border-0 shadow-none active:opacity-60 select-none shrink-0 cursor-pointer focus:outline-hidden"
                         style="touch-action: manipulation; -webkit-tap-highlight-color: transparent; -webkit-user-select: none;"
                         aria-label="Toggle navigation menu"
                         title="Toggle navigation menu"
                     >
-                        <i data-lucide="menu" class="w-5 h-5 pointer-events-none"></i>
+                        <i data-lucide="menu" class="w-6 h-6 pointer-events-none"></i>
                     </button>
                     
                     <!-- Sidebar Collapse Button inside the Header (Panel Toggle) -->
@@ -1710,9 +1966,16 @@
 
     </div>
 
-    <!-- Lucide icons replacement instantiation -->
+    <!-- Lucide icons replacement instantiation (Safe deferred execution) -->
     <script>
-        lucide.createIcons();
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                window.lucide.createIcons();
+            }
+        });
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+        }
     </script>
 
     <!-- Global Alpine Components Registration -->

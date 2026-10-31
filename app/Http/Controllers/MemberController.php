@@ -26,8 +26,10 @@ class MemberController extends Controller
                 $q->where('member_code', 'like', "%{$search}%")
                     ->orWhere('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%");
-                    // email is on users table now — search by joining if needed
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($uq) use ($search) {
+                        $uq->where('email', 'like', "%{$search}%");
+                    });
             });
         }
 

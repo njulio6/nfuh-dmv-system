@@ -40,6 +40,14 @@
                 <i data-lucide="history" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
                 <span>Withdrawal History</span>
             </a>
+            <a 
+                href="{{ route('reports.export.savings', request()->except('page')) }}"
+                class="px-4 py-2 rounded-xl text-xs font-bold border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all cursor-pointer flex items-center gap-1.5"
+                title="Export My Savings Statement (CSV)"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-blue-500"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Export CSV</span>
+            </a>
             @if(auth()->user()?->hasRole('admin') || auth()->user()?->can('savings.withdraw_request'))
             <button 
                 type="button" 

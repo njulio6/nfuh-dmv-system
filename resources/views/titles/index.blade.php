@@ -50,6 +50,16 @@
                 <span>Add Title</span>
             </a>
 
+            <!-- Export CSV Button (Respects active search filter, unpaginated) -->
+            <a 
+                href="{{ route('reports.export.titles', request()->except('page')) }}" 
+                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-[10px] flex items-center justify-center gap-1.5 shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer select-none"
+                title="Export Titles to CSV (Unpaginated)"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Export CSV</span>
+            </a>
+
             <!-- Reload / Clear Button -->
             <a 
                 href="{{ route('titles.index') }}" 

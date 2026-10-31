@@ -7,7 +7,18 @@
     subtitle="{{ isset($activeCycle) ? 'Viewing ledger for: ' . $activeCycle->name : 'Viewing active cycle ledger & contributions' }}"
     back-url="{{ isset($activeCycle) ? route('njangi-cycles.show', $activeCycle) : route('dashboard') }}"
     back-title="{{ isset($activeCycle) ? 'Back to Cycle' : 'Back to Dashboard' }}"
-/>
+>
+    <x-slot:actions>
+        <a 
+            href="{{ route('reports.export.njangi') }}"
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-2xs cursor-pointer"
+            title="Export Njangi Contributions (CSV)"
+        >
+            <i data-lucide="download" class="w-3.5 h-3.5 text-amber-500"></i>
+            <span>Export CSV</span>
+        </a>
+    </x-slot:actions>
+</x-premium-header>
 
 <!-- Ledger Summary Cards (Aeroco Gradient System) -->
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">

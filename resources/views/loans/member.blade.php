@@ -27,6 +27,38 @@
     }" 
     class="w-full flex flex-col gap-6"
 >
+    <!-- Action Bar -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-zinc-900/40 p-4 md:p-5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-xs">
+        <div class="flex flex-col">
+            <h2 class="text-base font-bold text-zinc-900 dark:text-white font-display">My Loans Overview</h2>
+            <p class="text-xs text-zinc-500 dark:text-zinc-400">Track current loan commitments, guarantee obligations, and personal statements.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5">
+            <a 
+                href="{{ route('member.loans.applications') }}"
+                class="px-4 py-2 rounded-xl text-xs font-bold border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all cursor-pointer flex items-center gap-1.5"
+            >
+                <i data-lucide="file-text" class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"></i>
+                <span>My Applications</span>
+            </a>
+            <a 
+                href="{{ route('member.loans.repayments') }}"
+                class="px-4 py-2 rounded-xl text-xs font-bold border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all cursor-pointer flex items-center gap-1.5"
+            >
+                <i data-lucide="history" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i>
+                <span>Repayment Requests</span>
+            </a>
+            <a 
+                href="{{ route('reports.export.loans', request()->except('page')) }}" 
+                class="px-4 py-2 rounded-xl text-xs font-bold border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all cursor-pointer flex items-center gap-1.5"
+                title="Export My Loans (CSV)"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-blue-500"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Export CSV</span>
+            </a>
+        </div>
+    </div>
+
     <!-- Member Stats Row (Aeroco Gradient System) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
         <!-- Outstanding Loan Balance -->

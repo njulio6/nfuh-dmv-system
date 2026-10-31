@@ -27,7 +27,9 @@ class SavingsController extends Controller
                 $q->where('member_code', 'like', "%{$search}%")
                   ->orWhere('first_name', 'like', "%{$search}%")
                   ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                  ->orWhereHas('user', function ($uq) use ($search) {
+                      $uq->where('email', 'like', "%{$search}%");
+                  });
             });
         }
 
@@ -126,6 +128,11 @@ class SavingsController extends Controller
         $validated = $request->validate($rules, $messages);
 
         $member = Member::findOrFail($validated['member_id']);
+
+        // Segregation of Duties: Officers cannot perform manual balance override adjustments on their own account
+        if ($validated['type'] === 'adjustment' && \App\Support\SegregationGuard::isSelf(Auth::user(), $member->id)) {
+            return redirect()->back()->with('error', 'Segregation of Duties Violation: You cannot manually adjust or override your own savings balance. Another authorized officer must record this entry.')->withInput();
+        }
 
         // Auto-enroll member in savings if not already done
         if (!$member->participates_in_savings) {

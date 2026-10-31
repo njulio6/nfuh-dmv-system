@@ -25,4 +25,9 @@ class LoanRepayment extends Model
     {
         return $this->belongsTo(LoanRequest::class, 'loan_request_id');
     }
+
+    public function loan(): BelongsTo
+    {
+        return $this->belongsTo(LoanRequest::class, 'loan_request_id');
+    }
 }

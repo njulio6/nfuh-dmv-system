@@ -63,6 +63,34 @@ Route::middleware(['auth'])->group(function () {
     // Member Attendance Routes
     Route::get('/member/attendance', [\App\Http\Controllers\AttendanceController::class, 'myAttendance'])
         ->name('member.attendance');
+
+    // Universal Unpaginated Reports & CSV Exports (Accessible to Members & Officers with strict data isolation)
+    Route::get('/reports/export/loans', [\App\Http\Controllers\ReportsController::class, 'exportLoansCsv'])
+        ->name('reports.export.loans');
+    Route::get('/reports/export/repayments', [\App\Http\Controllers\ReportsController::class, 'exportRepaymentsCsv'])
+        ->name('reports.export.repayments');
+    Route::get('/reports/export/loan-repayment-requests', [\App\Http\Controllers\ReportsController::class, 'exportLoanRepaymentRequestsCsv'])
+        ->name('reports.export.loan-repayment-requests');
+    Route::get('/reports/export/savings', [\App\Http\Controllers\ReportsController::class, 'exportSavingsCsv'])
+        ->name('reports.export.savings');
+    Route::get('/reports/export/savings-deposit-requests', [\App\Http\Controllers\ReportsController::class, 'exportSavingsDepositRequestsCsv'])
+        ->name('reports.export.savings-deposit-requests');
+    Route::get('/reports/export/savings-withdrawal-requests', [\App\Http\Controllers\ReportsController::class, 'exportSavingsWithdrawalRequestsCsv'])
+        ->name('reports.export.savings-withdrawal-requests');
+    Route::get('/reports/export/njangi', [\App\Http\Controllers\ReportsController::class, 'exportNjangiCsv'])
+        ->name('reports.export.njangi');
+    Route::get('/reports/export/njangi-submissions', [\App\Http\Controllers\ReportsController::class, 'exportNjangiSubmissionsCsv'])
+        ->name('reports.export.njangi-submissions');
+    Route::get('/reports/export/attendance', [\App\Http\Controllers\ReportsController::class, 'exportAttendanceCsv'])
+        ->name('reports.export.attendance');
+    Route::get('/reports/export/members', [\App\Http\Controllers\ReportsController::class, 'exportMembersCsv'])
+        ->name('reports.export.members');
+    Route::get('/reports/export/titles', [\App\Http\Controllers\ReportsController::class, 'exportTitlesCsv'])
+        ->name('reports.export.titles');
+    Route::get('/reports/export/sub-statuses', [\App\Http\Controllers\ReportsController::class, 'exportSubStatusesCsv'])
+        ->name('reports.export.sub-statuses');
+    Route::get('/reports/export/user-roles', [\App\Http\Controllers\ReportsController::class, 'exportUserRolesCsv'])
+        ->name('reports.export.user-roles');
 });
 
 // QR Code Session Check-In Routes (Public / Member Landing)
@@ -185,11 +213,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/loans/sub-statuses', [\App\Http\Controllers\LoanController::class, 'subStatusesIndex'])
         ->name('loans.sub-statuses');
 
-    // Reports and CSV Exports
-    Route::get('/reports/export/loans', [\App\Http\Controllers\ReportsController::class, 'exportLoansCsv'])
-        ->name('reports.export.loans');
-    Route::get('/reports/export/savings', [\App\Http\Controllers\ReportsController::class, 'exportSavingsCsv'])
-        ->name('reports.export.savings');
+
 
     // Officer Attendance Desk Routes
     Route::get('/admin/attendance/desk', [\App\Http\Controllers\AttendanceController::class, 'desk'])

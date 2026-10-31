@@ -353,6 +353,16 @@
                 @if($selectedSession)
                     <!-- Action Buttons: responsive grid / flex -->
                     <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                        <!-- Export Attendance CSV Button -->
+                        <a 
+                            href="{{ route('reports.export.attendance') }}"
+                            class="h-11 flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 border border-zinc-200/90 dark:border-zinc-800/90 hover:border-zinc-300 dark:hover:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-bold rounded-xl shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+                            title="Export Roll-Call & Attendance Records (CSV)"
+                        >
+                            <i data-lucide="download" class="w-4 h-4 text-emerald-500 shrink-0"></i>
+                            <span>Export CSV</span>
+                        </a>
+
                         <!-- QR Code Projection Button -->
                         <button 
                             type="button" 
@@ -550,6 +560,16 @@
                                 <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
                             </div>
                         </div>
+
+                        <!-- Export CSV Button -->
+                        <a 
+                            href="{{ route('reports.export.attendance', array_merge(request()->except('page'), ['session_id' => $selectedSession->id])) }}" 
+                            class="inline-flex items-center gap-1.5 px-3.5 py-2.5 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-950/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-all active:scale-[0.96] select-none shadow-2xs shrink-0"
+                            title="Export Roll-Call Ledger (CSV)"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-blue-500"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            <span>Export CSV</span>
+                        </a>
 
                         @if(request('search') || request('attendance_filter'))
                             <a 

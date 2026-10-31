@@ -69,9 +69,26 @@
         </div>
     </div>
 
-    <!-- Section Divider / Title -->
-    <div class="mb-6">
+    <!-- Section Divider / Title & Actions -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <h2 class="text-xs font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Loan Department Queues</h2>
+        <div class="flex items-center gap-2">
+            <a 
+                href="{{ route('reports.export.loans', request()->except('page')) }}"
+                class="inline-flex items-center gap-1.5 px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-2xs cursor-pointer"
+                title="Export Loan Portfolio (CSV)"
+            >
+                <i data-lucide="sheet" class="w-3.5 h-3.5 text-emerald-500"></i>
+                <span>Export Loans (CSV)</span>
+            </a>
+            <a 
+                href="{{ route('loans.repayments-log') }}"
+                class="inline-flex items-center gap-1.5 px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-2xs cursor-pointer"
+            >
+                <i data-lucide="receipt" class="w-3.5 h-3.5 text-purple-500"></i>
+                <span>Repayments Log</span>
+            </a>
+        </div>
     </div>
 
     <!-- Status Cards Grid -->

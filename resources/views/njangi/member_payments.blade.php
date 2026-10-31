@@ -220,6 +220,16 @@
                 </button>
             @endif
 
+            <!-- Export CSV Button -->
+            <a 
+                href="{{ route('reports.export.njangi-submissions', request()->except('page')) }}" 
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 border border-zinc-200 dark:border-zinc-800 rounded-[10px] text-xs font-semibold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-950/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-all active:scale-[0.96] select-none"
+                title="Export My Njangi Submissions (CSV)"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-blue-500"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Export CSV</span>
+            </a>
+
             <!-- Reload / Clear Button -->
             <a 
                 href="{{ route('member.njangi-payments') }}" 
