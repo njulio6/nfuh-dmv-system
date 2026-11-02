@@ -42,7 +42,7 @@
                 <span>My Applications</span>
             </a>
             <a 
-                href="{{ route('member.loans.repayments') }}"
+                href="{{ route('member.loans.repayment-requests') }}"
                 class="px-4 py-2 rounded-xl text-xs font-bold border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all cursor-pointer flex items-center gap-1.5"
             >
                 <i data-lucide="history" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i>

@@ -57,6 +57,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('member.loans.statement');
     Route::get('/member/loans/repayment-requests', [\App\Http\Controllers\LoanController::class, 'myRepaymentRequests'])
         ->name('member.loans.repayment-requests');
+    Route::get('/member/loans/repayments', [\App\Http\Controllers\LoanController::class, 'myRepaymentRequests'])
+        ->name('member.loans.repayments');
     Route::post('/member/loans/{loan}/repay-request', [\App\Http\Controllers\LoanController::class, 'requestRepayment'])
         ->name('member.loans.repay-request');
 
