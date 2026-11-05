@@ -16,6 +16,7 @@
         midCycleEnrollment: {{ old('allow_mid_cycle_enrollment', $settings->allow_mid_cycle_enrollment) ? 'true' : 'false' }},
         midCycleRemoval: {{ old('allow_mid_cycle_removal', $settings->allow_mid_cycle_removal) ? 'true' : 'false' }},
         restrictCheckinToCycle: {{ old('restrict_checkin_to_cycle_members', $settings->restrict_checkin_to_cycle_members) ? 'true' : 'false' }},
+        separateDisburser: {{ old('require_separate_withdrawal_disburser', $settings->require_separate_withdrawal_disburser ?? true) ? 'true' : 'false' }},
         scheduleOrdinal: '{{ old('session_schedule_ordinal', $settings->session_schedule_ordinal ?? 'first') }}',
         scheduleWeekday: '{{ old('session_schedule_weekday', $settings->session_schedule_weekday ?? 'Saturday') }}',
         previews: {
@@ -1080,6 +1081,43 @@
                                     Net: $<span x-text="(1000 - (1000 * ((withdrawalFee || 0) / 100))).toFixed(2)"></span>
                                 </span>
                             </div>
+                        </div>
+
+                        <!-- Segregation of Duties: Approver vs Disburser -->
+                        <div class="flex items-start gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                            <button
+                                type="button"
+                                @click="separateDisburser = !separateDisburser"
+                                role="switch"
+                                :aria-checked="separateDisburser"
+                                class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                                :class="separateDisburser ? 'bg-zinc-950 dark:bg-white' : 'bg-zinc-200 dark:bg-zinc-700'"
+                            >
+                                <span
+                                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white dark:bg-zinc-950 shadow-sm ring-0 transition duration-200 ease-in-out"
+                                    :class="separateDisburser ? 'translate-x-5' : 'translate-x-0'"
+                                ></span>
+                            </button>
+                            <div class="flex flex-col gap-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-zinc-950 dark:text-white">Separate Approver &amp; Disburser</span>
+                                    <span
+                                        class="text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider"
+                                        :class="separateDisburser ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'"
+                                        x-text="separateDisburser ? 'Enforced' : 'Not Enforced'"
+                                    ></span>
+                                </div>
+                                <p class="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">
+                                    When enabled, the officer who approved a withdrawal cannot also disburse (pay out) that same withdrawal.
+                                </p>
+                            </div>
+                            <input
+                                type="checkbox"
+                                name="require_separate_withdrawal_disburser"
+                                value="1"
+                                :checked="separateDisburser"
+                                class="hidden"
+                            >
                         </div>
                     </div>
                 </div>

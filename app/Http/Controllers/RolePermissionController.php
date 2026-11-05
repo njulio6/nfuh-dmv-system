@@ -277,6 +277,7 @@ class RolePermissionController extends Controller
             'Financial Secretary' => [
                 'permissions' => [
                     'savings.record_deposit',
+                    'savings.approve_withdrawal',
                     'savings.view_all',
                     'njangi.audit_submissions',
                     'njangi.manage_cycles',

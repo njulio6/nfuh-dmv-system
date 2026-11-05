@@ -181,6 +181,44 @@
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <!-- 2. OFFICER QUEUES & URGENT ATTENTION (PERMISSION FILTERED)          -->
     <!-- ═══════════════════════════════════════════════════════════════════ -->
+    @if(($canApproveWithdrawals ?? false) || ($canDisburseWithdrawals ?? false))
+        <div class="no-print grid grid-cols-1 sm:grid-cols-2 gap-4">
+            @if($canApproveWithdrawals)
+                <a href="{{ route('savings.withdrawal-requests', ['status' => 'pending']) }}" class="group bg-white dark:bg-zinc-900 border rounded-2xl p-4 sm:p-5 shadow-xs flex items-center justify-between gap-4 transition-all {{ $pendingSavingsWithdrawals > 0 ? 'border-amber-300/80 dark:border-amber-700/60 hover:border-amber-400' : 'border-zinc-200/80 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700' }}">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                            <i data-lucide="inbox" class="w-5 h-5"></i>
+                        </span>
+                        <div class="min-w-0">
+                            <div class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Withdrawals Pending Review</div>
+                            <div class="text-[11px] text-zinc-400 dark:text-zinc-500">Member requests waiting for approval or rejection</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="text-2xl font-extrabold font-display {{ $pendingSavingsWithdrawals > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-400' }}">{{ $pendingSavingsWithdrawals }}</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-zinc-400 group-hover:text-brand-primary transition-colors"></i>
+                    </div>
+                </a>
+            @endif
+            @if($canDisburseWithdrawals)
+                <a href="{{ route('savings.withdrawal-requests', ['status' => 'approved']) }}" class="group bg-white dark:bg-zinc-900 border rounded-2xl p-4 sm:p-5 shadow-xs flex items-center justify-between gap-4 transition-all {{ $awaitingDisbursementWithdrawals > 0 ? 'border-sky-300/80 dark:border-sky-700/60 hover:border-sky-400' : 'border-zinc-200/80 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700' }}">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+                            <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+                        </span>
+                        <div class="min-w-0">
+                            <div class="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Withdrawals Awaiting Disbursement</div>
+                            <div class="text-[11px] text-zinc-400 dark:text-zinc-500">Approved withdrawals waiting to be paid out</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="text-2xl font-extrabold font-display {{ $awaitingDisbursementWithdrawals > 0 ? 'text-sky-600 dark:text-sky-400' : 'text-zinc-400' }}">{{ $awaitingDisbursementWithdrawals }}</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-zinc-400 group-hover:text-brand-primary transition-colors"></i>
+                    </div>
+                </a>
+            @endif
+        </div>
+    @endif
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <!-- 3. COMPREHENSIVE 8-PILLAR KPI OVERVIEW (PERMISSION CONTROLLED)       -->

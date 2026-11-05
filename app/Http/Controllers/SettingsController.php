@@ -63,6 +63,7 @@ class SettingsController extends Controller
             'loan_guarantor_max'      => ['required', 'integer', 'min:1', 'gte:loan_guarantor_min'],
             'default_loan_interest'    => ['nullable', 'numeric', 'min:0', 'max:100'],
             'savings_withdrawal_fee_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'require_separate_withdrawal_disburser' => ['nullable', 'boolean'],
             'allow_mid_cycle_enrollment' => ['nullable', 'boolean'],
             'allow_mid_cycle_removal'    => ['nullable', 'boolean'],
             'restrict_checkin_to_cycle_members' => ['nullable', 'boolean'],
@@ -100,6 +101,7 @@ class SettingsController extends Controller
         if (isset($validated['savings_withdrawal_fee_percent'])) {
             $settings->savings_withdrawal_fee_percent = $validated['savings_withdrawal_fee_percent'];
         }
+        $settings->require_separate_withdrawal_disburser = $request->has('require_separate_withdrawal_disburser');
         $settings->allow_mid_cycle_enrollment = $request->has('allow_mid_cycle_enrollment');
         $settings->allow_mid_cycle_removal = $request->has('allow_mid_cycle_removal');
         $settings->restrict_checkin_to_cycle_members = $request->has('restrict_checkin_to_cycle_members');

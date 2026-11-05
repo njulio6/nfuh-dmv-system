@@ -76,9 +76,18 @@
         <!-- Right: Action Buttons Group -->
         <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto xl:justify-end">
             <!-- Available Balance Pill -->
+            @php
+                $memberReservedWithdrawals = $member->reserved_withdrawals_amount;
+            @endphp
             <div class="h-9 px-3.5 bg-zinc-100 dark:bg-zinc-800 rounded-[10px] flex items-center gap-1.5 border border-zinc-200 dark:border-zinc-700 select-none">
                 <span class="text-xs font-semibold text-zinc-600 dark:text-zinc-300">Available:</span>
                 <span class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">${{ number_format($member->available_savings_balance, 2) }}</span>
+                <x-info-tooltip
+                    title="Available to Withdraw"
+                    description="{{ $memberReservedWithdrawals > 0 ? 'Your settled balance of $' . number_format($member->savings_balance, 2) . ' already has $' . number_format($memberReservedWithdrawals, 2) . ' reserved for withdrawal requests that are pending review or approved but not yet paid out. That amount is set aside the moment you submit a request, before it is approved or paid, so it cannot be requested twice.' : 'This is the amount you can request in a new withdrawal right now. Once a request is submitted, it is reserved from your settled balance immediately, before it is approved or paid out, so it cannot be requested twice.' }}"
+                    formula="Settled Balance (${{ number_format($member->savings_balance, 2) }}) − Reserved for Withdrawals (${{ number_format($memberReservedWithdrawals, 2) }})"
+                    color="emerald"
+                />
             </div>
 
             @php
@@ -388,11 +397,27 @@
                 @csrf
 
                 <!-- Available Balance Hint -->
-                <div class="p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-between text-xs">
-                    <span class="text-zinc-500">Verified Available Balance:</span>
-                    <span class="font-extrabold text-emerald-600 dark:text-emerald-400 font-mono text-sm">
-                        ${{ number_format($member->available_savings_balance, 2) }}
-                    </span>
+                <div class="p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl flex flex-col gap-1.5 text-xs">
+                    <div class="flex items-center justify-between">
+                        <span class="text-zinc-500">Settled Balance:</span>
+                        <span class="font-bold text-zinc-700 dark:text-zinc-300 font-mono">
+                            ${{ number_format($member->savings_balance, 2) }}
+                        </span>
+                    </div>
+                    @if($memberReservedWithdrawals > 0)
+                    <div class="flex items-center justify-between">
+                        <span class="text-zinc-500">Reserved for Withdrawals:</span>
+                        <span class="font-bold text-amber-600 dark:text-amber-400 font-mono">
+                            -${{ number_format($memberReservedWithdrawals, 2) }}
+                        </span>
+                    </div>
+                    @endif
+                    <div class="flex items-center justify-between pt-1 border-t border-zinc-200 dark:border-zinc-800">
+                        <span class="text-zinc-500 font-semibold">Verified Available Balance:</span>
+                        <span class="font-extrabold text-emerald-600 dark:text-emerald-400 font-mono text-sm">
+                            ${{ number_format($member->available_savings_balance, 2) }}
+                        </span>
+                    </div>
                 </div>
 
                 <!-- Gross Amount Input -->

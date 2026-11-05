@@ -100,7 +100,28 @@ class Member extends Model
 
     public function getAvailableSavingsBalanceAttribute(): float
     {
-        $reservedWithdrawals = $this->savingsWithdrawalRequests()->whereIn('status', ['pending', 'approved'])->sum('gross_amount');
+        return $this->availableSavingsBalanceExcluding(null);
+    }
+
+    /**
+     * Total gross amount of withdrawal requests that are pending review or approved but not yet paid out.
+     */
+    public function getReservedWithdrawalsAmountAttribute(): float
+    {
+        return (float) $this->savingsWithdrawalRequests()->whereIn('status', ['pending', 'approved'])->sum('gross_amount');
+    }
+
+    /**
+     * Available savings balance, ignoring the given withdrawal request's own reservation.
+     * Used when reviewing a request so the request is not counted against itself.
+     */
+    public function availableSavingsBalanceExcluding(?int $withdrawalRequestId): float
+    {
+        $reservedWithdrawals = (float) $this->savingsWithdrawalRequests()
+            ->whereIn('status', ['pending', 'approved'])
+            ->when($withdrawalRequestId, fn ($q) => $q->where('id', '!=', $withdrawalRequestId))
+            ->sum('gross_amount');
+
         return (float) max(0, $this->savings_balance - $reservedWithdrawals);
     }
 

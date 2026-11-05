@@ -1091,8 +1091,23 @@
                                 <span x-show="!sidebarCollapsed" class="truncate">Deposit Requests</span>
                             </a>
                             <!-- Withdrawal Requests -->
-                            <a 
-                                href="{{ route('savings.withdrawal-requests') }}" 
+                            @php
+                                // Badge counts only the withdrawal work this user is permitted to act on
+                                $sidebarWithdrawalActionCount = 0;
+                                try {
+                                    $sbIsAdmin = $authUser && $authUser->hasRole('admin');
+                                    if ($authUser && ($sbIsAdmin || $authUser->can('savings.approve_withdrawal'))) {
+                                        $sidebarWithdrawalActionCount += \App\Models\SavingsWithdrawalRequest::where('status', 'pending')->count();
+                                    }
+                                    if ($authUser && ($sbIsAdmin || $authUser->can('savings.disburse_withdrawal'))) {
+                                        $sidebarWithdrawalActionCount += \App\Models\SavingsWithdrawalRequest::where('status', 'approved')->count();
+                                    }
+                                } catch (\Throwable $e) {
+                                    $sidebarWithdrawalActionCount = 0;
+                                }
+                            @endphp
+                            <a
+                                href="{{ route('savings.withdrawal-requests') }}"
                                 class="group flex items-center gap-2 overflow-hidden rounded-[10px] text-sm outline-none transition-all duration-200 relative select-none cursor-pointer {{ Route::is('savings.withdrawal-requests') ? 'bg-zinc-100 dark:bg-zinc-800 sidebar-text-primary font-medium' : 'sidebar-text-secondary hover:sidebar-text-primary hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40' }}"
                                 :class="sidebarCollapsed ? 'size-8 p-2 justify-center' : 'h-7 px-2 w-full'"
                                 title="Withdrawal Requests"
@@ -1100,6 +1115,11 @@
                             >
                                 <i data-lucide="arrow-up-right" class="w-4 h-4 shrink-0 transition-colors {{ Route::is('savings.withdrawal-requests') ? 'sidebar-text-primary' : 'sidebar-text-secondary group-hover:sidebar-text-primary' }}"></i>
                                 <span x-show="!sidebarCollapsed" class="truncate">Withdrawals</span>
+                                @if($sidebarWithdrawalActionCount > 0)
+                                    <span x-show="!sidebarCollapsed" class="ml-auto bg-sky-500/10 dark:bg-sky-500/20 text-sky-700 dark:text-sky-400 text-[10px] font-black px-1.5 py-0.5 rounded-full border border-sky-500/20">
+                                        {{ $sidebarWithdrawalActionCount }}
+                                    </span>
+                                @endif
                             </a>
                             <!-- Transactions -->
                             <a 

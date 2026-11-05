@@ -114,7 +114,7 @@
     <!-- Main Form container tracking filters, search, page & size -->
     <form id="savings-admin-withdrawal-filter-form" method="GET" action="{{ route('savings.withdrawal-requests') }}" x-ref="form" class="hidden">
         <input type="hidden" name="search" value="{{ request('search') }}" x-ref="searchInput">
-        <input type="hidden" name="status" value="{{ request('status') }}" x-ref="statusInput">
+        <input type="hidden" name="status" value="{{ $activeStatus }}" x-ref="statusInput">
         <input type="hidden" name="member_id" value="{{ request('member_id') }}" x-ref="memberIdInput">
         <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}" x-ref="perPageInput">
         <input type="hidden" name="page" value="{{ $requests->currentPage() }}" x-ref="pageInput">
@@ -149,6 +149,12 @@
                     <span class="text-[11px] font-bold text-amber-700 dark:text-amber-400">{{ $pendingCount }} Pending Approval</span>
                 </div>
             @endif
+            @if($pendingDisbursementCount > 0)
+                <div class="px-3 py-1.5 bg-sky-500/10 border border-sky-500/20 rounded-[10px] flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>
+                    <span class="text-[11px] font-bold text-sky-700 dark:text-sky-400">{{ $pendingDisbursementCount }} Awaiting Disbursement</span>
+                </div>
+            @endif
 
             <!-- Export CSV Button -->
             <a 
@@ -173,15 +179,40 @@
             <button 
                 type="button"
                 @click="showFilterModal = true"
-                class="p-2.5 border rounded-[10px] cursor-pointer transition-all active:scale-[0.96] relative {{ (request('status') || request('member_id')) ? 'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400' : 'text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-950/40 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800' }}"
+                class="p-2.5 border rounded-[10px] cursor-pointer transition-all active:scale-[0.96] relative {{ request('member_id') ? 'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400' : 'text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-950/40 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800' }}"
                 title="Filters"
             >
                 <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
-                @if(request('status') || request('member_id'))
+                @if(request('member_id'))
                     <span class="absolute top-1 right-1 w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
                 @endif
             </button>
         </div>
+    </div>
+
+    <!-- Status Tabs (work queues) -->
+    @php
+        $statusTabs = [
+            'pending' => ['label' => 'Pending Review', 'dot' => 'bg-amber-500'],
+            'approved' => ['label' => 'Awaiting Disbursement', 'dot' => 'bg-sky-500'],
+            'disbursed' => ['label' => 'Disbursed', 'dot' => 'bg-emerald-500'],
+            'rejected' => ['label' => 'Rejected', 'dot' => 'bg-rose-500'],
+            'all' => ['label' => 'All', 'dot' => 'bg-zinc-400'],
+        ];
+    @endphp
+    <div class="flex flex-wrap items-center gap-1.5 bg-white dark:bg-zinc-900/40 p-1.5 rounded-[10px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-xs" role="tablist" aria-label="Withdrawal status">
+        @foreach($statusTabs as $tabKey => $tab)
+            <a
+                href="{{ route('savings.withdrawal-requests', array_filter(['status' => $tabKey, 'search' => request('search'), 'member_id' => request('member_id'), 'per_page' => request('per_page')])) }}"
+                role="tab"
+                aria-selected="{{ $activeStatus === $tabKey ? 'true' : 'false' }}"
+                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all select-none {{ $activeStatus === $tabKey ? 'bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 shadow-2xs' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800' }}"
+            >
+                <span class="w-1.5 h-1.5 rounded-full {{ $tab['dot'] }}"></span>
+                <span>{{ $tab['label'] }}</span>
+                <span class="font-mono text-[11px] px-1.5 rounded {{ $activeStatus === $tabKey ? 'bg-white/20 dark:bg-zinc-950/10' : 'bg-zinc-100 dark:bg-zinc-800' }}">{{ $statusCounts[$tabKey] }}</span>
+            </a>
+        @endforeach
     </div>
 
     <!-- Data Table Card -->
@@ -266,10 +297,15 @@
                                     <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
                                     Self (Peer Review)
                                 </span>
+                            @elseif(!$canApprove)
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-700/80 select-none" title="An officer with approval permission must review this request first">
+                                    <i data-lucide="hourglass" class="w-3.5 h-3.5"></i>
+                                    Awaiting Review
+                                </span>
                             @else
                             <div class="flex items-center justify-center gap-1.5">
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     @click="
                                         selectedRequestId = '{{ $req->id }}';
                                         selectedGrossAmount = '{{ number_format($req->gross_amount, 2) }}';
@@ -308,9 +344,23 @@
                                     Self (Peer Review)
                                 </span>
                             @else
+                            @php
+                                $blockedAsApprover = \App\Http\Controllers\SavingsController::approverCannotDisburse(auth()->user(), $req, $separateDisburserEnforced);
+                            @endphp
                             <div class="flex items-center justify-center gap-1.5">
-                                <button 
-                                    type="button" 
+                                @if(!$canDisburse)
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 border border-sky-200/80 dark:border-sky-800/80 select-none" title="An officer with disbursement permission must pay out this withdrawal">
+                                    <i data-lucide="hourglass" class="w-3.5 h-3.5"></i>
+                                    Awaiting Payout
+                                </span>
+                                @elseif($blockedAsApprover)
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/80 select-none" title="Segregation of Duties: you approved this withdrawal, so a different officer must disburse it">
+                                    <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+                                    You Approved
+                                </span>
+                                @else
+                                <button
+                                    type="button"
                                     @click="openDisburseModal({
                                         id: '{{ $req->id }}',
                                         memberName: {{ json_encode($req->member->name) }},
@@ -326,7 +376,9 @@
                                     <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
                                     <span>Disburse</span>
                                 </button>
-                                <button 
+                                @endif
+                                @if($canApprove)
+                                <button
                                     type="button" 
                                     @click="
                                         selectedRequestId = '{{ $req->id }}';
@@ -340,6 +392,7 @@
                                 >
                                     <i data-lucide="x" class="w-4 h-4"></i>
                                 </button>
+                                @endif
                             </div>
                             @endif
                         @elseif ($req->status === 'disbursed')
@@ -699,10 +752,11 @@
                         id="admin-withdrawal-status-filter"
                         class="w-full bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-semibold"
                     >
-                        <option value="">All Statuses</option>
-                        <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Approved</option>
-                        <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                        <option value="all" {{ $activeStatus === 'all' ? 'selected' : '' }}>All Statuses</option>
+                        <option value="pending" {{ $activeStatus === 'pending' ? 'selected' : '' }}>Pending Review</option>
+                        <option value="approved" {{ $activeStatus === 'approved' ? 'selected' : '' }}>Awaiting Disbursement</option>
+                        <option value="disbursed" {{ $activeStatus === 'disbursed' ? 'selected' : '' }}>Disbursed</option>
+                        <option value="rejected" {{ $activeStatus === 'rejected' ? 'selected' : '' }}>Rejected</option>
                     </select>
                 </div>
                 <div class="flex flex-col gap-1">

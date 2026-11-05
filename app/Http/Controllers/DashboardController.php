@@ -40,11 +40,11 @@ class DashboardController extends Controller
         if ($isAdmin && (!$member || $portalMode === 'officer')) {
             // Permission checks
             $canViewMembers = method_exists($user, 'can') ? ($user->can('members.view') || $user->hasRole('admin')) : true;
-            $canViewNjangi = method_exists($user, 'can') ? ($user->can('njangi.view_cycles') || $user->hasAnyRole(['admin', 'Financial Secretary', 'Treasurer'])) : true;
-            $canViewSavings = method_exists($user, 'can') ? ($user->can('savings.view_all') || $user->hasAnyRole(['admin', 'Treasurer', 'Financial Secretary'])) : true;
-            $canViewLoans = method_exists($user, 'can') ? ($user->can('loans.view_all') || $user->hasAnyRole(['admin', 'Loan Committee', 'Treasurer'])) : true;
-            $canViewAttendance = method_exists($user, 'can') ? ($user->can('attendance.view') || $user->can('attendance.mark') || $user->hasAnyRole(['admin', 'General Secretary'])) : true;
-            $canViewGovernance = method_exists($user, 'can') ? ($user->can('governance.view_roles') || $user->hasRole('admin')) : true;
+            $canViewNjangi = method_exists($user, 'can') ? ($user->can('njangi.view_cycles') || $user->can('njangi.manage_cycles') || $user->can('njangi.audit_submissions') || $user->can('njangi.disburse') || $user->hasRole('admin')) : true;
+            $canViewSavings = method_exists($user, 'can') ? ($user->can('savings.view_all') || $user->can('savings.approve_withdrawal') || $user->can('savings.disburse_withdrawal') || $user->can('savings.record_deposit') || $user->hasRole('admin')) : true;
+            $canViewLoans = method_exists($user, 'can') ? ($user->can('loans.view_all') || $user->can('loans.committee_review') || $user->can('loans.approve') || $user->can('loans.disburse') || $user->hasRole('admin')) : true;
+            $canViewAttendance = method_exists($user, 'can') ? ($user->can('attendance.view') || $user->can('attendance.view_all') || $user->can('attendance.mark') || $user->hasRole('admin')) : true;
+            $canViewGovernance = method_exists($user, 'can') ? ($user->can('governance.view_roles') || $user->can('roles.manage') || $user->hasRole('admin')) : true;
 
             // Global Metrics
             $totalMembersCount = \App\Models\Member::count();
@@ -59,7 +59,7 @@ class DashboardController extends Controller
             $totalSavingsWithdrawals = (float) \App\Models\SavingsTransaction::where('type', 'withdrawal')->where('status', 'approved')->sum('amount');
             $totalSavingsBalance = (float) max(0, $totalSavingsDeposits - $totalSavingsWithdrawals);
 
-            $reservedWithdrawals = (float) \App\Models\SavingsWithdrawalRequest::whereIn('status', ['pending', 'approved', 'pending_approval', 'pending_disbursement'])->sum('gross_amount');
+            $reservedWithdrawals = (float) \App\Models\SavingsWithdrawalRequest::whereIn('status', ['pending', 'approved'])->sum('gross_amount');
             $totalAvailableSavings = (float) max(0, $totalSavingsBalance - $reservedWithdrawals);
             $savingsDepositsThisMonth = (float) \App\Models\SavingsTransaction::where('type', 'deposit')->where('status', 'approved')->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->sum('amount');
 
@@ -80,7 +80,11 @@ class DashboardController extends Controller
             // Urgent Officer Queues
             $pendingNjangiSubmissions = \App\Models\NjangiPaymentSubmission::where('status', 'pending')->count();
             $pendingSavingsDeposits = \App\Models\SavingsDepositRequest::where('status', 'pending')->count();
-            $pendingSavingsWithdrawals = \App\Models\SavingsWithdrawalRequest::whereIn('status', ['pending_approval', 'pending_disbursement'])->count();
+            // Withdrawal work queues: 'pending' = awaiting review, 'approved' = awaiting payout
+            $pendingSavingsWithdrawals = \App\Models\SavingsWithdrawalRequest::where('status', 'pending')->count();
+            $awaitingDisbursementWithdrawals = \App\Models\SavingsWithdrawalRequest::where('status', 'approved')->count();
+            $canApproveWithdrawals = $user->hasRole('admin') || $user->can('savings.approve_withdrawal');
+            $canDisburseWithdrawals = $user->hasRole('admin') || $user->can('savings.disburse_withdrawal');
             $pendingCommitteeLoans = \App\Models\LoanRequest::where('status', 'pending_committee')->count();
             $pendingDisbursementLoans = \App\Models\LoanRequest::where('status', 'approved_pending_disbursement')->count();
             $pendingRepaymentRequests = \App\Models\LoanRepaymentRequest::where('status', 'pending')->count();
@@ -178,6 +182,9 @@ class DashboardController extends Controller
                 'pendingNjangiSubmissions',
                 'pendingSavingsDeposits',
                 'pendingSavingsWithdrawals',
+                'awaitingDisbursementWithdrawals',
+                'canApproveWithdrawals',
+                'canDisburseWithdrawals',
                 'pendingCommitteeLoans',
                 'pendingDisbursementLoans',
                 'pendingRepaymentRequests',

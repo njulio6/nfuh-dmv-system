@@ -1152,6 +1152,14 @@ class ComprehensiveDemonstrationSeeder extends Seeder
                 'review_note' => 'Payment reference was not found in bank operating account.',
             ]);
         }
+
+        // Final pass: recompute every savings transaction's previous/new balance snapshot from
+        // the member's real chronological running total, so demo statements and exports always
+        // reconcile (Revision 11, Section 10 — "Reconcile ... against known test figures").
+        $fixedBalanceSnapshots = (new \App\Services\SavingsBalanceReconciler())->fix();
+        if ($fixedBalanceSnapshots > 0) {
+            $this->command?->info("Reconciled {$fixedBalanceSnapshots} savings transaction balance snapshot(s).");
+        }
     }
 
     /**

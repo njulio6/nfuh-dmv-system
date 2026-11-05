@@ -131,8 +131,8 @@ class LoanController extends Controller
     public function approve(Request $request, LoanRequest $loan)
     {
         $user = Auth::user();
-        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.approve') && !$user->hasRole('Loan Committee'))) {
-            abort(403, 'Unauthorized action. Only the Loan Committee or Administrator can approve loans.');
+        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.approve'))) {
+            abort(403, 'Unauthorized action. You do not have permission to approve loans.');
         }
 
         if ($loan->status !== 'pending_committee') {
@@ -172,8 +172,8 @@ class LoanController extends Controller
     public function disburse(Request $request, LoanRequest $loan)
     {
         $user = Auth::user();
-        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.disburse') && !$user->hasRole('Treasurer'))) {
-            abort(403, 'Unauthorized action. Only the Treasurer or Administrator can disburse loan funds.');
+        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.disburse'))) {
+            abort(403, 'Unauthorized action. You do not have permission to disburse loan funds.');
         }
 
         if ($loan->status !== 'approved') {
@@ -236,8 +236,8 @@ class LoanController extends Controller
     public function reject(Request $request, LoanRequest $loan)
     {
         $user = Auth::user();
-        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.reject') && !$user->can('loans.approve') && !$user->hasRole('Loan Committee'))) {
-            abort(403, 'Unauthorized action. Only the Loan Committee or Administrator can reject loans.');
+        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.reject') && !$user->can('loans.approve'))) {
+            abort(403, 'Unauthorized action. You do not have permission to reject loans.');
         }
 
         if (!in_array($loan->status, ['pending_guarantors', 'pending_committee', 'approved'])) {
@@ -730,8 +730,8 @@ class LoanController extends Controller
     public function markAsDefaulted(LoanRequest $loan)
     {
         $user = Auth::user();
-        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.manage_sub_statuses') && !$user->hasRole('Loan Committee'))) {
-            abort(403, 'Unauthorized action. Only authorized committee officers can mark loans as defaulted.');
+        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.manage_sub_statuses') && !$user->can('settings.manage'))) {
+            abort(403, 'Unauthorized action. You do not have permission to mark loans as defaulted.');
         }
 
         if ($loan->status !== 'active') {
@@ -751,8 +751,8 @@ class LoanController extends Controller
     public function markAsActive(LoanRequest $loan)
     {
         $user = Auth::user();
-        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.manage_sub_statuses') && !$user->hasRole('Loan Committee'))) {
-            abort(403, 'Unauthorized action. Only authorized committee officers can restore defaulted loans.');
+        if (!$user || (!$user->hasRole('admin') && !$user->can('loans.manage_sub_statuses') && !$user->can('settings.manage'))) {
+            abort(403, 'Unauthorized action. You do not have permission to restore defaulted loans.');
         }
 
         if ($loan->status !== 'defaulted') {

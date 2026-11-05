@@ -97,10 +97,11 @@ class RolesAndPermissionsSeeder extends Seeder
             'savings.view_all',
         ]);
 
-        // Financial Secretary role (Records collections and deposits, audits Njangi, but cannot disburse)
+        // Financial Secretary role (Records collections/deposits and approves withdrawal requests, but cannot disburse)
         $finSecRole = Role::firstOrCreate(['name' => 'Financial Secretary', 'guard_name' => 'web']);
         $finSecRole->syncPermissions([
             'savings.record_deposit',
+            'savings.approve_withdrawal',
             'savings.view_all',
             'njangi.audit_submissions',
             'njangi.manage_cycles',

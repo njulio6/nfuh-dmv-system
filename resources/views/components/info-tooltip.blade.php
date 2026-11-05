@@ -105,36 +105,74 @@
     $theme = $colorStyles[$c] ?? $colorStyles['blue'];
 @endphp
 
-<div class="relative inline-flex items-center ml-1.5" 
-     x-data="{ 
-         open: false, 
-         dropUp: false,
-         alignRight: false,
-         updatePosition() {
-             const rect = this.$el.getBoundingClientRect();
-             // Vertical: If less than 260px space above the icon, always drop down
-             this.dropUp = rect.top > 260 && (window.innerHeight - rect.bottom < 260);
-             // Horizontal: If closer than 340px to the right edge of viewport, align to right
-             this.alignRight = (window.innerWidth - rect.left < 340);
-         },
-         toggle() {
-             if (!this.open) this.updatePosition();
-             this.open = !this.open;
-         },
-         show() {
-             this.updatePosition();
-             this.open = true;
-         }
-     }" 
-     @mouseenter="show" 
-     @mouseleave="open = false" 
-     @click.stop="toggle" 
+@once
+<script>
+window.initInfoTooltip = function() {
+    return {
+        open: false,
+        dropUp: false,
+        alignRight: false,
+        panelWidth: 320,
+        updatePosition() {
+            const rect = this.$el.getBoundingClientRect();
+            // Vertical: If less than 260px space above the icon, always drop down
+            this.dropUp = rect.top > 260 && (window.innerHeight - rect.bottom < 260);
+
+            // Horizontal: size panel to fit within card/container
+            const contentEl = this.$el.closest('main') || document.body;
+            const contentRect = contentEl.getBoundingClientRect();
+            const cardEl = this.$el.closest('.stat-card-gradient, [class*="rounded-2xl"], [class*="rounded-3xl"]');
+            const cardRect = cardEl ? cardEl.getBoundingClientRect() : null;
+
+            const maxPanelWidth = window.innerWidth < 640 ? 288 : 320;
+            const minPanelWidth = 240;
+            const cardInnerPadding = 32;
+            const margin = 16;
+
+            const boundsLeft = cardRect ? Math.max(cardRect.left, contentRect.left) : contentRect.left;
+            const boundsRight = cardRect ? Math.min(cardRect.right, contentRect.right) : contentRect.right;
+            const availableWidth = cardRect
+                ? Math.min(cardRect.width - cardInnerPadding, contentRect.width - margin * 2)
+                : contentRect.width - margin * 2;
+
+            this.panelWidth = Math.max(minPanelWidth, Math.min(maxPanelWidth, availableWidth));
+
+            const spaceOnLeft = rect.left - boundsLeft;
+            const spaceOnRight = boundsRight - rect.right;
+
+            if (spaceOnRight >= this.panelWidth + margin) {
+                this.alignRight = false;
+            } else if (spaceOnLeft >= this.panelWidth + margin) {
+                this.alignRight = true;
+            } else {
+                this.alignRight = spaceOnLeft > spaceOnRight;
+            }
+        },
+        toggle() {
+            if (!this.open) this.updatePosition();
+            this.open = !this.open;
+        },
+        show() {
+            this.updatePosition();
+            this.open = true;
+        }
+    };
+};
+</script>
+@endonce
+
+<div class="relative inline-flex items-center ml-1.5"
+     x-data="initInfoTooltip()"
+     @mouseenter="show"
+     @mouseleave="open = false"
+     @click.stop="toggle"
      @click.outside="open = false">
     <button type="button" class="text-zinc-400 {{ $theme['btnHover'] }} transition-colors focus:outline-hidden p-0.5 rounded-md cursor-pointer" aria-label="Information and calculation details">
         <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
     </button>
-    
-    <div x-show="open" 
+
+    <div x-show="open"
+         x-cloak
          x-transition:enter="transition ease-out duration-150"
          x-transition:enter-start="opacity-0 translate-y-1 scale-95"
          x-transition:enter-end="opacity-100 translate-y-0 scale-100"
@@ -145,7 +183,8 @@
              dropUp ? 'bottom-full mb-2.5' : 'top-full mt-2.5',
              alignRight ? 'right-0' : 'left-0 sm:-left-3'
          ]"
-         class="absolute z-50 w-72 sm:w-80 p-4 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700/80 border-t-2 {{ $theme['topBorder'] }} rounded-2xl shadow-xl shadow-zinc-900/10 dark:shadow-black/60 text-left pointer-events-auto select-none"
+         :style="{ width: panelWidth + 'px' }"
+         class="absolute z-50 p-4 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700/80 border-t-2 {{ $theme['topBorder'] }} rounded-2xl shadow-xl shadow-zinc-900/10 dark:shadow-black/60 text-left pointer-events-auto select-none"
          style="display: none;"
          @click.stop>
         @if($title)

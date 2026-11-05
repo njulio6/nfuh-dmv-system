@@ -180,8 +180,14 @@
                     <td class="py-3 px-3 font-mono font-bold text-zinc-500 text-xs">
                         {{ $m->state_code ?: '-' }}
                     </td>
-                    <td class="py-3 px-3 font-bold text-zinc-950 dark:text-white text-sm">
-                        ${{ number_format($m->savings_balance, 2) }}
+                    <td class="py-3 px-3 text-sm">
+                        <div class="font-bold text-zinc-950 dark:text-white">${{ number_format($m->savings_balance, 2) }}</div>
+                        @php $mReserved = $m->reserved_withdrawals_amount; @endphp
+                        @if($mReserved > 0)
+                            <div class="text-[10px] text-amber-600 dark:text-amber-400 font-medium" title="Reserved for pending/approved withdrawal requests">
+                                ${{ number_format($m->available_savings_balance, 2) }} available (-${{ number_format($mReserved, 2) }} reserved)
+                            </div>
+                        @endif
                     </td>
                     <td class="py-3 px-3">
                         @if($m->savings_balance >= ($appSettings->min_savings_for_loan ?? 500))

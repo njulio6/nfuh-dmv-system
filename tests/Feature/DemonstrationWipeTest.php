@@ -160,4 +160,9 @@ test('demonstration wipe successfully wipes database and seeds complete demonstr
     expect(MeetingAttendance::where('attendance_status', 'absent')->count())->toBeGreaterThanOrEqual(15);
     expect(App\Models\MeetingGuest::count())->toBeGreaterThanOrEqual(15);
     expect(App\Models\AttendanceAuditLog::count())->toBeGreaterThanOrEqual(15);
+
+    // 8. Revision 11, Bug 4: every seeded savings statement must reconcile against the member's
+    // real running balance (no made-up previous_balance/new_balance snapshots).
+    $mismatches = (new \App\Services\SavingsBalanceReconciler())->report();
+    expect($mismatches)->toHaveCount(0);
 });

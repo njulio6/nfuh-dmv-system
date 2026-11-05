@@ -230,6 +230,11 @@
             }
 
             $headers[] = ['label' => 'Actions', 'align' => 'center', 'width' => 'min-w-[160px]'];
+            $authUser = auth()->user();
+            $isAdminUser = $authUser && $authUser->hasRole('admin');
+            $canApproveLoans = $authUser && ($isAdminUser || $authUser->can('loans.approve'));
+            $canRejectLoans = $authUser && ($isAdminUser || $authUser->can('loans.reject') || $authUser->can('loans.approve'));
+            $canDisburseLoans = $authUser && ($isAdminUser || $authUser->can('loans.disburse'));
         @endphp
 
         <x-premium-table :headers="$headers">
@@ -473,41 +478,53 @@
                     <td class="py-3.5 px-3 text-center">
                         <div class="flex items-center justify-center gap-1.5">
                                  @if($status === 'pending_committee')
-                                     <!-- Approve request -->
-                                     <button 
-                                         type="button" 
-                                         @click="openReviewModal('{{ route('loans.approve', $loan->id) }}', 'approve', '{{ addslashes($loan->member->name) }}', '{{ $loan->amount }}', '{{ $loan->duration_months }}', '{{ $loan->repayment_frequency === 'end_of_term' ? 'End of Term' : ucfirst($loan->repayment_frequency ?? 'monthly') }}')"
-                                         class="px-2.5 py-1.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all flex items-center justify-center select-none active:scale-[0.96]"
-                                     >
-                                         Approve
-                                     </button>
+                                     @if($canApproveLoans)
+                                         <!-- Approve request -->
+                                         <button 
+                                             type="button" 
+                                             @click="openReviewModal('{{ route('loans.approve', $loan->id) }}', 'approve', '{{ addslashes($loan->member->name) }}', '{{ $loan->amount }}', '{{ $loan->duration_months }}', '{{ $loan->repayment_frequency === 'end_of_term' ? 'End of Term' : ucfirst($loan->repayment_frequency ?? 'monthly') }}')"
+                                             class="px-2.5 py-1.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all flex items-center justify-center select-none active:scale-[0.96]"
+                                         >
+                                             Approve
+                                         </button>
+                                     @endif
 
-                                     <!-- Reject request -->
-                                     <button 
-                                         type="button" 
-                                         @click="openReviewModal('{{ route('loans.reject', $loan->id) }}', 'reject', '{{ addslashes($loan->member->name) }}', '{{ $loan->amount }}', '{{ $loan->duration_months }}', '{{ $loan->repayment_frequency === 'end_of_term' ? 'End of Term' : ucfirst($loan->repayment_frequency ?? 'monthly') }}')"
-                                         class="px-2.5 py-1.5 border border-red-200 dark:border-red-950/60 bg-red-50 hover:bg-red-100 dark:bg-red-950/10 text-red-650 dark:text-red-400 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all flex items-center justify-center select-none active:scale-[0.96]"
-                                     >
-                                         Reject
-                                     </button>
+                                     @if($canRejectLoans)
+                                         <!-- Reject request -->
+                                         <button 
+                                             type="button" 
+                                             @click="openReviewModal('{{ route('loans.reject', $loan->id) }}', 'reject', '{{ addslashes($loan->member->name) }}', '{{ $loan->amount }}', '{{ $loan->duration_months }}', '{{ $loan->repayment_frequency === 'end_of_term' ? 'End of Term' : ucfirst($loan->repayment_frequency ?? 'monthly') }}')"
+                                             class="px-2.5 py-1.5 border border-red-200 dark:border-red-950/60 bg-red-50 hover:bg-red-100 dark:bg-red-950/10 text-red-650 dark:text-red-400 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all flex items-center justify-center select-none active:scale-[0.96]"
+                                         >
+                                             Reject
+                                         </button>
+                                     @endif
+
+                                     @if(!$canApproveLoans && !$canRejectLoans)
+                                         <span class="text-[11px] text-zinc-400 dark:text-zinc-500 italic">Awaiting Committee Review</span>
+                                     @endif
                                 @elseif($status === 'approved')
-                                     <!-- Disburse Funds -->
-                                     <button 
-                                         type="button" 
-                                         @click="openDisburseModal(
-                                             '{{ route('loans.disburse', $loan->id) }}', 
-                                             '{{ addslashes($loan->member->name) }}', 
-                                             '{{ $loan->amount }}',
-                                             '{{ addslashes(ucwords(str_replace('_', ' ', $loan->payout_method ?? 'Not Specified'))) }}',
-                                             '{{ addslashes($loan->payout_details ?? '') }}',
-                                             '{{ $loan->duration_months }}',
-                                             '{{ $loan->repayment_frequency === 'end_of_term' ? 'End of Term' : ucfirst($loan->repayment_frequency ?? 'monthly') }}'
-                                         )"
-                                         class="px-3 py-1.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all flex items-center justify-center gap-1 select-none active:scale-[0.96]"
-                                     >
-                                         <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
-                                         Disburse
-                                     </button>
+                                     @if($canDisburseLoans)
+                                         <!-- Disburse Funds -->
+                                         <button 
+                                             type="button" 
+                                             @click="openDisburseModal(
+                                                 '{{ route('loans.disburse', $loan->id) }}', 
+                                                 '{{ addslashes($loan->member->name) }}', 
+                                                 '{{ $loan->amount }}',
+                                                 '{{ addslashes(ucwords(str_replace('_', ' ', $loan->payout_method ?? 'Not Specified'))) }}',
+                                                 '{{ addslashes($loan->payout_details ?? '') }}',
+                                                 '{{ $loan->duration_months }}',
+                                                 '{{ $loan->repayment_frequency === 'end_of_term' ? 'End of Term' : ucfirst($loan->repayment_frequency ?? 'monthly') }}'
+                                             )"
+                                             class="px-3 py-1.5 bg-zinc-950 hover:bg-zinc-900 dark:bg-zinc-50 dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-[11px] font-bold rounded-[8px] cursor-pointer shadow-3xs transition-all flex items-center justify-center gap-1 select-none active:scale-[0.96]"
+                                         >
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                                             Disburse
+                                         </button>
+                                     @else
+                                         <span class="text-[11px] text-zinc-400 dark:text-zinc-500 italic">Awaiting Disbursement</span>
+                                     @endif
                                 @elseif($status === 'active')
                                     <!-- Post manual repayment -->
                                     <button 

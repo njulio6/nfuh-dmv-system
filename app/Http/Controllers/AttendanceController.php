@@ -34,10 +34,7 @@ class AttendanceController extends Controller
             abort(401);
         }
 
-        $member = MemberResolver::fromUser($user);
-        $canMark = $user->hasRole('admin')
-            || ($user->can('attendance.mark') ?? false)
-            || ($member && $member->roles()->whereIn('name', ['Secretary', 'Admin'])->exists());
+        $canMark = $user->hasRole('admin') || ($user->can('attendance.mark') ?? false);
 
         if (!$canMark) {
             abort(403, 'Unauthorized action. You do not have permission to access the Officer Attendance Desk.');

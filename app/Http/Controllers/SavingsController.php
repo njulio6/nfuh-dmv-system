@@ -701,8 +701,26 @@ class SavingsController extends Controller
             });
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        $user = Auth::user();
+        $isAdmin = $user && $user->hasRole('admin');
+        $canApprove = $user && ($isAdmin || $user->can('savings.approve_withdrawal'));
+        $canDisburse = $user && ($isAdmin || $user->can('savings.disburse_withdrawal'));
+
+        // Default tab is chosen from the user's permissions, so each officer lands on their own work queue
+        $validStatuses = ['pending', 'approved', 'disbursed', 'rejected', 'all'];
+        $activeStatus = $request->input('status');
+        if (!in_array($activeStatus, $validStatuses, true)) {
+            if ($canDisburse && !$canApprove) {
+                $activeStatus = 'approved';
+            } elseif ($canApprove && !$canDisburse) {
+                $activeStatus = 'pending';
+            } else {
+                $activeStatus = 'all';
+            }
+        }
+
+        if ($activeStatus !== 'all') {
+            $query->where('status', $activeStatus);
         }
 
         if ($request->filled('member_id')) {
@@ -717,13 +735,36 @@ class SavingsController extends Controller
         $requests = $query->orderByRaw("CASE WHEN status = 'pending' THEN 0 WHEN status = 'approved' THEN 1 ELSE 2 END")
             ->orderBy('created_at', 'desc')
             ->orderBy('id', 'desc')
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
 
-        $pendingCount = SavingsWithdrawalRequest::where('status', 'pending')->count();
-        $pendingDisbursementCount = SavingsWithdrawalRequest::where('status', 'approved')->count();
+        $statusCounts = SavingsWithdrawalRequest::selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+        $statusCounts = [
+            'pending' => (int) ($statusCounts['pending'] ?? 0),
+            'approved' => (int) ($statusCounts['approved'] ?? 0),
+            'disbursed' => (int) ($statusCounts['disbursed'] ?? 0),
+            'rejected' => (int) ($statusCounts['rejected'] ?? 0),
+            'all' => (int) $statusCounts->sum(),
+        ];
+
+        $pendingCount = $statusCounts['pending'];
+        $pendingDisbursementCount = $statusCounts['approved'];
         $allMembers = Member::orderBy('first_name')->orderBy('last_name')->get();
+        $separateDisburserEnforced = self::separateDisburserEnforced();
 
-        return view('savings.admin_withdrawal_requests', compact('requests', 'pendingCount', 'pendingDisbursementCount', 'allMembers'));
+        return view('savings.admin_withdrawal_requests', compact(
+            'separateDisburserEnforced',
+            'requests',
+            'pendingCount',
+            'pendingDisbursementCount',
+            'allMembers',
+            'statusCounts',
+            'activeStatus',
+            'canApprove',
+            'canDisburse'
+        ));
     }
 
     /**
@@ -732,8 +773,8 @@ class SavingsController extends Controller
     public function approveWithdrawal(Request $request, SavingsWithdrawalRequest $withdrawalRequest)
     {
         $user = Auth::user();
-        if (!$user || (!$user->hasRole('admin') && !$user->can('savings.approve_withdrawal') && !$user->hasRole('Financial Secretary'))) {
-            abort(403, 'Unauthorized action. Only authorized officers can approve savings withdrawals.');
+        if (!$user || (!$user->hasRole('admin') && !$user->can('savings.approve_withdrawal'))) {
+            abort(403, 'Unauthorized action. You do not have permission to approve savings withdrawals.');
         }
 
         if ($withdrawalRequest->status !== 'pending') {
@@ -745,11 +786,20 @@ class SavingsController extends Controller
         }
 
         $member = $withdrawalRequest->member;
-        if ($member->available_savings_balance < (float) $withdrawalRequest->gross_amount) {
-            return redirect()->back()->with('error', 'Member does not have sufficient available savings balance ($' . number_format($member->available_savings_balance, 2) . ') to approve this withdrawal.');
-        }
 
-        DB::transaction(function () use ($withdrawalRequest, $member, $request) {
+        $error = DB::transaction(function () use ($withdrawalRequest, $member, $request) {
+            // Lock the request row so two officers cannot approve it at the same time
+            $locked = SavingsWithdrawalRequest::whereKey($withdrawalRequest->id)->lockForUpdate()->first();
+            if (!$locked || $locked->status !== 'pending') {
+                return 'This withdrawal request has already been processed by another officer.';
+            }
+
+            // Exclude this request's own reservation so it is not counted against itself
+            $availableForThisRequest = $member->availableSavingsBalanceExcluding($withdrawalRequest->id);
+            if ($availableForThisRequest < (float) $withdrawalRequest->gross_amount) {
+                return 'Member does not have sufficient available savings balance ($' . number_format($availableForThisRequest, 2) . ') to approve this withdrawal.';
+            }
+
             $currentDeposits = (float) SavingsTransaction::where('member_id', $member->id)
                 ->where('status', 'approved')
                 ->whereIn('type', ['deposit', 'adjustment'])
@@ -783,9 +833,15 @@ class SavingsController extends Controller
                 'admin_notes' => $request->input('admin_notes'),
                 'savings_transaction_id' => $transaction->id,
             ]);
+
+            return null;
         });
 
-        return redirect()->back()->with('success', 'Savings withdrawal request approved and is now pending disbursement.');
+        if ($error) {
+            return redirect()->back()->with('error', $error);
+        }
+
+        return redirect()->back()->with('success', 'Savings withdrawal request approved and is now awaiting disbursement.');
     }
 
     /**
@@ -794,8 +850,8 @@ class SavingsController extends Controller
     public function disburseWithdrawal(Request $request, SavingsWithdrawalRequest $withdrawalRequest)
     {
         $user = Auth::user();
-        if (!$user || (!$user->hasRole('admin') && !$user->can('savings.disburse_withdrawal') && !$user->hasRole('Treasurer'))) {
-            abort(403, 'Unauthorized action. Only the Treasurer or Administrator can disburse savings withdrawals.');
+        if (!$user || (!$user->hasRole('admin') && !$user->can('savings.disburse_withdrawal'))) {
+            abort(403, 'Unauthorized action. You do not have permission to disburse savings withdrawals.');
         }
 
         if ($withdrawalRequest->status !== 'approved') {
@@ -804,6 +860,10 @@ class SavingsController extends Controller
 
         if (\App\Support\SegregationGuard::isSelf($user, $withdrawalRequest->member_id)) {
             return redirect()->back()->with('error', 'Segregation of Duties Violation: You cannot disburse your own withdrawal.');
+        }
+
+        if (self::approverCannotDisburse($user, $withdrawalRequest)) {
+            return redirect()->back()->with('error', 'Segregation of Duties Violation: You approved this withdrawal, so a different officer must disburse it.');
         }
 
         $rules = [
@@ -836,7 +896,13 @@ class SavingsController extends Controller
 
         $ref = !empty($validated['disbursement_reference']) ? trim($validated['disbursement_reference']) : null;
 
-        DB::transaction(function () use ($withdrawalRequest, $validated, $proofPath, $disbursedDate, $disbursedAt, $ref) {
+        $error = DB::transaction(function () use ($withdrawalRequest, $validated, $proofPath, $disbursedDate, $disbursedAt, $ref) {
+            // Lock the request row so the same withdrawal can never be paid out twice
+            $locked = SavingsWithdrawalRequest::whereKey($withdrawalRequest->id)->lockForUpdate()->first();
+            if (!$locked || $locked->status !== 'approved') {
+                return 'This withdrawal has already been disbursed or is no longer awaiting disbursement.';
+            }
+
             $refNote = $ref ? " (Ref: {$ref})" : "";
 
             $notes = "Member withdrawal payout ($" . number_format($withdrawalRequest->net_amount, 2) . ") + " . number_format($withdrawalRequest->fee_rate, 2) . "% Admin Fee ($" . number_format($withdrawalRequest->fee_amount, 2) . ") via " . ucfirst(str_replace('_', ' ', $validated['disbursement_method'])) . $refNote;
@@ -896,7 +962,14 @@ class SavingsController extends Controller
                 'disbursement_proof' => $proofPath,
                 'disbursement_details' => $validated['disbursement_details'] ?? null,
             ]);
+
+            return null;
         });
+
+        if ($error) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($proofPath);
+            return redirect()->back()->with('error', $error);
+        }
 
         return redirect()
             ->route('savings.withdrawal-requests')
@@ -909,8 +982,8 @@ class SavingsController extends Controller
     public function rejectWithdrawal(Request $request, SavingsWithdrawalRequest $withdrawalRequest)
     {
         $user = Auth::user();
-        if (!$user || (!$user->hasRole('admin') && !$user->can('savings.approve_withdrawal') && !$user->hasRole('Financial Secretary'))) {
-            abort(403, 'Unauthorized action. Only authorized officers can reject savings withdrawals.');
+        if (!$user || (!$user->hasRole('admin') && !$user->can('savings.approve_withdrawal'))) {
+            abort(403, 'Unauthorized action. You do not have permission to reject savings withdrawals.');
         }
 
         if (!in_array($withdrawalRequest->status, ['pending', 'approved'])) {
@@ -925,10 +998,22 @@ class SavingsController extends Controller
             'rejection_reason' => ['required', 'string', 'min:3', 'max:1000'],
         ]);
 
-        DB::transaction(function () use ($withdrawalRequest, $validated) {
-            // Delete or reject pending ledger transaction if one was created
+        $error = DB::transaction(function () use ($withdrawalRequest, $validated) {
+            $locked = SavingsWithdrawalRequest::whereKey($withdrawalRequest->id)->lockForUpdate()->first();
+            if (!$locked || !in_array($locked->status, ['pending', 'approved'])) {
+                return 'This withdrawal request has already been processed by another officer.';
+            }
+
+            // Keep the pending ledger entry for audit history; mark it rejected instead of deleting it
             if ($withdrawalRequest->savings_transaction_id) {
-                SavingsTransaction::where('id', $withdrawalRequest->savings_transaction_id)->delete();
+                SavingsTransaction::where('id', $withdrawalRequest->savings_transaction_id)
+                    ->where('status', 'pending')
+                    ->update([
+                        'status' => 'rejected',
+                        'new_balance' => DB::raw('previous_balance'),
+                        'reviewed_by' => Auth::id(),
+                        'reviewed_at' => now(),
+                    ]);
             }
 
             $withdrawalRequest->update([
@@ -938,8 +1023,33 @@ class SavingsController extends Controller
                 'reviewed_by' => Auth::id(),
                 'reviewed_at' => now(),
             ]);
+
+            return null;
         });
 
+        if ($error) {
+            return redirect()->back()->with('error', $error);
+        }
+
         return redirect()->back()->with('success', 'Savings withdrawal request rejected.');
+    }
+
+    /**
+     * Whether the "separate approver and disburser" setting blocks this user from disbursing this request.
+     */
+    public static function approverCannotDisburse($user, SavingsWithdrawalRequest $withdrawalRequest, ?bool $enforced = null): bool
+    {
+        if (!$user || empty($withdrawalRequest->reviewed_by)) {
+            return false;
+        }
+
+        $enforced ??= self::separateDisburserEnforced();
+
+        return $enforced && (int) $withdrawalRequest->reviewed_by === (int) $user->id;
+    }
+
+    public static function separateDisburserEnforced(): bool
+    {
+        return (bool) (Setting::first()?->require_separate_withdrawal_disburser ?? true);
     }
 }
